@@ -55,12 +55,9 @@ export async function DELETE(
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 
-  // Delete storage object
+  // Delete storage object (file_url is now the storage path)
   if (notebook.file_url) {
-    const path = notebook.file_url.split("/pdf-uploads/")[1];
-    if (path) {
-      await supabase.storage.from("pdf-uploads").remove([path]);
-    }
+    await supabase.storage.from("pdf-uploads").remove([notebook.file_url]);
   }
 
   const { error } = await supabase
@@ -70,7 +67,8 @@ export async function DELETE(
     .eq("user_id", user.id);
 
   if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    console.error("[notebooks/delete] Delete failed:", error);
+    return NextResponse.json({ error: "Internal error" }, { status: 500 });
   }
 
   return NextResponse.json({ success: true });

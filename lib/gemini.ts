@@ -1,9 +1,11 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { createGoogleGenerativeAI } from "@ai-sdk/google";
 
-const apiKey = process.env.GEMINI_API_KEY!;
+if (!process.env.GEMINI_API_KEY) throw new Error("GEMINI_API_KEY is required");
 
-export const genAI = new GoogleGenerativeAI(apiKey);
+const apiKey = process.env.GEMINI_API_KEY;
+
+const genAI = new GoogleGenerativeAI(apiKey);
 
 // For Vercel AI SDK streaming
 export const google = createGoogleGenerativeAI({ apiKey });

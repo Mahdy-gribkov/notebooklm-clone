@@ -97,12 +97,20 @@ export default function LoginPage() {
           </form>
 
           {message && (
-            <p className="text-sm text-center text-green-600 dark:text-green-400">
+            <p
+              role="status"
+              aria-live="polite"
+              className="text-sm text-center text-green-600 dark:text-green-400"
+            >
               {message}
             </p>
           )}
           {error && (
-            <p className="text-sm text-center text-red-600 dark:text-red-400">
+            <p
+              role="alert"
+              aria-live="polite"
+              className="text-sm text-center text-red-600 dark:text-red-400"
+            >
               {error}
             </p>
           )}

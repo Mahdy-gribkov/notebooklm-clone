@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import type { Notebook } from "@/types";
 
@@ -13,7 +12,8 @@ interface NotebookCardProps {
 }
 
 const statusColors: Record<Notebook["status"], string> = {
-  processing: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300",
+  processing:
+    "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300",
   ready: "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300",
   error: "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300",
 };
@@ -26,10 +26,24 @@ export function NotebookCard({ notebook, onDelete }: NotebookCardProps) {
     if (!confirm(`Delete "${notebook.title}"? This cannot be undone.`)) return;
     setDeleting(true);
     try {
-      const res = await fetch(`/api/notebooks/${notebook.id}`, { method: "DELETE" });
+      const res = await fetch(`/api/notebooks/${notebook.id}`, {
+        method: "DELETE",
+      });
       if (res.ok) onDelete(notebook.id);
     } finally {
       setDeleting(false);
+    }
+  }
+
+  async function handleViewPdf(e: React.MouseEvent) {
+    e.preventDefault();
+    try {
+      const res = await fetch(`/api/notebooks/${notebook.id}/pdf`);
+      if (!res.ok) return;
+      const { url } = await res.json();
+      window.open(url, "_blank", "noopener,noreferrer");
+    } catch {
+      // silently fail — PDF is supplementary
     }
   }
 
@@ -59,6 +73,15 @@ export function NotebookCard({ notebook, onDelete }: NotebookCardProps) {
             </span>
             <span className="text-xs text-muted-foreground">{date}</span>
           </div>
+          {notebook.status === "ready" && (
+            <button
+              onClick={handleViewPdf}
+              className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+              aria-label="View PDF"
+            >
+              PDF
+            </button>
+          )}
         </CardContent>
       </Link>
       <Button
@@ -69,7 +92,12 @@ export function NotebookCard({ notebook, onDelete }: NotebookCardProps) {
         className="absolute right-2 top-2 h-7 w-7 p-0 opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-red-600"
         aria-label="Delete notebook"
       >
-        <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <svg
+          className="h-4 w-4"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
           <path
             strokeLinecap="round"
             strokeLinejoin="round"

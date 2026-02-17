@@ -2,6 +2,7 @@ import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { ChatInterface } from "@/components/chat-interface";
+import { ViewPdfButton } from "@/components/view-pdf-button";
 import { Button } from "@/components/ui/button";
 import type { Notebook, Message } from "@/types";
 
@@ -54,14 +55,7 @@ export default async function NotebookPage({ params }: PageProps) {
           <div className="flex-1 min-w-0">
             <h1 className="text-sm font-semibold truncate">{notebook.title}</h1>
           </div>
-          <a
-            href={notebook.file_url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-xs text-muted-foreground hover:text-foreground transition-colors shrink-0"
-          >
-            View PDF
-          </a>
+          <ViewPdfButton notebookId={id} />
         </div>
       </header>
 

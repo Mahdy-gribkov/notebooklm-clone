@@ -1,8 +1,6 @@
 "use client";
 
 import { useState, useRef, DragEvent, ChangeEvent } from "react";
-import { createClient } from "@/lib/supabase/client";
-import { Button } from "@/components/ui/button";
 import type { Notebook } from "@/types";
 
 interface UploadZoneProps {
@@ -40,13 +38,8 @@ export function UploadZone({ onNotebookCreated }: UploadZoneProps) {
     formData.append("file", file);
 
     try {
-      const supabase = createClient();
-      const { data: { session } } = await supabase.auth.getSession();
       const res = await fetch("/api/upload", {
         method: "POST",
-        headers: session?.access_token
-          ? { Authorization: `Bearer ${session.access_token}` }
-          : {},
         body: formData,
       });
 
@@ -56,7 +49,7 @@ export function UploadZone({ onNotebookCreated }: UploadZoneProps) {
       }
 
       setProgress("Processing and embedding...");
-      const notebook = await res.json() as Notebook;
+      const notebook = (await res.json()) as Notebook;
       onNotebookCreated(notebook);
       setProgress(null);
     } catch (e) {
@@ -82,7 +75,10 @@ export function UploadZone({ onNotebookCreated }: UploadZoneProps) {
 
   return (
     <div
-      onDragOver={(e) => { e.preventDefault(); setDragging(true); }}
+      onDragOver={(e) => {
+        e.preventDefault();
+        setDragging(true);
+      }}
       onDragLeave={() => setDragging(false)}
       onDrop={handleDrop}
       className={`rounded-xl border-2 border-dashed p-8 text-center transition-colors cursor-pointer ${
@@ -118,7 +114,9 @@ export function UploadZone({ onNotebookCreated }: UploadZoneProps) {
 
         {uploading ? (
           <div className="space-y-2">
-            <p className="text-sm font-medium text-muted-foreground">{progress}</p>
+            <p className="text-sm font-medium text-muted-foreground">
+              {progress}
+            </p>
             <div className="h-1.5 w-48 rounded-full bg-muted overflow-hidden">
               <div className="h-full w-1/2 rounded-full bg-primary animate-pulse" />
             </div>
@@ -127,7 +125,9 @@ export function UploadZone({ onNotebookCreated }: UploadZoneProps) {
           <>
             <p className="text-sm font-medium">
               Drop a PDF here or{" "}
-              <span className="text-primary underline underline-offset-2">browse</span>
+              <span className="text-primary underline underline-offset-2">
+                browse
+              </span>
             </p>
             <p className="text-xs text-muted-foreground">
               Max {MAX_SIZE_MB}MB. Text-based PDFs only.
@@ -136,7 +136,13 @@ export function UploadZone({ onNotebookCreated }: UploadZoneProps) {
         )}
 
         {error && (
-          <p className="mt-2 text-sm text-red-600 dark:text-red-400">{error}</p>
+          <p
+            role="alert"
+            aria-live="polite"
+            className="mt-2 text-sm text-red-600 dark:text-red-400"
+          >
+            {error}
+          </p>
         )}
       </div>
     </div>

@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { createClient as createServiceClient } from "@supabase/supabase-js";
 import { processNotebook } from "@/lib/rag";
+import { checkRateLimit } from "@/lib/rate-limit";
 import { NextResponse } from "next/server";
 
 export const maxDuration = 60;
@@ -22,6 +23,10 @@ export async function POST(request: Request) {
 
   if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  if (!checkRateLimit(user.id + ":upload", 3, 3_600_000)) {
+    return NextResponse.json({ error: "Too many requests" }, { status: 429 });
   }
 
   const formData = await request.formData();
@@ -46,56 +51,56 @@ export async function POST(request: Request) {
   }
 
   const buffer = Buffer.from(await file.arrayBuffer());
+
+  // Verify PDF magic bytes — prevents MIME spoofing
+  if (buffer.slice(0, 5).toString("ascii") !== "%PDF-") {
+    return NextResponse.json({ error: "Invalid PDF file" }, { status: 400 });
+  }
+
   const serviceClient = getServiceClient();
 
-  // Upload to Supabase Storage
+  // Store path only — bucket is private, signed URLs generated on demand
   const storagePath = `${user.id}/${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.-]/g, "_")}`;
   const { error: uploadError } = await serviceClient.storage
     .from("pdf-uploads")
     .upload(storagePath, buffer, { contentType: "application/pdf" });
 
   if (uploadError) {
+    console.error("[upload] Storage upload failed:", uploadError);
     return NextResponse.json(
-      { error: `Storage upload failed: ${uploadError.message}` },
+      { error: "Storage upload failed" },
       { status: 500 }
     );
   }
 
-  const {
-    data: { publicUrl },
-  } = serviceClient.storage.from("pdf-uploads").getPublicUrl(storagePath);
-
-  // Create notebook row (status=processing)
+  // Create notebook row with storage path (not public URL)
   const title = file.name.replace(/\.pdf$/i, "");
   const { data: notebook, error: dbError } = await serviceClient
     .from("notebooks")
     .insert({
       user_id: user.id,
       title,
-      file_url: publicUrl,
+      file_url: storagePath,
       status: "processing",
     })
     .select()
     .single();
 
   if (dbError || !notebook) {
+    console.error("[upload] Failed to create notebook:", dbError);
     return NextResponse.json(
-      { error: `Failed to create notebook: ${dbError?.message}` },
+      { error: "Failed to create notebook" },
       { status: 500 }
     );
   }
 
-  // Process synchronously (embed + store chunks)
-  // This runs within the 60s function timeout
+  // Process synchronously (embed + store chunks) within 60s timeout
   try {
     await processNotebook(notebook.id, user.id, buffer);
   } catch (error) {
+    console.error("[upload] Processing failed:", error);
     return NextResponse.json(
-      {
-        error:
-          error instanceof Error ? error.message : "Processing failed",
-        notebookId: notebook.id,
-      },
+      { error: "Processing failed", notebookId: notebook.id },
       { status: 500 }
     );
   }

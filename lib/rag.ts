@@ -1,6 +1,7 @@
 import { embeddingModel } from "@/lib/gemini";
 import { extractText } from "@/lib/pdf";
 import { splitText } from "@/lib/splitter";
+import { isValidUUID, sanitizeText } from "@/lib/validate";
 import type { Source } from "@/types";
 import { createClient } from "@supabase/supabase-js";
 
@@ -20,7 +21,11 @@ async function sleep(ms: number) {
 export async function embedText(text: string, attempt = 0): Promise<number[]> {
   try {
     const result = await embeddingModel.embedContent(text);
-    return result.embedding.values;
+    const values = result.embedding.values;
+    if (!Array.isArray(values) || values.length !== 768) {
+      throw new Error("Unexpected embedding shape from API");
+    }
+    return values;
   } catch (error: unknown) {
     const isRateLimit =
       error instanceof Error &&
@@ -40,15 +45,19 @@ export async function processNotebook(
   userId: string,
   pdfBuffer: Buffer
 ): Promise<void> {
+  if (!isValidUUID(notebookId)) throw new Error("Invalid notebookId");
+  if (!isValidUUID(userId)) throw new Error("Invalid userId");
+
   const supabase = getServiceClient();
 
   try {
-    const text = await extractText(pdfBuffer);
+    const rawText = await extractText(pdfBuffer);
+    const text = sanitizeText(rawText);
     const chunks = splitText(text);
 
-    // Embed chunks sequentially with small delay to respect 10 RPM
+    // Embed chunks in batches to respect 10 RPM
     const BATCH_SIZE = 5;
-    const INTER_BATCH_DELAY = 6500; // ~10 RPM = 1 req/6s, batch of 5 = 30s per batch
+    const INTER_BATCH_DELAY = 6500;
 
     for (let i = 0; i < chunks.length; i += BATCH_SIZE) {
       const batch = chunks.slice(i, i + BATCH_SIZE);
@@ -64,9 +73,11 @@ export async function processNotebook(
       }));
 
       const { error } = await supabase.from("chunks").insert(rows);
-      if (error) throw new Error(`Failed to insert chunks: ${error.message}`);
+      if (error) {
+        console.error("[rag] Failed to insert chunks:", error);
+        throw new Error("Failed to store document chunks");
+      }
 
-      // Delay between batches (skip after last batch)
       if (i + BATCH_SIZE < chunks.length) {
         await sleep(INTER_BATCH_DELAY);
       }
@@ -90,6 +101,9 @@ export async function retrieveChunks(
   notebookId: string,
   userId: string
 ): Promise<Source[]> {
+  if (!isValidUUID(notebookId)) throw new Error("Invalid notebookId");
+  if (!isValidUUID(userId)) throw new Error("Invalid userId");
+
   const supabase = getServiceClient();
 
   const queryEmbedding = await embedText(query);
@@ -101,7 +115,10 @@ export async function retrieveChunks(
     match_count: 5,
   });
 
-  if (error) throw new Error(`Vector search failed: ${error.message}`);
+  if (error) {
+    console.error("[rag] Vector search failed:", error);
+    throw new Error("Failed to retrieve document context");
+  }
 
   return (data ?? []).map(
     (row: { id: string; content: string; similarity: number }) => ({

@@ -1,0 +1,49 @@
+import { createClient } from "@/lib/supabase/server";
+import { createClient as createServiceClient } from "@supabase/supabase-js";
+import { NextResponse } from "next/server";
+
+function getServiceClient() {
+  return createServiceClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  );
+}
+
+export async function GET(
+  _request: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const { id } = await params;
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  // Verify ownership
+  const { data: notebook } = await supabase
+    .from("notebooks")
+    .select("file_url")
+    .eq("id", id)
+    .eq("user_id", user.id)
+    .single();
+
+  if (!notebook?.file_url) {
+    return NextResponse.json({ error: "Not found" }, { status: 404 });
+  }
+
+  const serviceClient = getServiceClient();
+  const { data, error } = await serviceClient.storage
+    .from("pdf-uploads")
+    .createSignedUrl(notebook.file_url, 60);
+
+  if (error || !data) {
+    console.error("[pdf] Failed to create signed URL:", error);
+    return NextResponse.json({ error: "Internal error" }, { status: 500 });
+  }
+
+  return NextResponse.json({ url: data.signedUrl });
+}

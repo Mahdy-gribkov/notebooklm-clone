@@ -7,9 +7,15 @@ import { createClient } from "@supabase/supabase-js";
 
 // Service-role client for server-only operations (no cookie context)
 function getServiceClient() {
+  if (!process.env.NEXT_PUBLIC_SUPABASE_URL) {
+    throw new Error("Environment variable NEXT_PUBLIC_SUPABASE_URL is required");
+  }
+  if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
+    throw new Error("Environment variable SUPABASE_SERVICE_ROLE_KEY is required");
+  }
   return createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
+    process.env.NEXT_PUBLIC_SUPABASE_URL,
+    process.env.SUPABASE_SERVICE_ROLE_KEY
   );
 }
 
@@ -30,8 +36,18 @@ export async function embedText(text: string, attempt = 0): Promise<number[]> {
       error instanceof Error &&
       (error.message.includes("429") || error.message.includes("quota"));
 
+    const errorMsg = error instanceof Error ? error.message : String(error);
+    console.error("[embedText] Embedding failed:", {
+      attempt,
+      errorMessage: errorMsg,
+      textLength: text.length,
+      isRateLimit,
+      fullError: error,
+    });
+
     if (isRateLimit && attempt < 5) {
       const wait = Math.pow(2, attempt) * 6000; // 6s, 12s, 24s, 48s, 96s
+      console.log(`[embedText] Rate limited, retrying after ${wait}ms (attempt ${attempt + 1}/5)`);
       await sleep(wait);
       return embedText(text, attempt + 1);
     }
@@ -50,8 +66,13 @@ export async function processNotebook(
   const supabase = getServiceClient();
 
   try {
+    console.log(`[processNotebook] Starting for notebook ${notebookId}`);
+    
     const rawText = await extractText(pdfBuffer);
+    console.log(`[processNotebook] Extracted ${rawText.length} chars from PDF`);
+    
     const text = sanitizeText(rawText);
+    console.log(`[processNotebook] Sanitized to ${text.length} chars`);
 
     const splitter = new RecursiveCharacterTextSplitter({
       chunkSize: 2000,
@@ -59,6 +80,8 @@ export async function processNotebook(
     });
     const docs = await splitter.createDocuments([text]);
     const chunks = docs.map((d) => d.pageContent);
+
+    console.log(`[processNotebook] Split into ${chunks.length} chunks`);
 
     if (chunks.length === 0) {
       throw new Error(
@@ -72,6 +95,7 @@ export async function processNotebook(
 
     for (let i = 0; i < chunks.length; i += BATCH_SIZE) {
       const batch = chunks.slice(i, i + BATCH_SIZE);
+      console.log(`[processNotebook] Embedding batch ${Math.floor(i / BATCH_SIZE) + 1}/${Math.ceil(chunks.length / BATCH_SIZE)}`);
 
       const embeddings = await Promise.all(batch.map((chunk) => embedText(chunk)));
 
@@ -85,8 +109,15 @@ export async function processNotebook(
 
       const { error } = await supabase.from("chunks").insert(rows);
       if (error) {
-        console.error("[rag] Failed to insert chunks:", error);
-        throw new Error("Failed to store document chunks");
+        console.error("[processNotebook] Failed to insert chunks:", {
+          batchIndex: Math.floor(i / BATCH_SIZE),
+          rowCount: rows.length,
+          notebookId,
+          userId,
+          errorMessage: error.message,
+          errorDetails: error,
+        });
+        throw new Error(`Failed to store document chunks: ${error.message}`);
       }
 
       if (i + BATCH_SIZE < chunks.length) {
@@ -94,11 +125,21 @@ export async function processNotebook(
       }
     }
 
+    console.log(`[processNotebook] Updating status to ready for ${notebookId}`);
     await supabase
       .from("notebooks")
       .update({ status: "ready" })
       .eq("id", notebookId);
+    
+    console.log(`[processNotebook] Successfully completed for ${notebookId}`);
   } catch (error) {
+    console.error("[processNotebook] Error occurred, updating status to error:", {
+      notebookId,
+      userId,
+      errorMessage: error instanceof Error ? error.message : String(error),
+      error,
+    });
+    
     await supabase
       .from("notebooks")
       .update({ status: "error" })

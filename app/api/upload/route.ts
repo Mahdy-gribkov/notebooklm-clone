@@ -8,7 +8,18 @@ export const maxDuration = 60;
 
 const MAX_SIZE_BYTES = 5 * 1024 * 1024; // 5MB
 
+function validateEnvironment() {
+  const missing = [];
+  if (!process.env.NEXT_PUBLIC_SUPABASE_URL) missing.push("NEXT_PUBLIC_SUPABASE_URL");
+  if (!process.env.SUPABASE_SERVICE_ROLE_KEY) missing.push("SUPABASE_SERVICE_ROLE_KEY");
+  if (!process.env.GEMINI_API_KEY) missing.push("GEMINI_API_KEY");
+  if (missing.length > 0) {
+    throw new Error(`Missing environment variables: ${missing.join(", ")}`);
+  }
+}
+
 function getServiceClient() {
+  validateEnvironment();
   return createServiceClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!
@@ -102,7 +113,13 @@ export async function POST(request: Request) {
     await processNotebook(notebook.id, user.id, buffer);
   } catch (error) {
     const errorMsg = error instanceof Error ? error.message : String(error);
-    console.error("[upload] Processing failed:", errorMsg, error);
+    console.error("[upload] Processing failed:", {
+      notebookId: notebook.id,
+      userId: user.id,
+      errorMessage: errorMsg,
+      errorType: error instanceof Error ? error.name : typeof error,
+      fullError: error,
+    });
     const msg =
       error instanceof Error && error.message.includes("No text layer")
         ? "This PDF has no selectable text (scanned image). Please upload a text-based PDF."
@@ -110,6 +127,12 @@ export async function POST(request: Request) {
         ? "AI quota exceeded. Please try again in a minute."
         : error instanceof Error && error.message.includes("No content could be extracted")
         ? "No text content found in this PDF."
+        : error instanceof Error && error.message.includes("is required")
+        ? "Configuration error: Required environment variable missing. Check server logs."
+        : error instanceof Error && error.message.includes("Failed to store document chunks")
+        ? "Database connection error. Please try again."
+        : error instanceof Error && error.message.includes("embedding shape")
+        ? "AI API error: Invalid response format."
         : "Processing failed. The document was saved — please try re-uploading.";
     // Notebook row already set to "error" status by processNotebook
     return NextResponse.json({ error: msg }, { status: 500 });

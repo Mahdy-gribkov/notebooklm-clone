@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# DocChat — VPS Deployment Script
+# DocChat - VPS Deployment Script
 # Run this on a fresh Ubuntu 22.04+ VPS.
 #
 # Usage:

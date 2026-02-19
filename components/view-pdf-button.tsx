@@ -12,7 +12,7 @@ export function ViewPdfButton({ notebookId }: ViewPdfButtonProps) {
       const { url } = await res.json();
       window.open(url, "_blank", "noopener,noreferrer");
     } catch {
-      // silently fail — PDF view is supplementary
+      // silently fail. PDF view is supplementary
     }
   }
 

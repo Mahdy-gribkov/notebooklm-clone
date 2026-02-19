@@ -69,14 +69,14 @@ export async function POST(request: Request) {
 
   const buffer = Buffer.from(await file.arrayBuffer());
 
-  // Verify PDF magic bytes — prevents MIME spoofing
+  // Verify PDF magic bytes. Prevents MIME spoofing
   if (buffer.slice(0, 5).toString("ascii") !== "%PDF-") {
     return NextResponse.json({ error: "Invalid PDF file" }, { status: 400 });
   }
 
   const serviceClient = getServiceClient();
 
-  // Store path only — bucket is private, signed URLs generated on demand
+  // Store path only. Bucket is private, signed URLs generated on demand
   const storagePath = `${user.id}/${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.-]/g, "_")}`;
   const { error: uploadError } = await serviceClient.storage
     .from("pdf-uploads")

@@ -4,7 +4,7 @@ import { NextResponse } from "next/server";
 
 export async function GET(request: Request) {
   const auth = await authenticateRequest(request);
-  if (!auth) {
+  if (auth === null) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 

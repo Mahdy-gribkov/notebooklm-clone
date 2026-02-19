@@ -1,36 +1,128 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# DocChat
 
-## Getting Started
+**Chat with your PDFs using AI.** Upload a document, ask questions in plain English, and get answers grounded in your content with cited sources.
 
-First, run the development server:
+## Tech Stack
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+| Layer | Technology |
+|-------|-----------|
+| Frontend | Next.js 16, React 19, TypeScript, Tailwind CSS v4, shadcn/ui |
+| AI/LLM | Gemini 2.5 Flash (via Vercel AI SDK), LangChain |
+| Embeddings | Google text-embedding-004 (768-dim), pgvector |
+| Database | Supabase (PostgreSQL + Auth + Storage) |
+| Auth | Supabase Auth (GitHub OAuth + Magic Link) + JWT validation (jose) |
+| Infrastructure | Docker, nginx (reverse proxy + SSL), Let's Encrypt |
+| CI/CD | GitHub Actions (typecheck, lint, build, Docker) |
+
+## Architecture
+
+```
+Browser
+  |
+nginx (SSL termination, gzip, caching)
+  |
+Next.js App (standalone, port 3000)
+  |
+  +-- API Routes (/api/chat, /api/upload, /api/notebooks, /api/messages)
+  |     |
+  |     +-- JWT Auth (jose) + Supabase RLS
+  |     +-- Gemini LLM (streaming via AI SDK)
+  |     +-- RAG Pipeline (LangChain splitter + embeddings + pgvector)
+  |
+  +-- Supabase
+        +-- PostgreSQL (notebooks, chunks, messages)
+        +-- pgvector (cosine similarity search)
+        +-- Storage (private PDF bucket)
+        +-- Auth (GitHub OAuth, Magic Link)
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Features
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+- **PDF Upload**: Drag-and-drop or click to upload. 5 MB max, text-based PDFs.
+- **RAG Chat**: Questions answered from your document only, with source citations.
+- **Source Panel**: See which document sections each answer came from, with relevance scores.
+- **Streaming Responses**: Real-time token streaming via Vercel AI SDK.
+- **Auth**: GitHub OAuth or passwordless Magic Link sign-in.
+- **Security**: JWT validation, rate limiting (10 msg/min chat, 3/hr upload), PDF magic bytes check, prompt injection defense, CSP headers.
+- **Dark Mode**: Dark-first design with violet accent palette.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Local Development
 
-## Learn More
+```bash
+# Install dependencies
+npm install
 
-To learn more about Next.js, take a look at the following resources:
+# Copy environment variables
+cp .env.local.example .env.local
+# Fill in your Supabase and Gemini API keys
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+# Run dev server
+npm run dev
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+Open http://localhost:3000.
 
-## Deploy on Vercel
+## Environment Variables
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+| Variable | Description |
+|----------|-------------|
+| `NEXT_PUBLIC_SUPABASE_URL` | Supabase project URL |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase anonymous key |
+| `SUPABASE_SERVICE_ROLE_KEY` | Supabase service role key (server-side only) |
+| `SUPABASE_JWT_SECRET` | JWT secret from Supabase Dashboard > Settings > API |
+| `GEMINI_API_KEY` | Google AI (Gemini) API key |
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Database Setup
+
+Apply migrations in the Supabase SQL Editor, in order:
+
+1. `supabase/migrations/0001_init.sql` - Tables, pgvector, RPC functions
+2. `supabase/migrations/0002_similarity_threshold.sql` - match_threshold parameter
+3. `supabase/migrations/0003_sources_check.sql` - JSONB constraint on messages.sources
+
+Create a private storage bucket named `pdf-uploads` (5 MB limit, application/pdf only).
+
+## Docker Deployment
+
+### Development (no SSL)
+
+```bash
+docker compose -f docker-compose.dev.yml up --build
+```
+
+### Production (with nginx + SSL)
+
+```bash
+# 1. Update nginx/nginx.conf with your domain
+# 2. Get initial SSL certificate
+docker compose run --rm certbot certonly \
+  --webroot -w /var/lib/letsencrypt \
+  -d your-domain.com
+
+# 3. Start the full stack
+docker compose up -d --build
+```
+
+See `deploy.sh` for a complete VPS setup script.
+
+## Project Structure
+
+```
+app/
+  (auth)/login/       Login page (GitHub OAuth + Magic Link)
+  (app)/dashboard/    Dashboard with notebook grid
+  (app)/notebook/[id] Chat interface per notebook
+  api/                API routes (chat, upload, notebooks, messages)
+components/           React components (chat, sources, upload, cards)
+lib/                  Server utilities (auth, gemini, rag, rate-limit, validate)
+supabase/migrations/  SQL migrations
+nginx/                nginx reverse proxy config
+```
+
+## CI/CD
+
+GitHub Actions runs on every push/PR to master:
+1. Type check (`tsc --noEmit`)
+2. Lint (`eslint`)
+3. Build (`next build`)
+4. Docker build validation

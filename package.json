@@ -1,5 +1,5 @@
 {
-  "name": "notebooklm-clone",
+  "name": "docchat",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -19,6 +19,7 @@
     "ai": "^4.3.19",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "jose": "^6.1.3",
     "langchain": "^1.2.24",
     "lucide-react": "^0.571.0",
     "next": "16.1.6",

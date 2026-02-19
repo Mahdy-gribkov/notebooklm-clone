@@ -9,7 +9,7 @@ import { NotebookCard } from "@/components/notebook-card";
 import { Button } from "@/components/ui/button";
 import type { Notebook } from "@/types";
 
-const PROCESSING_TIMEOUT_MS = 5 * 60 * 1000; // 5 minutes
+const PROCESSING_TIMEOUT_MS = 5 * 60 * 1000;
 const POLL_DELAYS = [5000, 10000, 20000, 30000];
 
 function isTimedOut(notebook: Notebook): boolean {
@@ -53,7 +53,6 @@ export default function DashboardPage() {
     setNotebooks((prev) => prev.filter((n) => n.id !== id));
   }
 
-  // Poll processing notebooks with exponential backoff: 5s → 10s → 20s → 30s cap
   useEffect(() => {
     const processing = notebooks.filter(
       (n) => n.status === "processing" && !isTimedOut(n)
@@ -86,45 +85,78 @@ export default function DashboardPage() {
   }, [notebooks]);
 
   const readyCount = notebooks.filter((n) => n.status === "ready").length;
+  const processingCount = notebooks.filter((n) => n.status === "processing" && !isTimedOut(n)).length;
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="border-b bg-background/80 backdrop-blur-sm sticky top-0 z-10">
-        <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-3">
-          <div className="flex items-center gap-2">
-            <svg className="h-5 w-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-            </svg>
+      {/* Header */}
+      <header className="border-b bg-background/80 backdrop-blur-md sticky top-0 z-10">
+        <div className="mx-auto flex max-w-5xl items-center justify-between px-4 sm:px-6 py-3">
+          <div className="flex items-center gap-2.5">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10">
+              <svg className="h-4 w-4 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+            </div>
             <span className="text-base font-semibold tracking-tight">DocChat</span>
           </div>
           <div className="flex items-center gap-3">
             {userEmail && (
-              <span className="hidden sm:block text-xs text-muted-foreground">
-                {userEmail}
-              </span>
+              <div className="hidden sm:flex items-center gap-2">
+                <div className="flex h-7 w-7 items-center justify-center rounded-full bg-primary/10 text-xs font-medium text-primary">
+                  {userEmail[0].toUpperCase()}
+                </div>
+                <span className="text-xs text-muted-foreground max-w-[160px] truncate">
+                  {userEmail}
+                </span>
+              </div>
             )}
-            <Button variant="ghost" size="sm" onClick={handleSignOut}>
+            <Button variant="ghost" size="sm" onClick={handleSignOut} className="text-muted-foreground hover:text-foreground">
               Sign out
             </Button>
           </div>
         </div>
       </header>
 
-      <main className="mx-auto max-w-5xl px-4 py-8 space-y-10">
-        <section>
+      <main className="mx-auto max-w-5xl px-4 sm:px-6 py-8 space-y-8">
+        {/* Stats row */}
+        {!loading && notebooks.length > 0 && (
+          <div className="grid grid-cols-3 gap-3 animate-fade-in">
+            <StatCard
+              label="Total"
+              value={notebooks.length}
+              icon={<svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" /></svg>}
+            />
+            <StatCard
+              label="Ready"
+              value={readyCount}
+              icon={<svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>}
+              accent
+            />
+            <StatCard
+              label="Processing"
+              value={processingCount}
+              icon={<svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>}
+            />
+          </div>
+        )}
+
+        {/* Upload section */}
+        <section className="animate-slide-up [animation-delay:100ms]">
           <div className="mb-3">
             <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
               Upload a PDF
             </h2>
             <p className="mt-0.5 text-xs text-muted-foreground">
-              Text-based PDFs only. Up to 5 MB. Processing takes 15–60 seconds.
+              Text-based PDFs only. Up to 5 MB. Processing takes 15-60 seconds.
             </p>
           </div>
           <UploadZone onNotebookCreated={handleNotebookCreated} />
         </section>
 
-        <section>
-          <div className="flex items-baseline justify-between mb-3">
+        {/* Notebooks section */}
+        <section className="animate-slide-up [animation-delay:200ms]">
+          <div className="flex items-baseline justify-between mb-4">
             <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
               Your Notebooks
             </h2>
@@ -140,41 +172,62 @@ export default function DashboardPage() {
               {[1, 2, 3].map((i) => (
                 <div
                   key={i}
-                  className="h-24 rounded-xl border bg-muted/40 animate-pulse"
+                  className="h-[120px] rounded-xl border bg-card animate-shimmer"
                 />
               ))}
             </div>
           ) : notebooks.length === 0 ? (
             <div className="rounded-xl border border-dashed p-14 text-center">
-              <svg className="mx-auto mb-3 h-10 w-10 text-muted-foreground/40" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 13h6m-3-3v6m5 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-              </svg>
-              <p className="text-sm font-medium text-muted-foreground">No notebooks yet</p>
+              <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-primary/5">
+                <svg className="h-7 w-7 text-primary/40" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 13h6m-3-3v6m5 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+              </div>
+              <p className="text-sm font-medium">No notebooks yet</p>
               <p className="mt-1 text-xs text-muted-foreground">
                 Upload a PDF above to start chatting with your document.
               </p>
             </div>
           ) : (
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {notebooks.map((notebook) => (
-                <NotebookCard
+              {notebooks.map((notebook, i) => (
+                <div
                   key={notebook.id}
-                  notebook={notebook}
-                  timedOut={isTimedOut(notebook)}
-                  onDelete={handleNotebookDeleted}
-                />
+                  className="animate-slide-up"
+                  style={{ animationDelay: `${i * 50}ms` }}
+                >
+                  <NotebookCard
+                    notebook={notebook}
+                    timedOut={isTimedOut(notebook)}
+                    onDelete={handleNotebookDeleted}
+                  />
+                </div>
               ))}
             </div>
           )}
         </section>
 
-        <footer className="border-t pt-6">
-          <p className="text-xs text-muted-foreground text-center">
-            Processing large PDFs may take up to 60 seconds due to Gemini rate limits.
+        <footer className="border-t pt-6 pb-4">
+          <p className="text-xs text-muted-foreground/60 text-center">
+            Processing large PDFs may take up to 60 seconds due to rate limits.
             Scanned PDFs without a text layer are not supported.
           </p>
         </footer>
       </main>
+    </div>
+  );
+}
+
+function StatCard({ label, value, icon, accent }: { label: string; value: number; icon: React.ReactNode; accent?: boolean }) {
+  return (
+    <div className="rounded-xl border bg-card p-4">
+      <div className="flex items-center justify-between mb-2">
+        <span className={`${accent ? "text-primary" : "text-muted-foreground"}`}>
+          {icon}
+        </span>
+      </div>
+      <p className="text-2xl font-bold tracking-tight">{value}</p>
+      <p className="text-xs text-muted-foreground mt-0.5">{label}</p>
     </div>
   );
 }

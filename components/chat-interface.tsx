@@ -15,10 +15,10 @@ interface ChatInterfaceProps {
 }
 
 const STARTER_PROMPTS = [
-  "Summarize the key points of this document",
-  "What are the main conclusions or findings?",
-  "What topics does this document cover?",
-  "What questions does this document answer?",
+  { text: "Summarize the key points of this document", icon: "list" },
+  { text: "What are the main conclusions or findings?", icon: "target" },
+  { text: "What topics does this document cover?", icon: "book" },
+  { text: "What questions does this document answer?", icon: "question" },
 ];
 
 export function ChatInterface({ notebookId, initialMessages }: ChatInterfaceProps) {
@@ -45,11 +45,9 @@ export function ChatInterface({ notebookId, initialMessages }: ChatInterfaceProp
         } else {
           setErrorMessage("Something went wrong. Please try again.");
         }
-        // Input is preserved automatically by useChat on error
       },
     });
 
-  // Derive streaming sources from latest stream data during render (no state needed)
   const streamingSources: Source[] = (() => {
     if (data && data.length > 0) {
       const last = data[data.length - 1] as { sources?: Source[] };
@@ -58,7 +56,6 @@ export function ChatInterface({ notebookId, initialMessages }: ChatInterfaceProp
     return [];
   })();
 
-  // Scroll to bottom on new messages
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
@@ -82,7 +79,6 @@ export function ChatInterface({ notebookId, initialMessages }: ChatInterfaceProp
     setInput(prompt);
   }
 
-  // Map db message id to stored sources
   const sourcesById = Object.fromEntries(
     initialMessages
       .filter((m) => m.role === "assistant" && m.sources)
@@ -91,37 +87,40 @@ export function ChatInterface({ notebookId, initialMessages }: ChatInterfaceProp
 
   return (
     <div className="flex h-full flex-col">
-      <ScrollArea className="flex-1 px-4 py-4">
-        <div className="space-y-4 max-w-2xl mx-auto">
+      <ScrollArea className="flex-1 px-4 py-6">
+        <div className="space-y-5 max-w-2xl mx-auto">
           {messages.length === 0 && (
-            <div className="flex flex-col items-center py-12 text-center">
-              <svg
-                className="mb-4 h-12 w-12 text-muted-foreground/30"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={1.5}
-                  d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
-                />
-              </svg>
-              <p className="text-sm font-medium text-muted-foreground">
+            <div className="flex flex-col items-center py-16 text-center animate-fade-in">
+              <div className="mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/5">
+                <svg
+                  className="h-8 w-8 text-primary/30"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={1.5}
+                    d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
+                  />
+                </svg>
+              </div>
+              <p className="text-base font-semibold mb-1">
                 Ask anything about your document
               </p>
-              <p className="text-xs mt-1 text-muted-foreground/70 mb-6">
+              <p className="text-sm text-muted-foreground mb-8">
                 All answers come directly from the uploaded PDF.
               </p>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 w-full max-w-md">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 w-full max-w-md">
                 {STARTER_PROMPTS.map((prompt) => (
                   <button
-                    key={prompt}
-                    onClick={() => handleStarterPrompt(prompt)}
-                    className="rounded-lg border px-3 py-2 text-left text-xs text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+                    key={prompt.text}
+                    onClick={() => handleStarterPrompt(prompt.text)}
+                    className="group flex items-start gap-2.5 rounded-xl border p-3 text-left text-xs text-muted-foreground hover:bg-accent/50 hover:text-foreground hover:border-primary/20 transition-all"
                   >
-                    {prompt}
+                    <StarterIcon type={prompt.icon} />
+                    <span className="leading-relaxed">{prompt.text}</span>
                   </button>
                 ))}
               </div>
@@ -133,25 +132,23 @@ export function ChatInterface({ notebookId, initialMessages }: ChatInterfaceProp
             const isLastAssistant =
               !isUser && message.id === messages[messages.length - 1]?.id;
 
-            // Use streaming sources for the last assistant message while loading,
-            // fall back to persisted sources from DB
             const sources: Source[] | undefined =
               isLastAssistant && isLoading
                 ? streamingSources
                 : (sourcesById[message.id] ?? (isLastAssistant ? streamingSources : undefined));
 
             return (
-              <div key={message.id} className={`flex ${isUser ? "justify-end" : "justify-start"}`}>
+              <div key={message.id} className={`flex ${isUser ? "justify-end" : "justify-start"} animate-slide-up`}>
                 <div
-                  className={`max-w-[85%] space-y-2 ${
+                  className={`max-w-[85%] space-y-2.5 ${
                     isUser ? "items-end" : "items-start"
                   } flex flex-col`}
                 >
                   <div
-                    className={`rounded-2xl px-4 py-2.5 text-sm leading-relaxed ${
+                    className={`rounded-2xl px-4 py-3 text-sm leading-relaxed ${
                       isUser
-                        ? "bg-primary text-primary-foreground rounded-br-sm"
-                        : "bg-muted rounded-bl-sm"
+                        ? "bg-gradient-to-br from-primary to-[oklch(0.45_0.2_290)] text-white rounded-br-md"
+                        : "bg-muted/60 border rounded-bl-md"
                     }`}
                   >
                     <p className="whitespace-pre-wrap">{message.content}</p>
@@ -166,14 +163,15 @@ export function ChatInterface({ notebookId, initialMessages }: ChatInterfaceProp
             );
           })}
 
+          {/* Shimmer loading indicator */}
           {isLoading && messages[messages.length - 1]?.role === "user" && (
-            <div className="flex justify-start">
-              <div className="rounded-2xl rounded-bl-sm bg-muted px-4 py-2.5">
-                <span className="flex gap-1" aria-label="Thinking...">
-                  <span className="animate-bounce h-1.5 w-1.5 rounded-full bg-muted-foreground [animation-delay:0ms]" />
-                  <span className="animate-bounce h-1.5 w-1.5 rounded-full bg-muted-foreground [animation-delay:150ms]" />
-                  <span className="animate-bounce h-1.5 w-1.5 rounded-full bg-muted-foreground [animation-delay:300ms]" />
-                </span>
+            <div className="flex justify-start animate-fade-in">
+              <div className="rounded-2xl rounded-bl-md bg-muted/60 border px-4 py-3 w-48">
+                <div className="space-y-2">
+                  <div className="h-2.5 rounded-full bg-muted-foreground/10 animate-shimmer" />
+                  <div className="h-2.5 rounded-full bg-muted-foreground/10 animate-shimmer [animation-delay:200ms] w-3/4" />
+                  <div className="h-2.5 rounded-full bg-muted-foreground/10 animate-shimmer [animation-delay:400ms] w-1/2" />
+                </div>
               </div>
             </div>
           )}
@@ -182,9 +180,10 @@ export function ChatInterface({ notebookId, initialMessages }: ChatInterfaceProp
         </div>
       </ScrollArea>
 
-      <div className="border-t p-4">
+      {/* Input area */}
+      <div className="border-t bg-background/80 backdrop-blur-sm p-4">
         {errorMessage && (
-          <p className="mb-2 text-center text-xs text-red-600 dark:text-red-400 max-w-2xl mx-auto">
+          <p className="mb-2 text-center text-xs text-destructive max-w-2xl mx-auto animate-fade-in">
             {errorMessage}
           </p>
         )}
@@ -192,24 +191,26 @@ export function ChatInterface({ notebookId, initialMessages }: ChatInterfaceProp
           onSubmit={handleFormSubmit}
           className="max-w-2xl mx-auto flex gap-2 items-end"
         >
-          <Textarea
-            value={input}
-            onChange={handleInputChange}
-            onKeyDown={handleKeyDown}
-            placeholder="Ask about your document... (Enter to send, Shift+Enter for new line)"
-            className="min-h-[44px] max-h-32 resize-none"
-            disabled={isLoading}
-            rows={1}
-          />
+          <div className="relative flex-1">
+            <Textarea
+              value={input}
+              onChange={handleInputChange}
+              onKeyDown={handleKeyDown}
+              placeholder="Ask about your document..."
+              className="min-h-[48px] max-h-32 resize-none pr-4 rounded-xl"
+              disabled={isLoading}
+              rows={1}
+            />
+          </div>
           <Button
             type="submit"
             size="sm"
             disabled={isLoading || !input.trim()}
-            className="h-11 px-4 shrink-0"
+            className="h-12 w-12 shrink-0 rounded-xl p-0"
             aria-label="Send message"
           >
             <svg
-              className="h-4 w-4"
+              className="h-4.5 w-4.5"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -223,10 +224,43 @@ export function ChatInterface({ notebookId, initialMessages }: ChatInterfaceProp
             </svg>
           </Button>
         </form>
-        <p className="mt-1.5 text-center text-xs text-muted-foreground/50 max-w-2xl mx-auto">
-          Answers are grounded in your document only. Sources shown below each reply.
+        <p className="mt-2 text-center text-[11px] text-muted-foreground/50 max-w-2xl mx-auto">
+          Enter to send. Shift+Enter for new line. Sources shown below each reply.
         </p>
       </div>
     </div>
   );
+}
+
+function StarterIcon({ type }: { type: string }) {
+  const cls = "h-4 w-4 shrink-0 mt-0.5 text-primary/40 group-hover:text-primary/60 transition-colors";
+  switch (type) {
+    case "list":
+      return (
+        <svg className={cls} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 6h16M4 10h16M4 14h16M4 18h16" />
+        </svg>
+      );
+    case "target":
+      return (
+        <svg className={cls} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <circle cx="12" cy="12" r="10" strokeWidth={1.5} />
+          <circle cx="12" cy="12" r="6" strokeWidth={1.5} />
+          <circle cx="12" cy="12" r="2" strokeWidth={1.5} />
+        </svg>
+      );
+    case "book":
+      return (
+        <svg className={cls} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+        </svg>
+      );
+    case "question":
+    default:
+      return (
+        <svg className={cls} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+      );
+  }
 }

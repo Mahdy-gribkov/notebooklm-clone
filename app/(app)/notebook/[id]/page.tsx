@@ -42,16 +42,17 @@ export default async function NotebookPage({ params }: PageProps) {
 
   return (
     <div className="flex h-screen flex-col bg-background">
-      <header className="border-b shrink-0">
-        <div className="mx-auto flex max-w-5xl items-center gap-4 px-4 py-3">
+      <header className="border-b bg-background/80 backdrop-blur-md shrink-0">
+        <div className="mx-auto flex max-w-5xl items-center gap-3 px-4 sm:px-6 py-3">
           <Link href="/dashboard">
-            <Button variant="ghost" size="sm" className="gap-1.5">
+            <Button variant="ghost" size="sm" className="gap-1.5 text-muted-foreground hover:text-foreground">
               <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
               </svg>
-              Dashboard
+              <span className="hidden sm:inline">Dashboard</span>
             </Button>
           </Link>
+          <div className="h-4 w-px bg-border" />
           <div className="flex-1 min-w-0">
             <h1 className="text-sm font-semibold truncate">{notebook.title}</h1>
           </div>

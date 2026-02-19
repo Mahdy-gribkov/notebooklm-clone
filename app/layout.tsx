@@ -13,9 +13,16 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "DocChat — Chat with your PDFs",
+  title: "DocChat - Chat with your PDFs",
   description:
-    "Upload a PDF and ask questions in plain English. DocChat answers from your document using AI — with cited sources.",
+    "Upload a PDF and ask questions in plain English. DocChat answers from your document using AI with cited sources.",
+  keywords: ["PDF", "chat", "AI", "RAG", "document", "research"],
+  authors: [{ name: "DocChat" }],
+  openGraph: {
+    title: "DocChat - Chat with your PDFs",
+    description: "Upload a PDF and ask questions. Get AI-powered answers with cited sources.",
+    type: "website",
+  },
 };
 
 export default function RootLayout({
@@ -24,7 +31,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" className="dark">
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased bg-background text-foreground`}
       >

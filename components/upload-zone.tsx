@@ -16,11 +16,18 @@ const STAGES = [
   { label: "Almost ready...", pct: 90 },
 ];
 
+function formatFileSize(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
 export function UploadZone({ onNotebookCreated }: UploadZoneProps) {
   const [dragging, setDragging] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [stageIndex, setStageIndex] = useState(0);
   const [error, setError] = useState<string | null>(null);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const stageTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
@@ -49,10 +56,12 @@ export function UploadZone({ onNotebookCreated }: UploadZoneProps) {
     const err = validate(file);
     if (err) {
       setError(err);
+      setSelectedFile(null);
       return;
     }
 
     setError(null);
+    setSelectedFile(file);
     setUploading(true);
     startStageTimer();
 
@@ -78,6 +87,7 @@ export function UploadZone({ onNotebookCreated }: UploadZoneProps) {
       stopStageTimer();
       setUploading(false);
       setStageIndex(0);
+      setSelectedFile(null);
     }
   }
 
@@ -104,12 +114,12 @@ export function UploadZone({ onNotebookCreated }: UploadZoneProps) {
       }}
       onDragLeave={() => setDragging(false)}
       onDrop={handleDrop}
-      className={`rounded-xl border-2 border-dashed p-8 text-center transition-colors ${
+      className={`relative rounded-xl border-2 border-dashed p-8 text-center transition-all duration-300 ${
         uploading
-          ? "border-primary/40 bg-primary/5 cursor-not-allowed"
+          ? "border-primary/30 bg-primary/[0.03] cursor-not-allowed"
           : dragging
-          ? "border-primary bg-primary/5 cursor-copy"
-          : "border-muted-foreground/25 hover:border-primary/50 cursor-pointer"
+          ? "border-primary bg-primary/[0.05] scale-[1.01] shadow-lg shadow-primary/5 cursor-copy"
+          : "border-muted-foreground/20 hover:border-primary/40 hover:bg-primary/[0.02] cursor-pointer"
       }`}
       onClick={() => !uploading && inputRef.current?.click()}
       role="button"
@@ -134,44 +144,60 @@ export function UploadZone({ onNotebookCreated }: UploadZoneProps) {
       <div className="flex flex-col items-center gap-3">
         {uploading ? (
           <>
-            <div className="relative h-10 w-10">
-              <svg className="animate-spin h-10 w-10 text-primary/30" fill="none" viewBox="0 0 24 24">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" />
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-              </svg>
-            </div>
-            <div className="space-y-2 w-full max-w-xs">
-              <p className="text-sm font-medium text-muted-foreground">{stage.label}</p>
-              <div className="h-1.5 w-full rounded-full bg-muted overflow-hidden">
+            {selectedFile && (
+              <div className="flex items-center gap-2 rounded-lg bg-primary/5 border border-primary/10 px-3 py-1.5 mb-1">
+                <svg className="h-4 w-4 text-primary/60" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                </svg>
+                <span className="text-xs font-medium text-foreground/80">{selectedFile.name}</span>
+                <span className="text-[10px] text-muted-foreground">{formatFileSize(selectedFile.size)}</span>
+              </div>
+            )}
+
+            <div className="space-y-3 w-full max-w-xs">
+              <p className="text-sm font-medium text-foreground/80">{stage.label}</p>
+              <div className="h-2 w-full rounded-full bg-muted overflow-hidden">
                 <div
-                  className="h-full rounded-full bg-primary transition-all duration-[3000ms] ease-out"
+                  className="h-full rounded-full bg-gradient-to-r from-primary/80 to-primary transition-all duration-[3000ms] ease-out"
                   style={{ width: `${stage.pct}%` }}
                 />
               </div>
-              <p className="text-xs text-muted-foreground">
+              <p className="text-[11px] text-muted-foreground">
                 This may take up to 60 seconds for large documents.
               </p>
             </div>
           </>
         ) : (
           <>
-            <svg
-              className="h-10 w-10 text-muted-foreground/60"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={1.5}
-                d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"
-              />
-            </svg>
+            <div className={`flex h-12 w-12 items-center justify-center rounded-full transition-colors duration-300 ${
+              dragging ? "bg-primary/10" : "bg-muted"
+            }`}>
+              <svg
+                className={`h-6 w-6 transition-colors duration-300 ${
+                  dragging ? "text-primary" : "text-muted-foreground/60"
+                }`}
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={1.5}
+                  d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"
+                />
+              </svg>
+            </div>
             <div>
               <p className="text-sm font-medium">
-                Drop a PDF here or{" "}
-                <span className="text-primary underline underline-offset-2">browse</span>
+                {dragging ? (
+                  <span className="text-primary">Drop to upload</span>
+                ) : (
+                  <>
+                    Drop a PDF here or{" "}
+                    <span className="text-primary underline underline-offset-2">browse</span>
+                  </>
+                )}
               </p>
               <p className="mt-1 text-xs text-muted-foreground">
                 PDF only, max {MAX_SIZE_MB} MB. Text-based PDFs only (no scanned images).
@@ -184,7 +210,7 @@ export function UploadZone({ onNotebookCreated }: UploadZoneProps) {
           <p
             role="alert"
             aria-live="polite"
-            className="text-sm text-red-600 dark:text-red-400 max-w-xs"
+            className="text-sm text-destructive max-w-xs"
           >
             {error}
           </p>

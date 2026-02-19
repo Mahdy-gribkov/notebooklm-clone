@@ -1,4 +1,4 @@
-import { getEmbeddings } from "@/lib/gemini";
+import { embedQuery } from "@/lib/gemini";
 import { extractText } from "@/lib/pdf";
 import { isValidUUID, sanitizeText } from "@/lib/validate";
 import type { Source } from "@/types";
@@ -26,11 +26,7 @@ async function sleep(ms: number) {
 // Embed with exponential backoff on 429
 export async function embedText(text: string, attempt = 0): Promise<number[]> {
   try {
-    const vector = await getEmbeddings().embedQuery(text);
-    if (!Array.isArray(vector) || vector.length !== 768) {
-      throw new Error("Unexpected embedding shape from API");
-    }
-    return vector;
+    return await embedQuery(text);
   } catch (error: unknown) {
     const isRateLimit =
       error instanceof Error &&

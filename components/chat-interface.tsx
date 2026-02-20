@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import { useChat } from "ai/react";
 import type { Message as AIMessage } from "ai";
 import ReactMarkdown from "react-markdown";
@@ -25,6 +25,14 @@ const STARTER_PROMPTS = [
 export function ChatInterface({ notebookId, initialMessages }: ChatInterfaceProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [copiedId, setCopiedId] = useState<string | null>(null);
+
+  // Auto-dismiss error after 8s
+  useEffect(() => {
+    if (!errorMessage) return;
+    const timer = setTimeout(() => setErrorMessage(null), 8000);
+    return () => clearTimeout(timer);
+  }, [errorMessage]);
 
   const priorMessages: AIMessage[] = initialMessages.map((m) => ({
     id: m.id,
@@ -84,6 +92,16 @@ export function ChatInterface({ notebookId, initialMessages }: ChatInterfaceProp
     setInput(prompt);
   }
 
+  const copyMessage = useCallback(async (id: string, content: string) => {
+    try {
+      await navigator.clipboard.writeText(content);
+      setCopiedId(id);
+      setTimeout(() => setCopiedId(null), 2000);
+    } catch {
+      // Clipboard API not available
+    }
+  }, []);
+
   const sourcesById = Object.fromEntries(
     initialMessages
       .filter((m) => m.role === "assistant" && m.sources)
@@ -92,10 +110,28 @@ export function ChatInterface({ notebookId, initialMessages }: ChatInterfaceProp
 
   return (
     <div className="flex h-full flex-col min-h-0">
+      {/* Error toast - top right */}
+      {errorMessage && (
+        <div className="fixed top-4 right-4 z-50 flex items-center gap-2 bg-destructive/10 border border-destructive/20 px-3 py-2.5 rounded-lg text-xs text-destructive animate-slide-up max-w-sm shadow-lg">
+          <svg className="h-4 w-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+          </svg>
+          <span>{errorMessage}</span>
+          <button
+            onClick={() => setErrorMessage(null)}
+            className="ml-1 text-destructive/60 hover:text-destructive"
+          >
+            <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+      )}
+
       {/* Scrollable messages area */}
       <div ref={scrollRef} className="flex-1 overflow-y-auto min-h-0 scrollbar-thin">
         <div className="px-4 py-6">
-          <div className="space-y-5 max-w-2xl mx-auto">
+          <div className="space-y-5 max-w-2xl lg:max-w-3xl mx-auto">
             {messages.length === 0 && (
               <div className="flex flex-col items-center py-16 text-center animate-fade-in">
                 <div className="mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/5">
@@ -114,10 +150,10 @@ export function ChatInterface({ notebookId, initialMessages }: ChatInterfaceProp
                   </svg>
                 </div>
                 <p className="text-base font-semibold mb-1">
-                  Ask anything about your document
+                  Ask anything about your sources
                 </p>
                 <p className="text-sm text-muted-foreground mb-8">
-                  All answers come directly from the uploaded PDF.
+                  All answers come directly from your uploaded PDFs.
                 </p>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 w-full max-w-md">
                   {STARTER_PROMPTS.map((prompt) => (
@@ -146,7 +182,7 @@ export function ChatInterface({ notebookId, initialMessages }: ChatInterfaceProp
 
               return (
                 <div key={message.id} className={`flex ${isUser ? "justify-end" : "justify-start"} animate-slide-up`}>
-                  <div className="flex gap-2.5 max-w-[85%]">
+                  <div className={`flex gap-2.5 max-w-[85%] lg:max-w-2xl xl:max-w-3xl`}>
                     {/* Avatar */}
                     {!isUser && (
                       <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary/10 mt-1">
@@ -161,7 +197,7 @@ export function ChatInterface({ notebookId, initialMessages }: ChatInterfaceProp
                       } flex flex-col min-w-0`}
                     >
                       <div
-                        className={`rounded-2xl px-4 py-3 text-sm leading-relaxed ${
+                        className={`group/msg relative rounded-2xl px-4 py-3 text-sm leading-relaxed ${
                           isUser
                             ? "bg-gradient-to-br from-primary to-[oklch(0.45_0.2_290)] text-white rounded-br-md shadow-sm"
                             : "bg-muted/40 border rounded-bl-md"
@@ -175,6 +211,25 @@ export function ChatInterface({ notebookId, initialMessages }: ChatInterfaceProp
                               {message.content}
                             </ReactMarkdown>
                           </div>
+                        )}
+
+                        {/* Copy button (AI messages only) */}
+                        {!isUser && message.content && (
+                          <button
+                            onClick={() => copyMessage(message.id, message.content)}
+                            className="absolute top-2 right-2 opacity-0 group-hover/msg:opacity-100 transition-opacity p-1 rounded-md hover:bg-muted text-muted-foreground hover:text-foreground"
+                            aria-label="Copy message"
+                          >
+                            {copiedId === message.id ? (
+                              <svg className="h-3.5 w-3.5 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                              </svg>
+                            ) : (
+                              <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M15.666 3.888A2.25 2.25 0 0013.5 2.25h-3c-1.03 0-1.9.693-2.166 1.638m7.332 0c.055.194.084.4.084.612v0a.75.75 0 01-.75.75H9.75a.75.75 0 01-.75-.75v0c0-.212.03-.418.084-.612m7.332 0c.646.049 1.288.11 1.927.184 1.1.128 1.907 1.077 1.907 2.185V19.5a2.25 2.25 0 01-2.25 2.25H6.75A2.25 2.25 0 014.5 19.5V6.257c0-1.108.806-2.057 1.907-2.185a48.208 48.208 0 011.927-.184" />
+                              </svg>
+                            )}
+                          </button>
                         )}
                       </div>
                       {!isUser && sources && sources.length > 0 && (
@@ -224,21 +279,16 @@ export function ChatInterface({ notebookId, initialMessages }: ChatInterfaceProp
 
       {/* Input area */}
       <div className="border-t bg-background/80 backdrop-blur-sm p-4 shrink-0">
-        {errorMessage && (
-          <p className="mb-2 text-center text-xs text-destructive max-w-2xl mx-auto animate-fade-in">
-            {errorMessage}
-          </p>
-        )}
         <form
           onSubmit={handleFormSubmit}
-          className="max-w-2xl mx-auto flex gap-2 items-end"
+          className="max-w-2xl lg:max-w-3xl mx-auto flex gap-2 items-end"
         >
           <div className="relative flex-1">
             <Textarea
               value={input}
               onChange={handleInputChange}
               onKeyDown={handleKeyDown}
-              placeholder="Ask about your document..."
+              placeholder="Ask anything about your sources..."
               className="min-h-[48px] max-h-32 resize-none pr-4 rounded-xl border-border/60 focus:border-primary/40 transition-colors"
               disabled={isLoading}
               rows={1}
@@ -266,7 +316,7 @@ export function ChatInterface({ notebookId, initialMessages }: ChatInterfaceProp
             </svg>
           </Button>
         </form>
-        <p className="mt-2 text-center text-[11px] text-muted-foreground/50 max-w-2xl mx-auto">
+        <p className="mt-2 text-center text-[11px] text-muted-foreground/50 max-w-2xl lg:max-w-3xl mx-auto">
           Enter to send. Shift+Enter for new line. Sources shown below each reply.
         </p>
       </div>

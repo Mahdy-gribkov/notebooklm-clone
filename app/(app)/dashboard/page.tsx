@@ -189,7 +189,7 @@ export default function DashboardPage() {
               )}
             </div>
             <Button
-              variant="outline"
+              variant="default"
               size="sm"
               onClick={handleCreateNotebook}
               disabled={creatingNotebook}
@@ -218,16 +218,17 @@ export default function DashboardPage() {
           )}
 
           {loading ? (
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {[1, 2, 3].map((i) => (
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+              {[1, 2, 3, 4].map((i) => (
                 <div
                   key={i}
-                  className="h-[120px] rounded-xl border bg-card animate-shimmer"
+                  className="h-[88px] rounded-xl border bg-card animate-shimmer"
+                  style={{ animationDelay: `${(i - 1) * 150}ms` }}
                 />
               ))}
             </div>
           ) : notebooks.length > 0 ? (
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
               {notebooks.map((notebook, i) => (
                 <div
                   key={notebook.id}

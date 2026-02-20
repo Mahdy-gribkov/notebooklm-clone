@@ -157,19 +157,20 @@ export function StudioPanel({ notebookId }: StudioPanelProps) {
         <div className="border-b px-4 py-3 flex items-center gap-3 shrink-0">
           <button
             onClick={goBack}
-            className="text-muted-foreground hover:text-foreground transition-colors"
+            className="flex items-center gap-1 text-muted-foreground hover:text-foreground transition-colors text-xs"
           >
             <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
             </svg>
+            Back
           </button>
           <span className="text-sm font-semibold flex-1">{label}</span>
           {(result || error) && !loading && (
             <Button
-              variant="ghost"
+              variant="outline"
               size="sm"
               onClick={() => generate(selectedAction)}
-              className="gap-1.5 text-xs text-muted-foreground hover:text-foreground"
+              className="gap-1.5 text-xs"
             >
               <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
@@ -222,34 +223,32 @@ export function StudioPanel({ notebookId }: StudioPanelProps) {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 gap-3">
+        <div className="grid grid-cols-1 min-[360px]:grid-cols-2 gap-3">
           {FEATURES.map((feature) => {
             const hasResult = generated.has(feature.action);
             return (
               <button
                 key={feature.action}
                 onClick={() => generate(feature.action)}
-                className="group flex items-start gap-3 rounded-xl border bg-card p-4 text-left transition-all hover:shadow-md hover:border-primary/30 hover:-translate-y-0.5"
+                className="group relative flex flex-col items-center gap-2 rounded-xl border bg-card p-4 text-center transition-all hover:shadow-md hover:border-primary/30 hover:-translate-y-0.5"
               >
+                {hasResult && (
+                  <span className="absolute top-2 right-2 flex h-2 w-2">
+                    <span className="absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75 animate-ping" />
+                    <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500" />
+                  </span>
+                )}
                 <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary group-hover:bg-primary/15 transition-colors">
                   <FeatureIcon type={feature.icon} />
                 </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold mb-0.5 flex items-center gap-2">
+                <div className="min-w-0">
+                  <p className="text-sm font-semibold mb-0.5">
                     {feature.label}
-                    {hasResult && (
-                      <span className="inline-flex items-center rounded-full bg-emerald-500/10 px-2 py-0.5 text-[10px] font-medium text-emerald-600 dark:text-emerald-400">
-                        Generated
-                      </span>
-                    )}
                   </p>
-                  <p className="text-xs text-muted-foreground">
+                  <p className="text-[11px] text-muted-foreground leading-snug">
                     {feature.description}
                   </p>
                 </div>
-                <svg className="h-4 w-4 shrink-0 text-muted-foreground/30 group-hover:text-muted-foreground mt-1 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                </svg>
               </button>
             );
           })}

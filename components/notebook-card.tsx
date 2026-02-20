@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { PdfViewerModal } from "@/components/pdf-viewer-modal";
 import type { Notebook, NotebookFile } from "@/types";
 
 interface NotebookCardProps {
@@ -87,115 +86,69 @@ export function NotebookCard({ notebook, files = [], timedOut = false, onDelete 
 
   return (
     <div className="group relative rounded-xl border bg-card overflow-hidden transition-all duration-200 hover:shadow-lg hover:shadow-primary/5 hover:-translate-y-0.5">
-      {/* Top accent line */}
-      <div className="h-0.5 bg-gradient-to-r from-primary/40 via-primary/20 to-transparent" />
-
       <Link
         href={isClickable ? `/notebook/${notebook.id}` : "#"}
-        className={`block p-4 ${!isClickable ? "pointer-events-none" : ""}`}
+        className={`block p-3 ${!isClickable ? "pointer-events-none" : ""}`}
         aria-disabled={!isClickable}
       >
-        {/* Title */}
-        <div className="flex items-start gap-2.5 pr-8 mb-3">
-          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-xs font-bold text-primary">
-            {notebook.title.charAt(0).toUpperCase()}
-          </div>
-          <h3 className="text-sm font-semibold leading-snug line-clamp-2 pt-0.5">
+        {/* Title row + time */}
+        <div className="flex items-start justify-between gap-2 mb-2">
+          <h3 className="text-sm font-semibold leading-snug line-clamp-1 pr-6">
             {notebook.title}
           </h3>
+          <span className="text-[10px] text-muted-foreground/60 shrink-0 pt-0.5">
+            {relativeTime(notebook.created_at)}
+          </span>
         </div>
 
         {/* Description */}
         {notebook.description && (
-          <p className="text-xs text-muted-foreground line-clamp-2 mb-3 px-0.5">
+          <p className="text-xs text-muted-foreground line-clamp-1 mb-2">
             {notebook.description}
           </p>
-        )}
-
-        {/* File chips */}
-        {files.length > 0 && (
-          <div className="flex flex-wrap gap-1.5 mb-3">
-            {files.slice(0, 3).map((file) => (
-              <span
-                key={file.id}
-                className="inline-flex items-center gap-1 rounded-md bg-primary/5 border border-primary/10 px-2 py-0.5 text-[10px] text-muted-foreground"
-              >
-                <svg className="h-2.5 w-2.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
-                </svg>
-                <span className="truncate max-w-[100px]">{file.file_name.replace(/\.pdf$/i, "")}</span>
-              </span>
-            ))}
-            {files.length > 3 && (
-              <span className="text-[10px] text-muted-foreground/60 self-center">
-                +{files.length - 3} more
-              </span>
-            )}
-          </div>
         )}
 
         {/* Bottom row */}
         <div className="flex items-center justify-between gap-2">
           <div className="flex items-center gap-2">
             {/* Status pill */}
-            <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[11px] font-medium ${status.className}`}>
+            <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium ${status.className}`}>
               {status.icon === "spinner" && (
                 <span className={`h-1.5 w-1.5 rounded-full ${(status as typeof statusConfig.processing).dotClass}`} />
               )}
               {status.icon === "check" && (
-                <svg className="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="h-2.5 w-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
                 </svg>
               )}
               {status.icon === "x" && (
-                <svg className="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="h-2.5 w-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
                 </svg>
               )}
               {status.icon === "clock" && (
-                <svg className="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="h-2.5 w-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
               )}
               {status.label}
             </span>
 
-            {/* File/page count */}
+            {/* File count */}
             {files.length > 0 && (
-              <span className="text-[11px] text-muted-foreground">
+              <span className="text-[10px] text-muted-foreground">
                 {files.length} file{files.length !== 1 ? "s" : ""}
               </span>
             )}
             {notebook.page_count && (
-              <span className="text-[11px] text-muted-foreground">
+              <span className="text-[10px] text-muted-foreground">
                 {notebook.page_count} pg{notebook.page_count !== 1 ? "s" : ""}
               </span>
             )}
-
-            {/* Time */}
-            <span className="text-[11px] text-muted-foreground">
-              {relativeTime(notebook.created_at)}
-            </span>
           </div>
 
-          {/* View PDF link */}
-          {notebook.status === "ready" && !timedOut && (
-            <span onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}>
-              <PdfViewerModal
-                notebookId={notebook.id}
-                trigger={
-                  <button
-                    className="text-[11px] text-muted-foreground hover:text-primary transition-colors shrink-0"
-                    aria-label="View source PDF"
-                  >
-                    View PDF
-                  </button>
-                }
-              />
-            </span>
-          )}
           {(notebook.status === "error" || timedOut) && (
-            <span className="text-[11px] text-muted-foreground">
+            <span className="text-[10px] text-muted-foreground">
               {timedOut ? "Try re-uploading" : "Upload failed"}
             </span>
           )}

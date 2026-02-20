@@ -38,11 +38,19 @@ export async function embedText(text: string, attempt = 0): Promise<number[]> {
   }
 }
 
+export interface ProcessResult {
+  pageCount: number;
+  chunkCount: number;
+  sampleText: string;
+}
+
 export async function processNotebook(
   notebookId: string,
   userId: string,
-  pdfBuffer: Buffer
-): Promise<void> {
+  pdfBuffer: Buffer,
+  fileId?: string,
+  fileName?: string
+): Promise<ProcessResult> {
   if (!isValidUUID(notebookId)) throw new Error("Invalid notebookId");
   if (!isValidUUID(userId)) throw new Error("Invalid userId");
 
@@ -65,12 +73,24 @@ export async function processNotebook(
       );
     }
 
-    // Delete any existing chunks for this notebook (idempotent on re-process)
-    await supabase.from("chunks").delete().eq("notebook_id", notebookId);
+    // Delete existing chunks for this file (or all if no fileId)
+    if (fileId) {
+      await supabase
+        .from("chunks")
+        .delete()
+        .eq("notebook_id", notebookId)
+        .eq("metadata->>file_id", fileId);
+    } else {
+      await supabase.from("chunks").delete().eq("notebook_id", notebookId);
+    }
 
     // Embed chunks in batches to respect 10 RPM
     const BATCH_SIZE = 5;
     const INTER_BATCH_DELAY = 6500;
+
+    const metadata = fileId
+      ? { file_id: fileId, file_name: fileName ?? "unknown" }
+      : {};
 
     for (let i = 0; i < chunks.length; i += BATCH_SIZE) {
       const batch = chunks.slice(i, i + BATCH_SIZE);
@@ -82,6 +102,7 @@ export async function processNotebook(
         content,
         embedding: JSON.stringify(embeddings[idx]),
         chunk_index: i + idx,
+        metadata,
       }));
 
       const { error } = await supabase.from("chunks").insert(rows);
@@ -102,6 +123,7 @@ export async function processNotebook(
       }
     }
 
+    // Update notebook status and page count
     await supabase
       .from("notebooks")
       .update({ status: "ready", page_count: pdfResult.pageCount })
@@ -111,6 +133,12 @@ export async function processNotebook(
     generateNotebookMeta(notebookId, chunks.slice(0, 3).join("\n\n")).catch((e) =>
       console.error("[processNotebook] Meta generation failed:", e)
     );
+
+    return {
+      pageCount: pdfResult.pageCount,
+      chunkCount: chunks.length,
+      sampleText: chunks.slice(0, 3).join("\n\n"),
+    };
   } catch (error) {
     console.error("[processNotebook] Error occurred, updating status to error:", {
       notebookId,
@@ -119,8 +147,16 @@ export async function processNotebook(
       error,
     });
 
-    // Clean up any partially inserted chunks
-    await supabase.from("chunks").delete().eq("notebook_id", notebookId);
+    // Clean up any partially inserted chunks for this file
+    if (fileId) {
+      await supabase
+        .from("chunks")
+        .delete()
+        .eq("notebook_id", notebookId)
+        .eq("metadata->>file_id", fileId);
+    } else {
+      await supabase.from("chunks").delete().eq("notebook_id", notebookId);
+    }
 
     await supabase
       .from("notebooks")
@@ -184,10 +220,11 @@ export async function retrieveChunks(
   }
 
   return (data ?? []).map(
-    (row: { id: string; content: string; similarity: number }) => ({
+    (row: { id: string; content: string; similarity: number; metadata?: { file_name?: string } }) => ({
       chunkId: row.id,
       content: row.content,
       similarity: row.similarity,
+      fileName: row.metadata?.file_name,
     })
   );
 }

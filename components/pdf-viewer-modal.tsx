@@ -11,10 +11,11 @@ import {
 
 interface PdfViewerModalProps {
   notebookId: string;
+  fileId?: string;
   trigger: React.ReactNode;
 }
 
-export function PdfViewerModal({ notebookId, trigger }: PdfViewerModalProps) {
+export function PdfViewerModal({ notebookId, fileId, trigger }: PdfViewerModalProps) {
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
@@ -24,7 +25,8 @@ export function PdfViewerModal({ notebookId, trigger }: PdfViewerModalProps) {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch(`/api/notebooks/${notebookId}/pdf`);
+      const params = fileId ? `?fileId=${fileId}` : "";
+      const res = await fetch(`/api/notebooks/${notebookId}/pdf${params}`);
       if (!res.ok) throw new Error("Failed to load PDF");
       const { url } = await res.json();
       setPdfUrl(url);

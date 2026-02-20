@@ -1,7 +1,7 @@
 import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { NotebookLayout } from "@/components/notebook-layout";
-import type { Notebook, Message } from "@/types";
+import type { Notebook, NotebookFile, Message } from "@/types";
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -26,9 +26,13 @@ export default async function NotebookPage({ params }: PageProps) {
 
   if (!notebook) notFound();
 
-  if (notebook.status === "processing") {
-    redirect(`/dashboard`);
-  }
+  // Fetch files for this notebook
+  const { data: files } = await supabase
+    .from("notebook_files")
+    .select("*")
+    .eq("notebook_id", id)
+    .eq("user_id", user.id)
+    .order("created_at", { ascending: true });
 
   const { data: messages } = await supabase
     .from("messages")
@@ -41,6 +45,7 @@ export default async function NotebookPage({ params }: PageProps) {
     <NotebookLayout
       notebookId={id}
       notebookTitle={notebook.title}
+      notebookFiles={(files ?? []) as NotebookFile[]}
       initialMessages={(messages ?? []) as Message[]}
     />
   );

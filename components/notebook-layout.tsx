@@ -4,18 +4,19 @@ import { useState, useCallback } from "react";
 import Link from "next/link";
 import { ChatInterface } from "@/components/chat-interface";
 import { StudioPanel } from "@/components/studio-panel";
-import { ViewPdfButton } from "@/components/view-pdf-button";
+import { NotebookFileList } from "@/components/notebook-file-list";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Button } from "@/components/ui/button";
-import type { Message } from "@/types";
+import type { Message, NotebookFile } from "@/types";
 
 interface NotebookLayoutProps {
   notebookId: string;
   notebookTitle: string;
+  notebookFiles: NotebookFile[];
   initialMessages: Message[];
 }
 
-export function NotebookLayout({ notebookId, notebookTitle, initialMessages }: NotebookLayoutProps) {
+export function NotebookLayout({ notebookId, notebookTitle, notebookFiles, initialMessages }: NotebookLayoutProps) {
   const [studioOpen, setStudioOpen] = useState(false);
 
   const toggleStudio = useCallback(() => {
@@ -60,7 +61,7 @@ export function NotebookLayout({ notebookId, notebookTitle, initialMessages }: N
           </button>
 
           <ThemeToggle />
-          <ViewPdfButton notebookId={notebookId} />
+          <NotebookFileList notebookId={notebookId} initialFiles={notebookFiles} />
         </div>
       </header>
 

@@ -4,10 +4,11 @@ import Link from "next/link";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { PdfViewerModal } from "@/components/pdf-viewer-modal";
-import type { Notebook } from "@/types";
+import type { Notebook, NotebookFile } from "@/types";
 
 interface NotebookCardProps {
   notebook: Notebook;
+  files?: NotebookFile[];
   timedOut?: boolean;
   onDelete: (id: string) => void;
 }
@@ -53,7 +54,7 @@ function relativeTime(dateStr: string): string {
   });
 }
 
-export function NotebookCard({ notebook, timedOut = false, onDelete }: NotebookCardProps) {
+export function NotebookCard({ notebook, files = [], timedOut = false, onDelete }: NotebookCardProps) {
   const [deleting, setDeleting] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const status = timedOut ? timedOutConfig : statusConfig[notebook.status];
@@ -111,6 +112,28 @@ export function NotebookCard({ notebook, timedOut = false, onDelete }: NotebookC
           </p>
         )}
 
+        {/* File chips */}
+        {files.length > 0 && (
+          <div className="flex flex-wrap gap-1.5 mb-3">
+            {files.slice(0, 3).map((file) => (
+              <span
+                key={file.id}
+                className="inline-flex items-center gap-1 rounded-md bg-primary/5 border border-primary/10 px-2 py-0.5 text-[10px] text-muted-foreground"
+              >
+                <svg className="h-2.5 w-2.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                </svg>
+                <span className="truncate max-w-[100px]">{file.file_name.replace(/\.pdf$/i, "")}</span>
+              </span>
+            ))}
+            {files.length > 3 && (
+              <span className="text-[10px] text-muted-foreground/60 self-center">
+                +{files.length - 3} more
+              </span>
+            )}
+          </div>
+        )}
+
         {/* Bottom row */}
         <div className="flex items-center justify-between gap-2">
           <div className="flex items-center gap-2">
@@ -137,7 +160,12 @@ export function NotebookCard({ notebook, timedOut = false, onDelete }: NotebookC
               {status.label}
             </span>
 
-            {/* Page count */}
+            {/* File/page count */}
+            {files.length > 0 && (
+              <span className="text-[11px] text-muted-foreground">
+                {files.length} file{files.length !== 1 ? "s" : ""}
+              </span>
+            )}
             {notebook.page_count && (
               <span className="text-[11px] text-muted-foreground">
                 {notebook.page_count} pg{notebook.page_count !== 1 ? "s" : ""}

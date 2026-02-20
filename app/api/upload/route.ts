@@ -90,7 +90,6 @@ export async function POST(request: Request) {
 
   if (dbError || !notebook) {
     console.error("[upload] Failed to create notebook:", dbError);
-    // Clean up the uploaded file since we couldn't create the notebook row
     await serviceClient.storage.from("pdf-uploads").remove([storagePath]);
     const msg =
       dbError?.message?.includes("relation") || dbError?.message?.includes("does not exist")
@@ -99,10 +98,41 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: msg }, { status: 500 });
   }
 
+  // Create notebook_files row for multi-file tracking
+  const { data: notebookFile, error: fileError } = await serviceClient
+    .from("notebook_files")
+    .insert({
+      notebook_id: notebook.id,
+      user_id: user.id,
+      file_name: file.name,
+      storage_path: storagePath,
+      status: "processing",
+    })
+    .select()
+    .single();
+
+  if (fileError || !notebookFile) {
+    console.error("[upload] Failed to create notebook_file:", fileError);
+    await serviceClient.from("notebooks").delete().eq("id", notebook.id);
+    await serviceClient.storage.from("pdf-uploads").remove([storagePath]);
+    return NextResponse.json({ error: "Failed to create file record" }, { status: 500 });
+  }
+
   // Process synchronously (embed + store chunks) within 60s timeout
   try {
-    await processNotebook(notebook.id, user.id, buffer);
+    const result = await processNotebook(notebook.id, user.id, buffer, notebookFile.id, file.name);
+
+    // Update notebook_file status
+    await serviceClient
+      .from("notebook_files")
+      .update({ status: "ready", page_count: result.pageCount })
+      .eq("id", notebookFile.id);
   } catch (error) {
+    // Mark file as error
+    await serviceClient
+      .from("notebook_files")
+      .update({ status: "error" })
+      .eq("id", notebookFile.id);
     const errorMsg = error instanceof Error ? error.message : String(error);
     console.error("[upload] Processing failed:", {
       notebookId: notebook.id,

@@ -2,10 +2,21 @@ export interface Notebook {
   id: string;
   user_id: string;
   title: string;
-  file_url: string;
+  file_url: string | null;
   status: 'processing' | 'ready' | 'error';
   page_count: number | null;
   description: string | null;
+  created_at: string;
+}
+
+export interface NotebookFile {
+  id: string;
+  notebook_id: string;
+  user_id: string;
+  file_name: string;
+  storage_path: string;
+  status: 'processing' | 'ready' | 'error';
+  page_count: number | null;
   created_at: string;
 }
 
@@ -22,6 +33,7 @@ export interface Source {
   chunkId: string;
   content: string;
   similarity: number;
+  fileName?: string;
 }
 
 export interface Message {

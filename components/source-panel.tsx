@@ -52,6 +52,11 @@ export function SourcePanel({ sources }: SourcePanelProps) {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                 </svg>
                 Source {i + 1}
+                {source.fileName && (
+                  <span className="text-[10px] text-muted-foreground font-normal truncate max-w-[120px]">
+                    from {source.fileName.replace(/\.pdf$/i, "")}
+                  </span>
+                )}
               </span>
               <span className="text-[10px] text-muted-foreground">
                 {similarityLabel(source.similarity)}

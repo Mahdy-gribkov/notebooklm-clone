@@ -7,7 +7,7 @@ import { UploadZone } from "@/components/upload-zone";
 import { NotebookCard } from "@/components/notebook-card";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/theme-toggle";
-import type { Notebook } from "@/types";
+import type { Notebook, NotebookFile } from "@/types";
 
 const PROCESSING_TIMEOUT_MS = 5 * 60 * 1000;
 const POLL_DELAYS = [5000, 10000, 20000, 30000];
@@ -28,15 +28,20 @@ function getFirstName(email: string): string {
 export default function DashboardPage() {
   const router = useRouter();
   const [notebooks, setNotebooks] = useState<Notebook[]>([]);
+  const [notebookFiles, setNotebookFiles] = useState<Record<string, NotebookFile[]>>({});
   const [loading, setLoading] = useState(true);
   const [userEmail, setUserEmail] = useState<string | null>(null);
+  const [creatingNotebook, setCreatingNotebook] = useState(false);
   const pollAttemptRef = useRef(0);
 
   useEffect(() => {
     fetch("/api/notebooks")
       .then((res) => (res.ok ? res.json() : null))
       .then((data) => {
-        if (data) setNotebooks(data);
+        if (data) {
+          setNotebooks(data);
+          fetchFilesForNotebooks(data);
+        }
         setLoading(false);
       })
       .catch(() => setLoading(false));
@@ -47,10 +52,44 @@ export default function DashboardPage() {
     });
   }, []);
 
+  function fetchFilesForNotebooks(nbs: Notebook[]) {
+    if (nbs.length === 0) return;
+    Promise.all(
+      nbs.map((n) =>
+        fetch(`/api/notebooks/${n.id}/files`)
+          .then((res) => (res.ok ? res.json() : []))
+          .then((files: NotebookFile[]) => ({ notebookId: n.id, files }))
+      )
+    ).then((results) => {
+      const filesMap: Record<string, NotebookFile[]> = {};
+      for (const { notebookId, files } of results) {
+        filesMap[notebookId] = files;
+      }
+      setNotebookFiles(filesMap);
+    });
+  }
+
   async function handleSignOut() {
     const supabase = createClient();
     await supabase.auth.signOut();
     window.location.href = "/login";
+  }
+
+  async function handleCreateNotebook() {
+    setCreatingNotebook(true);
+    try {
+      const res = await fetch("/api/notebooks/create", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ title: "Untitled Notebook" }),
+      });
+      if (res.ok) {
+        const notebook = await res.json();
+        router.push(`/notebook/${notebook.id}`);
+      }
+    } finally {
+      setCreatingNotebook(false);
+    }
   }
 
   function handleNotebookCreated(notebook: Notebook) {
@@ -59,6 +98,11 @@ export default function DashboardPage() {
 
   function handleNotebookDeleted(id: string) {
     setNotebooks((prev) => prev.filter((n) => n.id !== id));
+    setNotebookFiles((prev) => {
+      const next = { ...prev };
+      delete next[id];
+      return next;
+    });
   }
 
   useEffect(() => {
@@ -86,6 +130,8 @@ export default function DashboardPage() {
             return updated ?? n;
           })
         );
+        // Re-fetch files for processing notebooks (may have new files ready)
+        fetchFilesForNotebooks(processing);
       });
     }, delay);
 
@@ -127,7 +173,7 @@ export default function DashboardPage() {
       </header>
 
       <main className="mx-auto max-w-5xl px-4 sm:px-6 py-6 space-y-5 flex-1 w-full">
-        {/* Welcome + Upload */}
+        {/* Welcome + Actions */}
         <section className="animate-slide-up [animation-delay:100ms]">
           <div className="flex items-baseline justify-between mb-3">
             <div>
@@ -137,11 +183,23 @@ export default function DashboardPage() {
               {!loading && (
                 <p className="text-xs text-muted-foreground mt-0.5">
                   {notebooks.length === 0
-                    ? "Upload a PDF to get started"
+                    ? "Upload a PDF to get started, or create an empty notebook"
                     : `${readyCount} notebook${readyCount !== 1 ? "s" : ""} ready to chat`}
                 </p>
               )}
             </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleCreateNotebook}
+              disabled={creatingNotebook}
+              className="gap-1.5 shrink-0"
+            >
+              <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+              </svg>
+              {creatingNotebook ? "Creating..." : "New Notebook"}
+            </Button>
           </div>
           <UploadZone onNotebookCreated={handleNotebookCreated} onNavigate={(path) => router.push(path)} />
         </section>
@@ -178,6 +236,7 @@ export default function DashboardPage() {
                 >
                   <NotebookCard
                     notebook={notebook}
+                    files={notebookFiles[notebook.id] ?? []}
                     timedOut={isTimedOut(notebook)}
                     onDelete={handleNotebookDeleted}
                   />

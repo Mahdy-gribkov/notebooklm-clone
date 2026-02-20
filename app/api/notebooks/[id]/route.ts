@@ -66,9 +66,24 @@ export async function DELETE(
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 
-  // Delete storage object (file_url is now the storage path)
-  if (notebook.file_url) {
-    await supabase.storage.from("pdf-uploads").remove([notebook.file_url]);
+  // Delete all storage objects (multi-file support)
+  const { data: files } = await supabase
+    .from("notebook_files")
+    .select("storage_path")
+    .eq("notebook_id", id)
+    .eq("user_id", user.id);
+
+  const storagePaths = (files ?? [])
+    .map((f: { storage_path: string }) => f.storage_path)
+    .filter(Boolean);
+
+  // Also include legacy file_url if not already covered
+  if (notebook.file_url && !storagePaths.includes(notebook.file_url)) {
+    storagePaths.push(notebook.file_url);
+  }
+
+  if (storagePaths.length > 0) {
+    await supabase.storage.from("pdf-uploads").remove(storagePaths);
   }
 
   const { error } = await supabase

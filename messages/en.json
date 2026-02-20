@@ -136,7 +136,15 @@
     "regenerate": "Regenerate",
     "generating": "Generating {type}...",
     "generatingNote": "This may take 10-30 seconds for large documents.",
-    "disclaimer": "Generated content is AI-produced and may not be perfectly accurate. Always verify against the source document."
+    "disclaimer": "Generated content is AI-produced and may not be perfectly accurate. Always verify against the source document.",
+    "notes": "Notes",
+    "addNote": "Add note",
+    "newNote": "New note",
+    "noNotes": "No notes yet. Create one to start writing.",
+    "noteLabel": "Note",
+    "noteTitle": "Note title",
+    "notePlaceholder": "Start writing...",
+    "saving": "Saving..."
   },
   "upload": {
     "dropOrBrowse": "Drop a PDF here or {browse}",

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { FlashcardsView } from "@/components/studio/flashcards";
@@ -8,6 +8,8 @@ import { QuizView } from "@/components/studio/quiz";
 import { ReportView } from "@/components/studio/report";
 import { MindMapView } from "@/components/studio/mindmap";
 import { DataTableView } from "@/components/studio/datatable";
+import { NoteEditor } from "@/components/studio/note-editor";
+import type { Note } from "@/types";
 
 type StudioAction = "flashcards" | "quiz" | "report" | "mindmap" | "datatable" | "infographic" | "slidedeck";
 type StubAction = "audio" | "video";
@@ -40,6 +42,45 @@ export function StudioPanel({ notebookId }: StudioPanelProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [generated, setGenerated] = useState<Set<StudioAction>>(new Set());
+  const [notes, setNotes] = useState<Note[]>([]);
+  const [editingNote, setEditingNote] = useState<Note | null>(null);
+  const [creatingNote, setCreatingNote] = useState(false);
+
+  // Load notes on mount
+  useEffect(() => {
+    fetch(`/api/notebooks/${notebookId}/notes`)
+      .then((r) => (r.ok ? r.json() : []))
+      .then((data) => setNotes(data))
+      .catch(() => {});
+  }, [notebookId]);
+
+  async function handleCreateNote() {
+    setCreatingNote(true);
+    try {
+      const res = await fetch(`/api/notebooks/${notebookId}/notes`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ title: t("newNote") }),
+      });
+      if (res.ok) {
+        const note = await res.json();
+        setNotes((prev) => [note, ...prev]);
+        setEditingNote(note);
+      }
+    } finally {
+      setCreatingNote(false);
+    }
+  }
+
+  function handleNoteUpdate(updated: Note) {
+    setNotes((prev) => prev.map((n) => (n.id === updated.id ? updated : n)));
+    setEditingNote(updated);
+  }
+
+  function handleNoteDelete(noteId: string) {
+    setNotes((prev) => prev.filter((n) => n.id !== noteId));
+    setEditingNote(null);
+  }
 
   const features: { action: StudioAction; label: string; description: string; icon: string; color: string }[] = [
     { action: "flashcards", label: t("flashcards"), description: t("flashcardsDesc"), icon: "cards", color: "bg-blue-500/15 text-blue-600 dark:text-blue-400" },
@@ -121,6 +162,19 @@ export function StudioPanel({ notebookId }: StudioPanelProps) {
     setSelectedAction(null);
     setResult(null);
     setError(null);
+  }
+
+  // Note editor view
+  if (editingNote) {
+    return (
+      <NoteEditor
+        note={editingNote}
+        notebookId={notebookId}
+        onBack={() => setEditingNote(null)}
+        onUpdate={handleNoteUpdate}
+        onDelete={handleNoteDelete}
+      />
+    );
   }
 
   // Result view
@@ -239,6 +293,50 @@ export function StudioPanel({ notebookId }: StudioPanelProps) {
               </div>
             </div>
           ))}
+        </div>
+
+        {/* Notes section */}
+        <div className="mt-6 border-t pt-5">
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+              {t("notes")}
+            </h3>
+            <button
+              onClick={handleCreateNote}
+              disabled={creatingNote}
+              className="flex items-center gap-1 text-xs text-primary hover:text-primary/80 transition-colors disabled:opacity-50"
+            >
+              <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+              </svg>
+              {t("addNote")}
+            </button>
+          </div>
+          {notes.length === 0 ? (
+            <p className="text-[11px] text-muted-foreground/60 text-center py-4">
+              {t("noNotes")}
+            </p>
+          ) : (
+            <div className="space-y-1.5">
+              {notes.map((note) => (
+                <button
+                  key={note.id}
+                  onClick={() => setEditingNote(note)}
+                  className="w-full flex items-center gap-2.5 rounded-lg px-3 py-2 text-left hover:bg-accent/50 transition-colors group"
+                >
+                  <svg className="h-4 w-4 text-muted-foreground/50 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                  </svg>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-xs font-medium truncate">{note.title}</p>
+                    <p className="text-[10px] text-muted-foreground">
+                      {new Date(note.updated_at).toLocaleDateString(undefined, { month: "short", day: "numeric" })}
+                    </p>
+                  </div>
+                </button>
+              ))}
+            </div>
+          )}
         </div>
 
         <p className="text-center text-[11px] text-muted-foreground/50 mt-8">

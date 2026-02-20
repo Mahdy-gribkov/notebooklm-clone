@@ -1,6 +1,9 @@
 import { authenticateRequest } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
+import { isValidUUID } from "@/lib/validate";
 import { NextResponse } from "next/server";
+
+const NOTEBOOK_COLUMNS = "id, user_id, title, file_url, status, page_count, description, created_at";
 
 export async function GET(
   _request: Request,
@@ -12,6 +15,9 @@ export async function GET(
   }
 
   const { id } = await params;
+  if (!isValidUUID(id)) {
+    return NextResponse.json({ error: "Invalid ID" }, { status: 400 });
+  }
   const supabase = await createClient();
   const {
     data: { user },
@@ -23,7 +29,7 @@ export async function GET(
 
   const { data, error } = await supabase
     .from("notebooks")
-    .select("*")
+    .select(NOTEBOOK_COLUMNS)
     .eq("id", id)
     .eq("user_id", user.id)
     .single();
@@ -45,6 +51,9 @@ export async function DELETE(
   }
 
   const { id } = await params;
+  if (!isValidUUID(id)) {
+    return NextResponse.json({ error: "Invalid ID" }, { status: 400 });
+  }
   const supabase = await createClient();
   const {
     data: { user },

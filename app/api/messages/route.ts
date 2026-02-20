@@ -1,5 +1,6 @@
 import { authenticateRequest } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
+import { isValidUUID } from "@/lib/validate";
 import { NextResponse } from "next/server";
 
 export async function GET(request: Request) {
@@ -11,8 +12,8 @@ export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const notebookId = searchParams.get("notebookId");
 
-  if (!notebookId) {
-    return NextResponse.json({ error: "notebookId required" }, { status: 400 });
+  if (!notebookId || !isValidUUID(notebookId)) {
+    return NextResponse.json({ error: "Valid notebookId required" }, { status: 400 });
   }
 
   const supabase = await createClient();
@@ -26,7 +27,7 @@ export async function GET(request: Request) {
 
   const { data, error } = await supabase
     .from("messages")
-    .select("*")
+    .select("id, notebook_id, user_id, role, content, sources, created_at")
     .eq("notebook_id", notebookId)
     .eq("user_id", user.id)
     .order("created_at", { ascending: true })

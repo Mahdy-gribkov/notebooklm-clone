@@ -165,7 +165,7 @@ export async function POST(request: Request) {
   // Return the updated notebook
   const { data: updated } = await serviceClient
     .from("notebooks")
-    .select("*")
+    .select("id, user_id, title, file_url, status, page_count, description, created_at")
     .eq("id", notebook.id)
     .single();
 

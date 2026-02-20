@@ -4,6 +4,7 @@ import { getServiceClient } from "@/lib/supabase/service";
 import { processNotebook } from "@/lib/rag";
 import { updateNotebookStatus } from "@/lib/notebook-status";
 import { checkRateLimit } from "@/lib/rate-limit";
+import { isValidUUID } from "@/lib/validate";
 import { NextResponse } from "next/server";
 
 export const maxDuration = 60;
@@ -20,6 +21,9 @@ export async function GET(
   }
 
   const { id: notebookId } = await params;
+  if (!isValidUUID(notebookId)) {
+    return NextResponse.json({ error: "Invalid ID" }, { status: 400 });
+  }
   const supabase = await createClient();
   const {
     data: { user },
@@ -43,7 +47,7 @@ export async function GET(
 
   const { data: files, error } = await supabase
     .from("notebook_files")
-    .select("*")
+    .select("id, notebook_id, user_id, file_name, storage_path, status, page_count, created_at")
     .eq("notebook_id", notebookId)
     .eq("user_id", user.id)
     .order("created_at", { ascending: false });
@@ -66,6 +70,9 @@ export async function POST(
   }
 
   const { id: notebookId } = await params;
+  if (!isValidUUID(notebookId)) {
+    return NextResponse.json({ error: "Invalid ID" }, { status: 400 });
+  }
   const supabase = await createClient();
   const {
     data: { user },
@@ -201,7 +208,7 @@ export async function POST(
 
   const { data: updated } = await serviceClient
     .from("notebook_files")
-    .select("*")
+    .select("id, notebook_id, user_id, file_name, storage_path, status, page_count, created_at")
     .eq("id", notebookFile.id)
     .single();
 

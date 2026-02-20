@@ -2,6 +2,7 @@ import { authenticateRequest } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { getServiceClient } from "@/lib/supabase/service";
 import { updateNotebookStatus } from "@/lib/notebook-status";
+import { isValidUUID } from "@/lib/validate";
 import { NextResponse } from "next/server";
 
 export async function DELETE(
@@ -14,6 +15,9 @@ export async function DELETE(
   }
 
   const { id: notebookId, fileId } = await params;
+  if (!isValidUUID(notebookId) || !isValidUUID(fileId)) {
+    return NextResponse.json({ error: "Invalid ID" }, { status: 400 });
+  }
   const supabase = await createClient();
   const {
     data: { user },

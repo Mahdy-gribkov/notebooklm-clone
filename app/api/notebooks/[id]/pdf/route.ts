@@ -1,6 +1,7 @@
 import { authenticateRequest } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { getServiceClient } from "@/lib/supabase/service";
+import { isValidUUID } from "@/lib/validate";
 import { NextResponse } from "next/server";
 
 export async function GET(
@@ -13,6 +14,9 @@ export async function GET(
   }
 
   const { id } = await params;
+  if (!isValidUUID(id)) {
+    return NextResponse.json({ error: "Invalid ID" }, { status: 400 });
+  }
   const url = new URL(request.url);
   const fileId = url.searchParams.get("fileId");
 

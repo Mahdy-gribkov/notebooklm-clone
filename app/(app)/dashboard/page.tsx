@@ -1,11 +1,12 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { UploadZone } from "@/components/upload-zone";
 import { NotebookCard } from "@/components/notebook-card";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { UserDropdown } from "@/components/user-dropdown";
 import type { Notebook, NotebookFile } from "@/types";
@@ -13,6 +14,9 @@ import { useTranslations } from "next-intl";
 
 const PROCESSING_TIMEOUT_MS = 5 * 60 * 1000;
 const POLL_DELAYS = [5000, 10000, 20000, 30000];
+
+type SortKey = "newest" | "oldest" | "az" | "za" | "files";
+type StatusFilter = "all" | "ready" | "processing" | "error";
 
 function isTimedOut(notebook: Notebook): boolean {
   return (
@@ -34,6 +38,9 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [userEmail, setUserEmail] = useState<string | null>(null);
   const [creatingNotebook, setCreatingNotebook] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [sortBy, setSortBy] = useState<SortKey>("newest");
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const pollAttemptRef = useRef(0);
   const t = useTranslations("dashboard");
 
@@ -43,11 +50,9 @@ export default function DashboardPage() {
       .then((data) => {
         if (data) {
           if (data.notebooks) {
-            // Batch response: { notebooks, filesByNotebook }
             setNotebooks(data.notebooks);
             setNotebookFiles(data.filesByNotebook ?? {});
           } else {
-            // Fallback: plain array
             setNotebooks(data);
           }
         }
@@ -122,7 +127,64 @@ export default function DashboardPage() {
     return () => clearTimeout(timeout);
   }, [notebooks]);
 
-  const readyCount = notebooks.filter((n) => n.status === "ready").length;
+  // Computed stats
+  const stats = useMemo(() => {
+    const totalFiles = Object.values(notebookFiles).reduce((sum, files) => sum + files.length, 0);
+    const totalPages = notebooks.reduce((sum, n) => sum + (n.page_count ?? 0), 0);
+    const readyCount = notebooks.filter((n) => n.status === "ready").length;
+    const processingCount = notebooks.filter((n) => n.status === "processing").length;
+    const errorCount = notebooks.filter((n) => n.status === "error").length;
+    return { totalFiles, totalPages, readyCount, processingCount, errorCount };
+  }, [notebooks, notebookFiles]);
+
+  // Filtered + sorted notebooks
+  const filteredNotebooks = useMemo(() => {
+    const query = searchQuery.toLowerCase();
+    return notebooks
+      .filter((n) => {
+        if (statusFilter === "ready") return n.status === "ready";
+        if (statusFilter === "processing") return n.status === "processing";
+        if (statusFilter === "error") return n.status === "error";
+        return true;
+      })
+      .filter((n) => {
+        if (!query) return true;
+        return (
+          n.title.toLowerCase().includes(query) ||
+          (n.description?.toLowerCase().includes(query) ?? false)
+        );
+      })
+      .sort((a, b) => {
+        switch (sortBy) {
+          case "oldest":
+            return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+          case "az":
+            return a.title.localeCompare(b.title);
+          case "za":
+            return b.title.localeCompare(a.title);
+          case "files":
+            return (notebookFiles[b.id]?.length ?? 0) - (notebookFiles[a.id]?.length ?? 0);
+          case "newest":
+          default:
+            return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+        }
+      });
+  }, [notebooks, notebookFiles, searchQuery, sortBy, statusFilter]);
+
+  const sortOptions: { key: SortKey; label: string }[] = [
+    { key: "newest", label: t("sortNewest") },
+    { key: "oldest", label: t("sortOldest") },
+    { key: "az", label: t("sortAZ") },
+    { key: "za", label: t("sortZA") },
+    { key: "files", label: t("sortFiles") },
+  ];
+
+  const filterOptions: { key: StatusFilter; label: string; count: number }[] = [
+    { key: "all", label: t("filterAll"), count: notebooks.length },
+    { key: "ready", label: t("filterReady"), count: stats.readyCount },
+    { key: "processing", label: t("filterProcessing"), count: stats.processingCount },
+    { key: "error", label: t("filterError"), count: stats.errorCount },
+  ];
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
@@ -152,11 +214,9 @@ export default function DashboardPage() {
               <h1 className="text-lg font-semibold tracking-tight">
                 {userEmail ? t("welcomeBack", { name: getFirstName(userEmail) }) : t("welcomeBackGeneric")}
               </h1>
-              {!loading && (
+              {!loading && notebooks.length > 0 && (
                 <p className="text-xs text-muted-foreground mt-0.5">
-                  {notebooks.length === 0
-                    ? t("emptyState")
-                    : t("readyCount", { count: readyCount })}
+                  {t("readyCount", { count: stats.readyCount })}
                 </p>
               )}
             </div>
@@ -176,19 +236,74 @@ export default function DashboardPage() {
           <UploadZone onNotebookCreated={handleNotebookCreated} onNavigate={(path) => router.push(path)} />
         </section>
 
-        {/* Notebooks */}
-        <section className="animate-slide-up [animation-delay:200ms]">
-          {notebooks.length > 0 && (
-            <div className="flex items-baseline justify-between mb-3">
-              <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
-                {t("yourNotebooks")}
-              </h2>
-              <span className="text-xs text-muted-foreground">
-                {t("readyOf", { ready: readyCount, total: notebooks.length })}
-              </span>
+        {/* Stats bar */}
+        {!loading && notebooks.length > 0 && (
+          <section className="grid grid-cols-3 gap-3 animate-slide-up [animation-delay:150ms]">
+            <div className="rounded-xl border bg-card p-3 text-center">
+              <p className="text-lg font-bold">{notebooks.length}</p>
+              <p className="text-[10px] text-muted-foreground uppercase tracking-wider">{t("totalNotebooks")}</p>
             </div>
-          )}
+            <div className="rounded-xl border bg-card p-3 text-center">
+              <p className="text-lg font-bold">{stats.totalFiles}</p>
+              <p className="text-[10px] text-muted-foreground uppercase tracking-wider">{t("totalFiles")}</p>
+            </div>
+            <div className="rounded-xl border bg-card p-3 text-center">
+              <p className="text-lg font-bold">{stats.totalPages}</p>
+              <p className="text-[10px] text-muted-foreground uppercase tracking-wider">{t("totalPages")}</p>
+            </div>
+          </section>
+        )}
 
+        {/* Search + Sort + Filters */}
+        {!loading && notebooks.length > 0 && (
+          <section className="space-y-3 animate-slide-up [animation-delay:200ms]">
+            <div className="flex items-center gap-2">
+              <div className="relative flex-1">
+                <svg className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground/50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+                <Input
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder={t("search")}
+                  className="h-9 ps-9 text-xs"
+                />
+              </div>
+              <select
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value as SortKey)}
+                className="h-9 rounded-lg border bg-background px-2.5 text-xs text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
+              >
+                {sortOptions.map((opt) => (
+                  <option key={opt.key} value={opt.key}>{opt.label}</option>
+                ))}
+              </select>
+            </div>
+
+            {/* Status filter pills */}
+            <div className="flex items-center gap-1.5 flex-wrap">
+              {filterOptions.map((f) => (
+                <button
+                  key={f.key}
+                  onClick={() => setStatusFilter(f.key)}
+                  className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-medium transition-colors ${
+                    statusFilter === f.key
+                      ? "bg-primary/10 text-primary border border-primary/20"
+                      : "text-muted-foreground hover:text-foreground hover:bg-accent border border-transparent"
+                  }`}
+                >
+                  {f.label}
+                  <span className={`text-[10px] ${statusFilter === f.key ? "text-primary/60" : "text-muted-foreground/50"}`}>
+                    {f.count}
+                  </span>
+                </button>
+              ))}
+            </div>
+          </section>
+        )}
+
+        {/* Notebooks grid */}
+        <section className="animate-slide-up [animation-delay:250ms]">
           {loading ? (
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
               {[1, 2, 3, 4].map((i) => (
@@ -199,9 +314,36 @@ export default function DashboardPage() {
                 />
               ))}
             </div>
-          ) : notebooks.length > 0 ? (
+          ) : notebooks.length === 0 ? (
+            /* Empty state */
+            <div className="flex flex-col items-center py-16 text-center animate-fade-in">
+              <div className="mb-5 flex h-20 w-20 items-center justify-center rounded-2xl bg-primary/5">
+                <svg className="h-10 w-10 text-primary/20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                </svg>
+              </div>
+              <h2 className="text-base font-semibold mb-1">{t("emptyTitle")}</h2>
+              <p className="text-sm text-muted-foreground mb-6 max-w-xs">
+                {t("emptyDescription")}
+              </p>
+              <Button onClick={handleCreateNotebook} disabled={creatingNotebook} className="gap-1.5">
+                <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                </svg>
+                {t("newNotebook")}
+              </Button>
+            </div>
+          ) : filteredNotebooks.length === 0 ? (
+            /* No results for search/filter */
+            <div className="flex flex-col items-center py-12 text-center animate-fade-in">
+              <svg className="h-10 w-10 text-muted-foreground/20 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+              <p className="text-sm text-muted-foreground">{t("noResults")}</p>
+            </div>
+          ) : (
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-              {notebooks.map((notebook, i) => (
+              {filteredNotebooks.map((notebook, i) => (
                 <div
                   key={notebook.id}
                   className="animate-slide-up"
@@ -216,31 +358,17 @@ export default function DashboardPage() {
                 </div>
               ))}
             </div>
-          ) : null}
+          )}
         </section>
       </main>
 
-      <footer className="border-t py-5">
-        <div className="mx-auto max-w-5xl px-4 sm:px-6 flex flex-col items-center gap-2">
-          <div className="flex items-center gap-3">
-            <a href="https://github.com/medy-gribkov" target="_blank" rel="noopener noreferrer" className="text-muted-foreground/40 hover:text-muted-foreground transition-colors" aria-label="GitHub">
-              <svg className="h-4 w-4" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z" />
-              </svg>
-            </a>
-            <a href="https://medygribkov.vercel.app" target="_blank" rel="noopener noreferrer" className="text-muted-foreground/40 hover:text-muted-foreground transition-colors" aria-label="Portfolio">
-              <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9" />
-              </svg>
-            </a>
-          </div>
-          <p className="text-xs text-muted-foreground/40">
-            Built by{" "}
-            <a href="https://medygribkov.vercel.app" target="_blank" rel="noopener noreferrer" className="underline underline-offset-2 hover:text-muted-foreground transition-colors">
-              Medy Gribkov
-            </a>
-          </p>
-        </div>
+      <footer className="border-t py-4">
+        <p className="text-center text-xs text-muted-foreground/40">
+          Built by{" "}
+          <a href="https://medygribkov.vercel.app" target="_blank" rel="noopener noreferrer" className="underline underline-offset-2 hover:text-muted-foreground transition-colors">
+            Medy Gribkov
+          </a>
+        </p>
       </footer>
     </div>
   );

@@ -66,7 +66,18 @@
     "totalPages": "עמודים",
     "emptyTitle": "אין מחברות עדיין",
     "emptyDescription": "העלה PDF כדי להתחיל לשוחח עם המסמכים שלך",
-    "noResults": "אין מחברות התואמות לחיפוש"
+    "noResults": "אין מחברות התואמות לחיפוש",
+    "featuredNotebooks": "תבניות מומלצות"
+  },
+  "featured": {
+    "gettingStarted": "התחלה עם DocChat",
+    "gettingStartedDesc": "למד איך להעלות, לשוחח ולהשתמש בכלי הסטודיו",
+    "researchAnalysis": "ניתוח מאמר מחקרי",
+    "researchAnalysisDesc": "נתח מאמרים אקדמיים בעזרת AI",
+    "meetingOrganizer": "ארגון רשימות פגישות",
+    "meetingOrganizerDesc": "ארגן וסכם מסמכי פגישות",
+    "studyGuide": "בונה מדריך לימוד",
+    "studyGuideDesc": "צור חומרי לימוד מספרי הלימוד שלך"
   },
   "notebook": {
     "dashboard": "לוח בקרה",

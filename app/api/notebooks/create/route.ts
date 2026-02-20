@@ -19,10 +19,14 @@ export async function POST(request: Request) {
   }
 
   let title = "Untitled Notebook";
+  let description: string | null = null;
   try {
     const body = await request.json();
     if (body.title && typeof body.title === "string") {
       title = body.title.trim().slice(0, 200) || title;
+    }
+    if (body.description && typeof body.description === "string") {
+      description = body.description.trim().slice(0, 500) || null;
     }
   } catch {
     // No body or invalid JSON, use default title
@@ -35,6 +39,7 @@ export async function POST(request: Request) {
     .insert({
       user_id: user.id,
       title,
+      description,
       file_url: null,
       status: "ready",
     })

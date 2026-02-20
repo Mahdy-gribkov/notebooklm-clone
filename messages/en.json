@@ -66,7 +66,18 @@
     "totalPages": "Pages",
     "emptyTitle": "No notebooks yet",
     "emptyDescription": "Upload a PDF to start chatting with your documents",
-    "noResults": "No notebooks match your search"
+    "noResults": "No notebooks match your search",
+    "featuredNotebooks": "Featured Templates"
+  },
+  "featured": {
+    "gettingStarted": "Getting Started with DocChat",
+    "gettingStartedDesc": "Learn how to upload, chat, and use studio tools",
+    "researchAnalysis": "Research Paper Analysis",
+    "researchAnalysisDesc": "Analyze academic papers with AI assistance",
+    "meetingOrganizer": "Meeting Notes Organizer",
+    "meetingOrganizerDesc": "Organize and summarize meeting documents",
+    "studyGuide": "Study Guide Builder",
+    "studyGuideDesc": "Create study materials from your textbooks"
   },
   "notebook": {
     "dashboard": "Dashboard",

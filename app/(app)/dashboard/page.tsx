@@ -3,11 +3,11 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import { UploadZone } from "@/components/upload-zone";
 import { NotebookCard } from "@/components/notebook-card";
 import { Input } from "@/components/ui/input";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { UserDropdown } from "@/components/user-dropdown";
+import { featuredNotebooks } from "@/lib/featured-notebooks";
 import type { Notebook, NotebookFile } from "@/types";
 import { useTranslations } from "next-intl";
 
@@ -36,10 +36,12 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [userEmail, setUserEmail] = useState<string | null>(null);
   const [creatingNotebook, setCreatingNotebook] = useState(false);
+  const [creatingFeatured, setCreatingFeatured] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState<SortKey>("newest");
   const pollAttemptRef = useRef(0);
   const t = useTranslations("dashboard");
+  const tf = useTranslations("featured");
 
   useEffect(() => {
     fetch("/api/notebooks?include=files")
@@ -80,8 +82,23 @@ export default function DashboardPage() {
     }
   }
 
-  function handleNotebookCreated(notebook: Notebook) {
-    setNotebooks((prev) => [notebook, ...prev]);
+  async function handleCreateFeatured(titleKey: string, descKey: string) {
+    setCreatingFeatured(titleKey);
+    try {
+      const title = tf(titleKey);
+      const description = tf(descKey);
+      const res = await fetch("/api/notebooks/create", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ title, description }),
+      });
+      if (res.ok) {
+        const notebook = await res.json();
+        router.push(`/notebook/${notebook.id}`);
+      }
+    } finally {
+      setCreatingFeatured(null);
+    }
   }
 
   function handleNotebookDeleted(id: string) {
@@ -180,7 +197,7 @@ export default function DashboardPage() {
       <main className="mx-auto max-w-4xl px-4 sm:px-6 py-8 space-y-6 flex-1 w-full">
         {/* Welcome */}
         <section className="animate-slide-up [animation-delay:100ms]">
-          <h1 className="text-xl font-semibold tracking-tight">
+          <h1 className="text-2xl font-bold tracking-tight">
             {userEmail ? t("welcomeBack", { name: getFirstName(userEmail) }) : t("welcomeBackGeneric")}
           </h1>
           {!loading && notebooks.length > 0 && (
@@ -190,15 +207,35 @@ export default function DashboardPage() {
           )}
         </section>
 
-        {/* Upload zone (compact) */}
+        {/* Featured notebooks */}
         <section className="animate-slide-up [animation-delay:150ms]">
-          <UploadZone onNotebookCreated={handleNotebookCreated} onNavigate={(path) => router.push(path)} />
+          <h2 className="text-sm font-semibold text-muted-foreground mb-3">{t("featuredNotebooks")}</h2>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            {featuredNotebooks.map((fn) => (
+              <button
+                key={fn.titleKey}
+                onClick={() => handleCreateFeatured(fn.titleKey, fn.descriptionKey)}
+                disabled={creatingFeatured === fn.titleKey}
+                className={`relative flex flex-col items-start gap-2 rounded-xl border p-4 text-left transition-all hover:shadow-md hover:-translate-y-0.5 bg-gradient-to-br ${fn.gradient} disabled:opacity-60`}
+              >
+                <FeaturedIcon type={fn.icon} />
+                <div>
+                  <p className="text-xs font-semibold leading-tight">{tf(fn.titleKey)}</p>
+                  <p className="text-[10px] text-muted-foreground mt-0.5 line-clamp-2">{tf(fn.descriptionKey)}</p>
+                </div>
+                {creatingFeatured === fn.titleKey && (
+                  <span className="absolute top-2 right-2 h-3.5 w-3.5 rounded-full border-2 border-primary border-t-transparent animate-spin" />
+                )}
+              </button>
+            ))}
+          </div>
         </section>
 
         {/* Search + Sort */}
         {!loading && notebooks.length > 0 && (
           <section className="flex items-center gap-2 animate-slide-up [animation-delay:200ms]">
-            <div className="relative flex-1">
+            <h2 className="text-sm font-semibold mr-auto">{t("yourNotebooks")}</h2>
+            <div className="relative w-48">
               <svg className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground/50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
               </svg>
@@ -206,13 +243,13 @@ export default function DashboardPage() {
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder={t("search")}
-                className="h-9 ps-9 text-xs"
+                className="h-8 ps-9 text-xs"
               />
             </div>
             <select
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value as SortKey)}
-              className="h-9 rounded-lg border bg-background px-2.5 text-xs text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
+              className="h-8 rounded-lg border bg-background px-2.5 text-xs text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
             >
               {sortOptions.map((opt) => (
                 <option key={opt.key} value={opt.key}>{opt.label}</option>
@@ -299,4 +336,36 @@ export default function DashboardPage() {
       </footer>
     </div>
   );
+}
+
+function FeaturedIcon({ type }: { type: string }) {
+  const cls = "h-5 w-5";
+  switch (type) {
+    case "rocket":
+      return (
+        <svg className={cls} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15.59 14.37a6 6 0 01-5.84 7.38v-4.8m5.84-2.58a14.98 14.98 0 006.16-12.12A14.98 14.98 0 009.63 8.41m5.96 5.96a14.926 14.926 0 01-5.841 2.58m-.119-8.54a6 6 0 00-7.381 5.84h4.8m2.581-5.84a14.927 14.927 0 00-2.58 5.841M3.75 21L6 18.75M8.25 21L6 18.75M3.75 18.75L6 21" />
+        </svg>
+      );
+    case "research":
+      return (
+        <svg className={cls} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m5.231 13.481L15 17.25m-4.5-15H5.625c-.621 0-1.125.504-1.125 1.125v16.5c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9zm3.75 11.625a2.625 2.625 0 11-5.25 0 2.625 2.625 0 015.25 0z" />
+        </svg>
+      );
+    case "meeting":
+      return (
+        <svg className={cls} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M18 18.72a9.094 9.094 0 003.741-.479 3 3 0 00-4.682-2.72m.94 3.198l.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0112 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 016 18.719m12 0a5.971 5.971 0 00-.941-3.197m0 0A5.995 5.995 0 0012 12.75a5.995 5.995 0 00-5.058 2.772m0 0a3 3 0 00-4.681 2.72 8.986 8.986 0 003.74.477m.94-3.197a5.971 5.971 0 00-.94 3.197M15 6.75a3 3 0 11-6 0 3 3 0 016 0zm6 3a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0zm-13.5 0a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0z" />
+        </svg>
+      );
+    case "study":
+      return (
+        <svg className={cls} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4.26 10.147a60.436 60.436 0 00-.491 6.347A48.627 48.627 0 0112 20.904a48.627 48.627 0 018.232-4.41 60.46 60.46 0 00-.491-6.347m-15.482 0a50.57 50.57 0 00-2.658-.813A59.905 59.905 0 0112 3.493a59.902 59.902 0 0110.399 5.84c-.896.248-1.783.52-2.658.814m-15.482 0A50.697 50.697 0 0112 13.489a50.702 50.702 0 017.74-3.342M6.75 15a.75.75 0 100-1.5.75.75 0 000 1.5zm0 0v-3.675A55.378 55.378 0 0112 8.443m-7.007 11.55A5.981 5.981 0 006.75 15.75v-1.5" />
+        </svg>
+      );
+    default:
+      return null;
+  }
 }

@@ -1,6 +1,6 @@
 import { authenticateRequest } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
-import { isValidUUID } from "@/lib/validate";
+import { isValidUUID, sanitizeText } from "@/lib/validate";
 import { NextResponse } from "next/server";
 
 const NOTEBOOK_COLUMNS = "id, user_id, title, file_url, status, page_count, description, created_at";
@@ -38,6 +38,42 @@ export async function GET(
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 
+  return NextResponse.json(data);
+}
+
+export async function PATCH(
+  request: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const auth = await authenticateRequest(request);
+  if (!auth) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  const { id } = await params;
+  if (!isValidUUID(id)) return NextResponse.json({ error: "Invalid ID" }, { status: 400 });
+
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  const body = await request.json().catch(() => ({}));
+  const updates: Record<string, string> = {};
+  if (body.title !== undefined) updates.title = sanitizeText(body.title).slice(0, 200);
+  if (body.description !== undefined) updates.description = sanitizeText(body.description).slice(0, 500);
+
+  if (Object.keys(updates).length === 0) {
+    return NextResponse.json({ error: "No updates" }, { status: 400 });
+  }
+
+  const { data, error } = await supabase
+    .from("notebooks")
+    .update(updates)
+    .eq("id", id)
+    .eq("user_id", user.id)
+    .select(NOTEBOOK_COLUMNS)
+    .single();
+
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (!data) return NextResponse.json({ error: "Not found" }, { status: 404 });
   return NextResponse.json(data);
 }
 

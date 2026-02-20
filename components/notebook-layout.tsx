@@ -31,8 +31,10 @@ interface NotebookLayoutProps {
 export function NotebookLayout({ notebookId, notebookTitle, notebookFiles, initialMessages }: NotebookLayoutProps) {
   const [sourcesOpen, setSourcesOpen] = useState(true);
   const [studioOpen, setStudioOpen] = useState(true);
-  // Track which mobile overlay is open (mutual exclusion)
   const [mobilePanel, setMobilePanel] = useState<"sources" | "studio" | null>(null);
+  const [title, setTitle] = useState(notebookTitle);
+  const [editingTitle, setEditingTitle] = useState(false);
+  const [editValue, setEditValue] = useState(notebookTitle);
   const t = useTranslations("notebook");
 
   const toggleSources = useCallback(() => {
@@ -54,6 +56,41 @@ export function NotebookLayout({ notebookId, notebookTitle, notebookFiles, initi
   const openMobileStudio = useCallback(() => {
     setMobilePanel("studio");
   }, []);
+
+  async function saveTitle() {
+    const newTitle = editValue.trim();
+    if (!newTitle || newTitle === title) {
+      setEditingTitle(false);
+      setEditValue(title);
+      return;
+    }
+    setTitle(newTitle);
+    setEditingTitle(false);
+    try {
+      await fetch(`/api/notebooks/${notebookId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ title: newTitle }),
+      });
+    } catch {
+      // Revert on failure
+      setTitle(notebookTitle);
+    }
+  }
+
+  function handleTitleKeyDown(e: React.KeyboardEvent) {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      saveTitle();
+    } else if (e.key === "Escape") {
+      setEditingTitle(false);
+      setEditValue(title);
+    }
+  }
+
+  // Check if any files are still processing
+  const hasProcessingFiles = notebookFiles.some((f) => f.status === "processing");
+  const hasReadyFiles = notebookFiles.some((f) => f.status === "ready");
 
   return (
     <div className="flex h-screen flex-col bg-background">
@@ -85,8 +122,31 @@ export function NotebookLayout({ notebookId, notebookTitle, notebookFiles, initi
           </button>
 
           <div className="h-4 w-px bg-border hidden sm:block" />
+
+          {/* Editable title */}
           <div className="flex-1 min-w-0">
-            <h1 className="text-sm font-semibold truncate">{notebookTitle}</h1>
+            {editingTitle ? (
+              <input
+                value={editValue}
+                onChange={(e) => setEditValue(e.target.value)}
+                onBlur={saveTitle}
+                onKeyDown={handleTitleKeyDown}
+                autoFocus
+                className="w-full text-sm font-semibold bg-transparent border-b border-primary/40 outline-none py-0.5"
+                maxLength={200}
+              />
+            ) : (
+              <h1
+                className="text-sm font-semibold truncate cursor-pointer hover:text-primary/80 transition-colors"
+                onDoubleClick={() => {
+                  setEditValue(title);
+                  setEditingTitle(true);
+                }}
+                title={t("doubleClickToEdit")}
+              >
+                {title}
+              </h1>
+            )}
           </div>
 
           {/* Desktop studio toggle */}
@@ -123,7 +183,11 @@ export function NotebookLayout({ notebookId, notebookTitle, notebookFiles, initi
 
         {/* Center: Chat (always visible) */}
         <div className="flex-1 min-w-0 min-h-0">
-          <ChatInterface notebookId={notebookId} initialMessages={initialMessages} />
+          <ChatInterface
+            notebookId={notebookId}
+            initialMessages={initialMessages}
+            isProcessing={hasProcessingFiles && !hasReadyFiles}
+          />
         </div>
 
         {/* Right: Studio panel (desktop lg+) */}
@@ -192,7 +256,6 @@ export function NotebookLayout({ notebookId, notebookTitle, notebookFiles, initi
         {/* Mobile FABs (only when no overlay is open) */}
         {mobilePanel === null && (
           <>
-            {/* Sources FAB - bottom left */}
             <button
               onClick={openMobileSources}
               className="lg:hidden fixed bottom-24 left-4 z-40 flex h-12 w-12 items-center justify-center rounded-full bg-secondary text-secondary-foreground shadow-lg hover:shadow-xl transition-all hover:scale-105 active:scale-95"
@@ -203,7 +266,6 @@ export function NotebookLayout({ notebookId, notebookTitle, notebookFiles, initi
               </svg>
             </button>
 
-            {/* Studio FAB - bottom right */}
             <button
               onClick={openMobileStudio}
               className="lg:hidden fixed bottom-24 right-4 z-40 flex h-12 w-12 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg hover:shadow-xl transition-all hover:scale-105 active:scale-95"

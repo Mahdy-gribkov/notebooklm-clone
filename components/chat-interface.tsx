@@ -14,12 +14,14 @@ import type { Message, Source } from "@/types";
 interface ChatInterfaceProps {
   notebookId: string;
   initialMessages: Message[];
+  isProcessing?: boolean;
 }
 
-export function ChatInterface({ notebookId, initialMessages }: ChatInterfaceProps) {
+export function ChatInterface({ notebookId, initialMessages, isProcessing = false }: ChatInterfaceProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [savedNoteId, setSavedNoteId] = useState<string | null>(null);
   const t = useTranslations("chat");
 
   const starterPrompts = [
@@ -104,6 +106,22 @@ export function ChatInterface({ notebookId, initialMessages }: ChatInterfaceProp
     }
   }, []);
 
+  const saveToNote = useCallback(async (messageId: string, content: string) => {
+    try {
+      const res = await fetch(`/api/notebooks/${notebookId}/notes`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ title: content.slice(0, 60).replace(/\n/g, " "), content }),
+      });
+      if (res.ok) {
+        setSavedNoteId(messageId);
+        setTimeout(() => setSavedNoteId(null), 2000);
+      }
+    } catch {
+      // Silent fail
+    }
+  }, [notebookId]);
+
   const sourcesById = useMemo(
     () =>
       Object.fromEntries(
@@ -140,6 +158,13 @@ export function ChatInterface({ notebookId, initialMessages }: ChatInterfaceProp
           <div className="space-y-5 max-w-2xl lg:max-w-3xl mx-auto">
             {messages.length === 0 && (
               <div className="flex flex-col items-center py-16 text-center animate-fade-in">
+                {/* Processing state */}
+                {isProcessing && (
+                  <div className="flex items-center gap-2.5 mb-6 px-4 py-2.5 rounded-lg bg-amber-500/10 border border-amber-500/20">
+                    <div className="h-4 w-4 rounded-full border-2 border-amber-500 border-t-transparent animate-spin shrink-0" />
+                    <span className="text-xs text-amber-600 dark:text-amber-400">{t("processingState")}</span>
+                  </div>
+                )}
                 <div className="mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/5">
                   <svg
                     className="h-8 w-8 text-primary/30"
@@ -219,23 +244,40 @@ export function ChatInterface({ notebookId, initialMessages }: ChatInterfaceProp
                           </div>
                         )}
 
-                        {/* Copy button (AI messages only) */}
+                        {/* Action buttons (AI messages only) */}
                         {!isUser && message.content && (
-                          <button
-                            onClick={() => copyMessage(message.id, message.content)}
-                            className="absolute top-2 right-2 opacity-0 group-hover/msg:opacity-100 transition-opacity p-1 rounded-md hover:bg-muted text-muted-foreground hover:text-foreground"
-                            aria-label={t("copyMessage")}
-                          >
-                            {copiedId === message.id ? (
-                              <svg className="h-3.5 w-3.5 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                              </svg>
-                            ) : (
-                              <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M15.666 3.888A2.25 2.25 0 0013.5 2.25h-3c-1.03 0-1.9.693-2.166 1.638m7.332 0c.055.194.084.4.084.612v0a.75.75 0 01-.75.75H9.75a.75.75 0 01-.75-.75v0c0-.212.03-.418.084-.612m7.332 0c.646.049 1.288.11 1.927.184 1.1.128 1.907 1.077 1.907 2.185V19.5a2.25 2.25 0 01-2.25 2.25H6.75A2.25 2.25 0 014.5 19.5V6.257c0-1.108.806-2.057 1.907-2.185a48.208 48.208 0 011.927-.184" />
-                              </svg>
-                            )}
-                          </button>
+                          <div className="absolute top-2 right-2 flex items-center gap-0.5 opacity-0 group-hover/msg:opacity-100 transition-opacity">
+                            <button
+                              onClick={() => copyMessage(message.id, message.content)}
+                              className="p-1 rounded-md hover:bg-muted text-muted-foreground hover:text-foreground"
+                              aria-label={t("copyMessage")}
+                            >
+                              {copiedId === message.id ? (
+                                <svg className="h-3.5 w-3.5 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                </svg>
+                              ) : (
+                                <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M15.666 3.888A2.25 2.25 0 0013.5 2.25h-3c-1.03 0-1.9.693-2.166 1.638m7.332 0c.055.194.084.4.084.612v0a.75.75 0 01-.75.75H9.75a.75.75 0 01-.75-.75v0c0-.212.03-.418.084-.612m7.332 0c.646.049 1.288.11 1.927.184 1.1.128 1.907 1.077 1.907 2.185V19.5a2.25 2.25 0 01-2.25 2.25H6.75A2.25 2.25 0 014.5 19.5V6.257c0-1.108.806-2.057 1.907-2.185a48.208 48.208 0 011.927-.184" />
+                                </svg>
+                              )}
+                            </button>
+                            <button
+                              onClick={() => saveToNote(message.id, message.content)}
+                              className="p-1 rounded-md hover:bg-muted text-muted-foreground hover:text-foreground"
+                              aria-label={t("saveToNote")}
+                            >
+                              {savedNoteId === message.id ? (
+                                <svg className="h-3.5 w-3.5 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                </svg>
+                              ) : (
+                                <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                </svg>
+                              )}
+                            </button>
+                          </div>
                         )}
                       </div>
                       {!isUser && sources && sources.length > 0 && (

@@ -82,7 +82,8 @@
   "notebook": {
     "dashboard": "Dashboard",
     "sources": "Sources",
-    "studio": "Studio"
+    "studio": "Studio",
+    "doubleClickToEdit": "Double-click to edit title"
   },
   "chat": {
     "askAnything": "Ask anything about your sources",
@@ -95,7 +96,9 @@
     "starter1": "Summarize the key points of this document",
     "starter2": "What are the main conclusions or findings?",
     "starter3": "What topics does this document cover?",
-    "starter4": "What questions does this document answer?"
+    "starter4": "What questions does this document answer?",
+    "saveToNote": "Save to note",
+    "processingState": "Your sources are being processed..."
   },
   "sources": {
     "title": "Sources",

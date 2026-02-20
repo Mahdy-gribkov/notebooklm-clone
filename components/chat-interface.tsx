@@ -205,7 +205,7 @@ export function ChatInterface({ notebookId, initialMessages }: ChatInterfaceProp
                       <div
                         className={`group/msg relative rounded-2xl px-4 py-3 text-sm leading-relaxed ${
                           isUser
-                            ? "bg-gradient-to-br from-primary to-[oklch(0.45_0.2_290)] text-white rounded-br-md shadow-sm"
+                            ? "bg-gradient-to-br from-primary to-[oklch(0.40_0.16_250)] text-white rounded-br-md shadow-sm"
                             : "bg-muted/40 border rounded-bl-md"
                         }`}
                       >

@@ -1,7 +1,7 @@
 "use client";
 
 import { Suspense, useState } from "react";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -16,12 +16,19 @@ export default function LoginPage() {
   );
 }
 
+type AuthMode = "signin" | "signup";
+
 function LoginContent() {
+  const [mode, setMode] = useState<AuthMode>("signin");
   const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [sent, setSent] = useState(false);
+  const [signUpDone, setSignUpDone] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const searchParams = useSearchParams();
+  const router = useRouter();
   const authFailed = searchParams.get("error") === "auth_failed";
   const t = useTranslations("login");
 
@@ -41,8 +48,54 @@ function LoginContent() {
     }
   }
 
-  async function handleMagicLink(e: React.FormEvent) {
+  async function handlePasswordAuth(e: React.FormEvent) {
     e.preventDefault();
+    if (!email || !password) return;
+    setError(null);
+
+    if (mode === "signup") {
+      if (password !== confirmPassword) {
+        setError(t("passwordMismatch"));
+        return;
+      }
+      if (password.length < 8) {
+        setError(t("passwordTooShort"));
+        return;
+      }
+    }
+
+    setLoading(true);
+    const supabase = createClient();
+
+    if (mode === "signup") {
+      const { error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          emailRedirectTo: `${window.location.origin}/auth/callback`,
+        },
+      });
+      if (error) {
+        setError(error.message);
+      } else {
+        setSignUpDone(true);
+      }
+    } else {
+      const { error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+      if (error) {
+        setError(error.message);
+      } else {
+        router.push("/dashboard");
+        return;
+      }
+    }
+    setLoading(false);
+  }
+
+  async function handleMagicLink() {
     if (!email) return;
     setLoading(true);
     setError(null);
@@ -64,38 +117,47 @@ function LoginContent() {
     setLoading(false);
   }
 
+  function switchMode() {
+    setMode(mode === "signin" ? "signup" : "signin");
+    setError(null);
+    setPassword("");
+    setConfirmPassword("");
+    setSent(false);
+    setSignUpDone(false);
+  }
+
   return (
     <div className="flex min-h-screen">
-      {/* Left panel with animated gradient */}
+      {/* Left panel — theme-adaptive */}
       <div className="hidden lg:flex lg:w-[55%] relative overflow-hidden">
-        {/* Animated gradient background */}
-        <div className="absolute inset-0 bg-gradient-to-br from-[oklch(0.35_0.2_275)] via-[oklch(0.25_0.15_290)] to-[oklch(0.18_0.12_260)] animate-gradient" />
+        {/* Light mode gradient */}
+        <div className="absolute inset-0 bg-gradient-to-br from-[oklch(0.95_0.03_250)] via-[oklch(0.90_0.06_270)] to-[oklch(0.85_0.10_260)] dark:from-[oklch(0.35_0.2_275)] dark:via-[oklch(0.25_0.15_290)] dark:to-[oklch(0.18_0.12_260)] animate-gradient" />
 
         {/* Floating decorative elements */}
         <div className="absolute inset-0 overflow-hidden">
-          <div className="absolute top-[15%] left-[10%] h-64 w-64 rounded-full bg-[oklch(0.5_0.2_275_/_0.1)] blur-3xl animate-float" />
-          <div className="absolute bottom-[20%] right-[15%] h-48 w-48 rounded-full bg-[oklch(0.6_0.18_290_/_0.08)] blur-3xl animate-float [animation-delay:1.5s]" />
-          <div className="absolute top-[50%] left-[50%] h-32 w-32 rounded-full bg-[oklch(0.7_0.15_260_/_0.06)] blur-2xl animate-float [animation-delay:3s]" />
+          <div className="absolute top-[15%] left-[10%] h-64 w-64 rounded-full bg-primary/10 dark:bg-[oklch(0.5_0.2_275_/_0.1)] blur-3xl animate-float" />
+          <div className="absolute bottom-[20%] right-[15%] h-48 w-48 rounded-full bg-primary/8 dark:bg-[oklch(0.6_0.18_290_/_0.08)] blur-3xl animate-float [animation-delay:1.5s]" />
+          <div className="absolute top-[50%] left-[50%] h-32 w-32 rounded-full bg-primary/6 dark:bg-[oklch(0.7_0.15_260_/_0.06)] blur-2xl animate-float [animation-delay:3s]" />
         </div>
 
         {/* Content */}
-        <div className="relative z-10 flex flex-col justify-between p-8 text-white w-full h-screen overflow-hidden">
+        <div className="relative z-10 flex flex-col justify-between p-8 text-foreground dark:text-white w-full h-screen overflow-hidden">
           <div className="flex items-center gap-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-white/10 backdrop-blur-sm">
-              <DocIcon className="h-5 w-5" />
+            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10 dark:bg-white/10 backdrop-blur-sm">
+              <DocIcon className="h-5 w-5 text-primary dark:text-white" />
             </div>
             <span className="text-lg font-semibold tracking-tight">DocChat</span>
           </div>
 
           <div className="space-y-5 max-w-lg">
-            <h1 className="text-4xl font-bold leading-[1.1] tracking-tight animate-slide-up">
+            <h1 className="text-display text-4xl animate-slide-up">
               {t("heroTitle1")}
               <br />
-              <span className="bg-gradient-to-r from-white via-[oklch(0.85_0.1_275)] to-[oklch(0.75_0.15_290)] bg-clip-text text-transparent">
+              <span className="bg-gradient-to-r from-primary via-[oklch(0.55_0.18_275)] to-[oklch(0.45_0.2_290)] dark:from-white dark:via-[oklch(0.85_0.1_275)] dark:to-[oklch(0.75_0.15_290)] bg-clip-text text-transparent">
                 {t("heroTitle2")}
               </span>
             </h1>
-            <p className="text-base leading-relaxed text-white/60 animate-slide-up [animation-delay:100ms]">
+            <p className="text-body leading-relaxed text-muted-foreground dark:text-white/60 animate-slide-up [animation-delay:100ms]">
               {t("heroDescription")}
             </p>
 
@@ -119,20 +181,20 @@ function LoginContent() {
           </div>
 
           <div className="space-y-1">
-            <p className="text-xs text-white/30">
+            <p className="text-caption opacity-50">
               {t("poweredBy")}
             </p>
-            <p className="text-xs text-white/20">
+            <p className="text-caption opacity-30">
               Built by{" "}
-              <a href="https://medygribkov.vercel.app" target="_blank" rel="noopener noreferrer" className="underline underline-offset-2 hover:text-white/40 transition-colors">
-                Medy Gribkov
+              <a href="https://mahdygribkov.vercel.app" target="_blank" rel="noopener noreferrer" className="underline underline-offset-2 hover:opacity-60 transition-opacity">
+                Mahdy Gribkov
               </a>
             </p>
           </div>
         </div>
       </div>
 
-      {/* Right panel, auth form */}
+      {/* Right panel — auth form */}
       <div className="flex flex-1 flex-col items-center justify-center px-6 py-8 bg-background relative">
         <div className="absolute top-4 right-4">
           <ThemeToggle />
@@ -147,11 +209,25 @@ function LoginContent() {
           </div>
 
           <div className="space-y-2">
-            <h2 className="text-2xl font-bold tracking-tight">
-              {t("title")}
+            <h2 className="text-display">
+              {mode === "signin" ? t("title") : t("signUpTitle")}
             </h2>
-            <p className="text-sm text-muted-foreground">
-              {t("subtitle")}
+            <p className="text-body text-muted-foreground">
+              {mode === "signin" ? (
+                <>
+                  {t("noAccount")}{" "}
+                  <button onClick={switchMode} className="text-primary font-medium hover:underline underline-offset-2">
+                    {t("signUpLink")}
+                  </button>
+                </>
+              ) : (
+                <>
+                  {t("haveAccount")}{" "}
+                  <button onClick={switchMode} className="text-primary font-medium hover:underline underline-offset-2">
+                    {t("signInLink")}
+                  </button>
+                </>
+              )}
             </p>
           </div>
 
@@ -163,7 +239,31 @@ function LoginContent() {
             </div>
           )}
 
-          {sent ? (
+          {signUpDone ? (
+            <div className="space-y-4 animate-slide-up">
+              <div className="rounded-xl border border-green-500/20 bg-green-500/5 px-4 py-4">
+                <div className="flex items-start gap-3">
+                  <div className="mt-0.5 flex h-5 w-5 items-center justify-center rounded-full bg-green-500/10">
+                    <CheckIcon className="h-3 w-3 text-green-600 dark:text-green-400" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-green-800 dark:text-green-300">
+                      {t("signUpSuccess")}
+                    </p>
+                    <p className="mt-1 text-sm text-green-700 dark:text-green-400">
+                      {email}
+                    </p>
+                  </div>
+                </div>
+              </div>
+              <button
+                onClick={() => { setSignUpDone(false); setMode("signin"); }}
+                className="text-sm text-muted-foreground hover:text-foreground transition-colors underline underline-offset-2"
+              >
+                {t("signInLink")}
+              </button>
+            </div>
+          ) : sent ? (
             <div className="space-y-4 animate-slide-up">
               <div className="rounded-xl border border-green-500/20 bg-green-500/5 px-4 py-4">
                 <div className="flex items-start gap-3">
@@ -189,6 +289,7 @@ function LoginContent() {
             </div>
           ) : (
             <div className="space-y-5">
+              {/* GitHub OAuth */}
               <Button
                 className="w-full h-11 gap-2.5 font-medium"
                 variant="outline"
@@ -199,23 +300,22 @@ function LoginContent() {
                 {t("githubButton")}
               </Button>
 
+              {/* Divider */}
               <div className="relative">
                 <div className="absolute inset-0 flex items-center">
                   <span className="w-full border-t" />
                 </div>
                 <div className="relative flex justify-center text-xs">
                   <span className="bg-background px-3 text-muted-foreground">
-                    {t("emailDivider")}
+                    {t("orDivider")}
                   </span>
                 </div>
               </div>
 
-              <form onSubmit={handleMagicLink} className="space-y-3">
+              {/* Email + Password form */}
+              <form onSubmit={handlePasswordAuth} className="space-y-3">
                 <div className="space-y-1.5">
-                  <label
-                    htmlFor="email"
-                    className="text-sm font-medium"
-                  >
+                  <label htmlFor="email" className="text-sm font-medium">
                     {t("emailLabel")}
                   </label>
                   <Input
@@ -230,20 +330,77 @@ function LoginContent() {
                     className="h-11"
                   />
                 </div>
-                <Button type="submit" className="w-full h-11 font-medium" disabled={loading || !email}>
+
+                <div className="space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <label htmlFor="password" className="text-sm font-medium">
+                      {t("passwordLabel")}
+                    </label>
+                    {mode === "signin" && (
+                      <button
+                        type="button"
+                        onClick={handleMagicLink}
+                        disabled={loading || !email}
+                        className="text-xs text-primary hover:underline underline-offset-2 disabled:opacity-50"
+                      >
+                        {t("forgotPassword")}
+                      </button>
+                    )}
+                  </div>
+                  <Input
+                    id="password"
+                    type="password"
+                    placeholder={t("passwordPlaceholder")}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    disabled={loading}
+                    required
+                    minLength={8}
+                    autoComplete={mode === "signup" ? "new-password" : "current-password"}
+                    className="h-11"
+                  />
+                </div>
+
+                {mode === "signup" && (
+                  <div className="space-y-1.5">
+                    <label htmlFor="confirm-password" className="text-sm font-medium">
+                      {t("confirmPasswordLabel")}
+                    </label>
+                    <Input
+                      id="confirm-password"
+                      type="password"
+                      placeholder={t("confirmPasswordPlaceholder")}
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      disabled={loading}
+                      required
+                      minLength={8}
+                      autoComplete="new-password"
+                      className="h-11"
+                    />
+                    <p className="text-caption">
+                      {t("passwordRequirements")}
+                    </p>
+                  </div>
+                )}
+
+                <Button type="submit" className="w-full h-11 font-medium" disabled={loading || !email || !password}>
                   {loading ? (
                     <span className="flex items-center gap-2">
                       <LoadingSpinner />
-                      {t("sending")}
+                      {mode === "signin" ? t("signingIn") : t("creatingAccount")}
                     </span>
                   ) : (
-                    t("emailButton")
+                    mode === "signin" ? t("signInButton") : t("signUpButton")
                   )}
                 </Button>
-                <p className="text-xs text-center text-muted-foreground">
+              </form>
+
+              {mode === "signin" && (
+                <p className="text-caption text-center">
                   {t("emailNote")}
                 </p>
-              </form>
+              )}
 
               {error && (
                 <p
@@ -264,13 +421,13 @@ function LoginContent() {
 
 function FeatureCard({ icon, title, description }: { icon: React.ReactNode; title: string; description: string }) {
   return (
-    <div className="flex items-start gap-3 rounded-xl bg-white/[0.06] backdrop-blur-sm p-2.5 border border-white/[0.06]">
-      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-white/10">
+    <div className="flex items-start gap-3 rounded-xl bg-primary/5 dark:bg-white/[0.06] backdrop-blur-sm p-2.5 border border-primary/10 dark:border-white/[0.06]">
+      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/10 dark:bg-white/10">
         {icon}
       </div>
       <div>
-        <p className="text-sm font-medium text-white/90">{title}</p>
-        <p className="text-xs text-white/50 mt-0.5">{description}</p>
+        <p className="text-body font-medium text-foreground dark:text-white/90">{title}</p>
+        <p className="text-caption mt-0.5 dark:text-white/50">{description}</p>
       </div>
     </div>
   );
@@ -295,7 +452,7 @@ function DocIcon({ className }: { className?: string }) {
 
 function TargetIcon() {
   return (
-    <svg className="h-4 w-4 text-white/70" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <svg className="h-4 w-4 text-primary/70 dark:text-white/70" fill="none" stroke="currentColor" viewBox="0 0 24 24">
       <circle cx="12" cy="12" r="10" strokeWidth={1.5} />
       <circle cx="12" cy="12" r="6" strokeWidth={1.5} />
       <circle cx="12" cy="12" r="2" strokeWidth={1.5} />
@@ -305,7 +462,7 @@ function TargetIcon() {
 
 function HistoryIcon() {
   return (
-    <svg className="h-4 w-4 text-white/70" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <svg className="h-4 w-4 text-primary/70 dark:text-white/70" fill="none" stroke="currentColor" viewBox="0 0 24 24">
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
     </svg>
   );
@@ -313,7 +470,7 @@ function HistoryIcon() {
 
 function ShieldIcon() {
   return (
-    <svg className="h-4 w-4 text-white/70" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <svg className="h-4 w-4 text-primary/70 dark:text-white/70" fill="none" stroke="currentColor" viewBox="0 0 24 24">
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
     </svg>
   );

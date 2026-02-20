@@ -21,9 +21,9 @@ export async function GET(request: Request) {
 
   // Fetch all user data
   const [notebooks, notes, messages] = await Promise.all([
-    supabase.from("notebooks").select("*").eq("user_id", user.id).order("created_at", { ascending: false }),
-    supabase.from("notes").select("*").eq("user_id", user.id).order("created_at", { ascending: false }),
-    supabase.from("messages").select("id, notebook_id, role, content, created_at").eq("user_id", user.id).order("created_at", { ascending: false }),
+    supabase.from("notebooks").select("*").eq("user_id", user.id).order("created_at", { ascending: false }).limit(5000),
+    supabase.from("notes").select("*").eq("user_id", user.id).order("created_at", { ascending: false }).limit(5000),
+    supabase.from("messages").select("id, notebook_id, role, content, created_at").eq("user_id", user.id).order("created_at", { ascending: false }).limit(5000),
   ]);
 
   const exportData = {

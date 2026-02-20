@@ -152,11 +152,11 @@ export async function POST(request: Request) {
         : error instanceof Error && error.message.includes("No content could be extracted")
         ? "No text content found in this PDF."
         : error instanceof Error && error.message.includes("is required")
-        ? "Configuration error: Required environment variable missing. Check server logs."
+        ? "Processing failed. Please try again."
         : error instanceof Error && error.message.includes("Failed to store document chunks")
-        ? "Database connection error. Please try again."
+        ? "Processing failed. Please try again."
         : error instanceof Error && error.message.includes("embedding shape")
-        ? "AI API error: Invalid response format."
+        ? "Processing failed. Please try again."
         : "Processing failed. Please try again.";
     // Notebook row already set to "error" status by processNotebook
     return NextResponse.json({ error: msg }, { status: 500 });

@@ -56,11 +56,19 @@ export async function POST(
   const body = await request.json().catch(() => ({}));
   const { action, result } = body as { action: string; result: unknown };
 
-  if (!action || typeof action !== "string") {
-    return NextResponse.json({ error: "Missing action" }, { status: 400 });
+  const VALID_ACTIONS = ["flashcards", "quiz", "report", "mindmap", "datatable", "infographic", "slidedeck"];
+
+  if (!action || typeof action !== "string" || !VALID_ACTIONS.includes(action)) {
+    return NextResponse.json({ error: "Invalid action" }, { status: 400 });
   }
-  if (!result) {
+  if (!result || typeof result !== "object") {
     return NextResponse.json({ error: "Missing result" }, { status: 400 });
+  }
+
+  // Cap result size at 500KB to prevent abuse
+  const resultStr = JSON.stringify(result);
+  if (resultStr.length > 500_000) {
+    return NextResponse.json({ error: "Result too large" }, { status: 400 });
   }
 
   const { data, error } = await supabase

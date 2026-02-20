@@ -1,6 +1,7 @@
 import { authenticateRequest } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { getServiceClient } from "@/lib/supabase/service";
+import { checkRateLimit } from "@/lib/rate-limit";
 import { NextResponse } from "next/server";
 
 export async function DELETE(request: Request) {
@@ -16,6 +17,13 @@ export async function DELETE(request: Request) {
 
   if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  if (!checkRateLimit(`${user.id}:delete-account`, 1, 86_400_000)) {
+    return NextResponse.json(
+      { error: "Too many requests" },
+      { status: 429, headers: { "Retry-After": "86400" } }
+    );
   }
 
   const serviceClient = getServiceClient();

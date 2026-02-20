@@ -9,7 +9,7 @@ import { NextResponse } from "next/server";
 
 export const maxDuration = 120;
 
-const VALID_ACTIONS = ["flashcards", "quiz", "report", "mindmap", "datatable"] as const;
+const VALID_ACTIONS = ["flashcards", "quiz", "report", "mindmap", "datatable", "infographic", "slidedeck"] as const;
 type StudioAction = (typeof VALID_ACTIONS)[number];
 
 const PROMPTS: Record<StudioAction, string> = {
@@ -22,6 +22,10 @@ const PROMPTS: Record<StudioAction, string> = {
   mindmap: `You are a knowledge organizer. Extract the hierarchical topic structure from the document below. Return ONLY valid JSON with no additional text: {"label":"Main Topic","children":[{"label":"Subtopic 1","children":[{"label":"Detail A"},{"label":"Detail B"}]},{"label":"Subtopic 2","children":[]}]}. Maximum 3 levels deep, 4-8 top-level children.`,
 
   datatable: `You are a data extractor. Extract all quantitative data, statistics, figures, dates, and key facts from the document below into a structured table. Return ONLY valid JSON with no additional text: {"columns":["Category","Value","Context"],"rows":[["GDP Growth","3.2%","Q4 2024"]]}. Include at least 5 rows if the document contains enough data.`,
+
+  infographic: `You are a visual content designer. Create a structured infographic layout from the document below. Break the content into 4-6 visual sections with titles, key stats, and bullet points. Return ONLY valid JSON with no additional text: [{"heading":"Section Title","content":"Brief description paragraph"},{"heading":"Key Statistics","content":"Stat 1: value. Stat 2: value. Stat 3: value."},{"heading":"Main Findings","content":"Detailed findings paragraph"}]. Each section should be concise and visually oriented.`,
+
+  slidedeck: `You are a presentation designer. Create a slide deck from the document below with 8-12 slides. Return ONLY valid JSON with no additional text: [{"heading":"Title Slide","content":"Subtitle and overview"},{"heading":"Introduction","content":"Background and context with 2-3 key bullet points"},{"heading":"Key Findings","content":"Main discoveries with supporting data"},{"heading":"Conclusion","content":"Summary and next steps"}]. Each content field should have 2-4 bullet points or short paragraphs suitable for presentation slides.`,
 };
 
 export async function POST(request: Request) {

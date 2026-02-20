@@ -8,6 +8,8 @@ import { QuizView } from "@/components/studio/quiz";
 import { ReportView } from "@/components/studio/report";
 import { MindMapView } from "@/components/studio/mindmap";
 import { DataTableView } from "@/components/studio/datatable";
+import { InfographicView } from "@/components/studio/infographic";
+import { SlideDeckView } from "@/components/studio/slidedeck";
 import { NoteEditor } from "@/components/studio/note-editor";
 import type { Note } from "@/types";
 
@@ -233,8 +235,8 @@ export function StudioPanel({ notebookId }: StudioPanelProps) {
             {result && selectedAction === "report" && <ReportView data={result as ReportSection[]} />}
             {result && selectedAction === "mindmap" && <MindMapView data={result as MindMapNode} />}
             {result && selectedAction === "datatable" && <DataTableView data={result as DataTableData} />}
-            {result && selectedAction === "infographic" && <ReportView data={result as ReportSection[]} />}
-            {result && selectedAction === "slidedeck" && <ReportView data={result as ReportSection[]} />}
+            {result && selectedAction === "infographic" && <InfographicView data={result as ReportSection[]} />}
+            {result && selectedAction === "slidedeck" && <SlideDeckView data={result as ReportSection[]} />}
           </div>
         </div>
       </div>

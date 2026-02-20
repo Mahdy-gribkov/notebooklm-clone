@@ -1,11 +1,23 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, Suspense } from "react";
 import Link from "next/link";
+import dynamic from "next/dynamic";
 import { ChatInterface } from "@/components/chat-interface";
-import { StudioPanel } from "@/components/studio-panel";
 import { SourcesPanel } from "@/components/sources-panel";
+
+const StudioPanel = dynamic(
+  () => import("@/components/studio-panel").then((m) => ({ default: m.StudioPanel })),
+  {
+    loading: () => (
+      <div className="flex items-center justify-center h-full">
+        <div className="h-8 w-8 rounded-full border-2 border-primary border-t-transparent animate-spin" />
+      </div>
+    ),
+  }
+);
 import { ThemeToggle } from "@/components/theme-toggle";
+import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import type { Message, NotebookFile } from "@/types";
 
@@ -21,6 +33,7 @@ export function NotebookLayout({ notebookId, notebookTitle, notebookFiles, initi
   const [studioOpen, setStudioOpen] = useState(false);
   // Track which mobile overlay is open (mutual exclusion)
   const [mobilePanel, setMobilePanel] = useState<"sources" | "studio" | null>(null);
+  const t = useTranslations("notebook");
 
   const toggleSources = useCallback(() => {
     setSourcesOpen((prev) => !prev);
@@ -52,7 +65,7 @@ export function NotebookLayout({ notebookId, notebookTitle, notebookFiles, initi
               <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
               </svg>
-              <span className="hidden sm:inline text-xs">Dashboard</span>
+              <span className="hidden sm:inline text-xs">{t("dashboard")}</span>
             </Button>
           </Link>
 
@@ -68,7 +81,7 @@ export function NotebookLayout({ notebookId, notebookTitle, notebookFiles, initi
             <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
             </svg>
-            Sources
+            {t("sources")}
           </button>
 
           <div className="h-4 w-px bg-border hidden sm:block" />
@@ -88,7 +101,7 @@ export function NotebookLayout({ notebookId, notebookTitle, notebookFiles, initi
             <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M9.75 3.104v5.714a2.25 2.25 0 01-.659 1.591L5 14.5M9.75 3.104c-.251.023-.501.05-.75.082m.75-.082a24.301 24.301 0 014.5 0m0 0v5.714a2.25 2.25 0 00.659 1.591L19 14.5M14.25 3.104c.251.023.501.05.75.082M19 14.5l-2.47 2.47a2.25 2.25 0 00-.659 1.59v1.69m-11.742 0A2.923 2.923 0 005 19.748V21" />
             </svg>
-            Studio
+            {t("studio")}
           </button>
 
           <ThemeToggle />
@@ -133,7 +146,7 @@ export function NotebookLayout({ notebookId, notebookTitle, notebookFiles, initi
             />
             <div className="absolute left-0 top-0 bottom-0 w-[90vw] max-w-[320px] bg-background border-r shadow-2xl animate-slide-in-left">
               <div className="flex items-center justify-between border-b px-4 py-3">
-                <h2 className="text-sm font-semibold">Sources</h2>
+                <h2 className="text-sm font-semibold">{t("sources")}</h2>
                 <button
                   onClick={closeMobilePanel}
                   className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
@@ -159,7 +172,7 @@ export function NotebookLayout({ notebookId, notebookTitle, notebookFiles, initi
             />
             <div className="absolute right-0 top-0 bottom-0 w-[90vw] max-w-[420px] bg-background border-l shadow-2xl animate-slide-in-right">
               <div className="flex items-center justify-between border-b px-4 py-3">
-                <h2 className="text-sm font-semibold">Studio</h2>
+                <h2 className="text-sm font-semibold">{t("studio")}</h2>
                 <button
                   onClick={closeMobilePanel}
                   className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
@@ -183,7 +196,7 @@ export function NotebookLayout({ notebookId, notebookTitle, notebookFiles, initi
             <button
               onClick={openMobileSources}
               className="lg:hidden fixed bottom-24 left-4 z-40 flex h-12 w-12 items-center justify-center rounded-full bg-secondary text-secondary-foreground shadow-lg hover:shadow-xl transition-all hover:scale-105 active:scale-95"
-              aria-label="Open Sources"
+              aria-label={t("sources")}
             >
               <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
@@ -194,7 +207,7 @@ export function NotebookLayout({ notebookId, notebookTitle, notebookFiles, initi
             <button
               onClick={openMobileStudio}
               className="lg:hidden fixed bottom-24 right-4 z-40 flex h-12 w-12 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg hover:shadow-xl transition-all hover:scale-105 active:scale-95"
-              aria-label="Open Studio"
+              aria-label={t("studio")}
             >
               <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M9.75 3.104v5.714a2.25 2.25 0 01-.659 1.591L5 14.5M9.75 3.104c-.251.023-.501.05-.75.082m.75-.082a24.301 24.301 0 014.5 0m0 0v5.714a2.25 2.25 0 00.659 1.591L19 14.5M14.25 3.104c.251.023.501.05.75.082M19 14.5l-2.47 2.47a2.25 2.25 0 00-.659 1.59v1.69m-11.742 0A2.923 2.923 0 005 19.748V21" />

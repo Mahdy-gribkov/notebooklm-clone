@@ -1,16 +1,11 @@
 "use client";
 
 import { useState, useCallback } from "react";
+import { useTranslations } from "next-intl";
 import type { Source } from "@/types";
 
 interface SourcePanelProps {
   sources: Source[];
-}
-
-function similarityLabel(score: number): string {
-  if (score >= 0.8) return "High relevance";
-  if (score >= 0.6) return "Good relevance";
-  return "Partial relevance";
 }
 
 function similarityColor(score: number): string {
@@ -20,6 +15,7 @@ function similarityColor(score: number): string {
 }
 
 export function SourcePanel({ sources }: SourcePanelProps) {
+  const t = useTranslations("sourcePanel");
   const [expanded, setExpanded] = useState<number | null>(null);
   const [copiedIdx, setCopiedIdx] = useState<number | null>(null);
 
@@ -43,10 +39,10 @@ export function SourcePanel({ sources }: SourcePanelProps) {
           <svg className="h-3.5 w-3.5 text-primary/60" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
           </svg>
-          Sources Cited
+          {t("sourcesCited")}
         </p>
         <span className="text-[10px] text-muted-foreground/60">
-          {sources.length} match{sources.length !== 1 ? "es" : ""}
+          {t("matches", { count: sources.length })}
         </span>
       </div>
 
@@ -69,25 +65,25 @@ export function SourcePanel({ sources }: SourcePanelProps) {
                 >
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                 </svg>
-                Source {i + 1}
+                {t("source", { number: i + 1 })}
                 {source.fileName && (
                   <span
                     className="text-[10px] text-muted-foreground font-normal truncate max-w-[120px]"
                     title={source.fileName}
                   >
-                    from {source.fileName.replace(/\.pdf$/i, "")}
+                    {t("from", { fileName: source.fileName.replace(/\.pdf$/i, "") })}
                   </span>
                 )}
               </span>
               <div className="flex items-center gap-1.5">
                 <span className="text-[10px] text-muted-foreground">
-                  {similarityLabel(source.similarity)}
+                  {source.similarity >= 0.8 ? t("highRelevance") : source.similarity >= 0.6 ? t("goodRelevance") : t("partialRelevance")}
                 </span>
                 {/* Copy button */}
                 <button
                   onClick={(e) => { e.stopPropagation(); copyContent(i, source.content); }}
                   className="opacity-0 group-hover/src:opacity-100 transition-opacity p-0.5 rounded hover:bg-muted text-muted-foreground/40 hover:text-muted-foreground"
-                  aria-label="Copy source text"
+                  aria-label={t("copySource")}
                 >
                   {copiedIdx === i ? (
                     <svg className="h-3 w-3 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">

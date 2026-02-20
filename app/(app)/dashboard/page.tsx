@@ -8,6 +8,7 @@ import { NotebookCard } from "@/components/notebook-card";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/theme-toggle";
 import type { Notebook, NotebookFile } from "@/types";
+import { useTranslations } from "next-intl";
 
 const PROCESSING_TIMEOUT_MS = 5 * 60 * 1000;
 const POLL_DELAYS = [5000, 10000, 20000, 30000];
@@ -33,14 +34,22 @@ export default function DashboardPage() {
   const [userEmail, setUserEmail] = useState<string | null>(null);
   const [creatingNotebook, setCreatingNotebook] = useState(false);
   const pollAttemptRef = useRef(0);
+  const t = useTranslations("dashboard");
+  const tc = useTranslations("common");
 
   useEffect(() => {
-    fetch("/api/notebooks")
+    fetch("/api/notebooks?include=files")
       .then((res) => (res.ok ? res.json() : null))
       .then((data) => {
         if (data) {
-          setNotebooks(data);
-          fetchFilesForNotebooks(data);
+          if (data.notebooks) {
+            // Batch response: { notebooks, filesByNotebook }
+            setNotebooks(data.notebooks);
+            setNotebookFiles(data.filesByNotebook ?? {});
+          } else {
+            // Fallback: plain array
+            setNotebooks(data);
+          }
         }
         setLoading(false);
       })
@@ -51,23 +60,6 @@ export default function DashboardPage() {
       setUserEmail(data.user?.email ?? null);
     });
   }, []);
-
-  function fetchFilesForNotebooks(nbs: Notebook[]) {
-    if (nbs.length === 0) return;
-    Promise.all(
-      nbs.map((n) =>
-        fetch(`/api/notebooks/${n.id}/files`)
-          .then((res) => (res.ok ? res.json() : []))
-          .then((files: NotebookFile[]) => ({ notebookId: n.id, files }))
-      )
-    ).then((results) => {
-      const filesMap: Record<string, NotebookFile[]> = {};
-      for (const { notebookId, files } of results) {
-        filesMap[notebookId] = files;
-      }
-      setNotebookFiles(filesMap);
-    });
-  }
 
   async function handleSignOut() {
     const supabase = createClient();
@@ -130,8 +122,6 @@ export default function DashboardPage() {
             return updated ?? n;
           })
         );
-        // Re-fetch files for processing notebooks (may have new files ready)
-        fetchFilesForNotebooks(processing);
       });
     }, delay);
 
@@ -166,7 +156,7 @@ export default function DashboardPage() {
             )}
             <ThemeToggle />
             <Button variant="ghost" size="sm" onClick={handleSignOut} className="text-muted-foreground hover:text-foreground">
-              Sign out
+              {tc("signOut")}
             </Button>
           </div>
         </div>
@@ -178,13 +168,13 @@ export default function DashboardPage() {
           <div className="flex items-baseline justify-between mb-3">
             <div>
               <h1 className="text-lg font-semibold tracking-tight">
-                {userEmail ? `Welcome back, ${getFirstName(userEmail)}` : "Welcome back"}
+                {userEmail ? t("welcomeBack", { name: getFirstName(userEmail) }) : t("welcomeBackGeneric")}
               </h1>
               {!loading && (
                 <p className="text-xs text-muted-foreground mt-0.5">
                   {notebooks.length === 0
-                    ? "Upload a PDF to get started, or create an empty notebook"
-                    : `${readyCount} notebook${readyCount !== 1 ? "s" : ""} ready to chat`}
+                    ? t("emptyState")
+                    : t("readyCount", { count: readyCount })}
                 </p>
               )}
             </div>
@@ -198,7 +188,7 @@ export default function DashboardPage() {
               <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
               </svg>
-              {creatingNotebook ? "Creating..." : "New Notebook"}
+              {creatingNotebook ? t("creating") : t("newNotebook")}
             </Button>
           </div>
           <UploadZone onNotebookCreated={handleNotebookCreated} onNavigate={(path) => router.push(path)} />
@@ -209,10 +199,10 @@ export default function DashboardPage() {
           {notebooks.length > 0 && (
             <div className="flex items-baseline justify-between mb-3">
               <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
-                Your Notebooks
+                {t("yourNotebooks")}
               </h2>
               <span className="text-xs text-muted-foreground">
-                {readyCount} of {notebooks.length} ready
+                {t("readyOf", { ready: readyCount, total: notebooks.length })}
               </span>
             </div>
           )}

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useCallback } from "react";
+import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { FlashcardsView } from "@/components/studio/flashcards";
 import { QuizView } from "@/components/studio/quiz";
@@ -13,52 +14,6 @@ type StudioAction = "flashcards" | "quiz" | "report" | "mindmap" | "datatable";
 interface StudioPanelProps {
   notebookId: string;
 }
-
-const FEATURES: {
-  action: StudioAction;
-  label: string;
-  description: string;
-  icon: string;
-}[] = [
-  {
-    action: "flashcards",
-    label: "Flashcards",
-    description: "Generate study cards from your document",
-    icon: "cards",
-  },
-  {
-    action: "quiz",
-    label: "Quiz",
-    description: "Test your knowledge with multiple choice",
-    icon: "quiz",
-  },
-  {
-    action: "report",
-    label: "Report",
-    description: "Get a structured summary report",
-    icon: "report",
-  },
-  {
-    action: "mindmap",
-    label: "Mind Map",
-    description: "Visualize topic hierarchy",
-    icon: "mindmap",
-  },
-  {
-    action: "datatable",
-    label: "Data Table",
-    description: "Extract facts and figures into a table",
-    icon: "table",
-  },
-];
-
-const ACTION_LABELS: Record<StudioAction, string> = {
-  flashcards: "Flashcards",
-  quiz: "Quiz",
-  report: "Report",
-  mindmap: "Mind Map",
-  datatable: "Data Table",
-};
 
 interface Flashcard { front: string; back: string }
 interface QuizQuestion { question: string; options: string[]; correctIndex: number; explanation: string }
@@ -77,11 +32,23 @@ function parseStudioResult(_action: StudioAction, text: string): StudioResult {
 }
 
 export function StudioPanel({ notebookId }: StudioPanelProps) {
+  const t = useTranslations("studio");
+  const tc = useTranslations("common");
   const [selectedAction, setSelectedAction] = useState<StudioAction | null>(null);
   const [result, setResult] = useState<StudioResult | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [generated, setGenerated] = useState<Set<StudioAction>>(new Set());
+
+  const features = [
+    { action: "flashcards" as StudioAction, label: t("flashcards"), description: t("flashcardsDesc"), icon: "cards" },
+    { action: "quiz" as StudioAction, label: t("quiz"), description: t("quizDesc"), icon: "quiz" },
+    { action: "report" as StudioAction, label: t("report"), description: t("reportDesc"), icon: "report" },
+    { action: "mindmap" as StudioAction, label: t("mindmap"), description: t("mindmapDesc"), icon: "mindmap" },
+    { action: "datatable" as StudioAction, label: t("datatable"), description: t("datatableDesc"), icon: "table" },
+  ];
+
+  const actionLabel = selectedAction ? t(selectedAction) : "";
 
   const generate = useCallback(
     async (action: StudioAction) => {
@@ -150,8 +117,6 @@ export function StudioPanel({ notebookId }: StudioPanelProps) {
 
   // Result view
   if (selectedAction && (result || loading || error)) {
-    const label = ACTION_LABELS[selectedAction];
-
     return (
       <div className="flex h-full flex-col">
         <div className="border-b px-4 py-3 flex items-center gap-3 shrink-0">
@@ -162,9 +127,9 @@ export function StudioPanel({ notebookId }: StudioPanelProps) {
             <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
             </svg>
-            Back
+            {tc("back")}
           </button>
-          <span className="text-sm font-semibold flex-1">{label}</span>
+          <span className="text-sm font-semibold flex-1">{actionLabel}</span>
           {(result || error) && !loading && (
             <Button
               variant="outline"
@@ -175,7 +140,7 @@ export function StudioPanel({ notebookId }: StudioPanelProps) {
               <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
               </svg>
-              Regenerate
+              {t("regenerate")}
             </Button>
           )}
         </div>
@@ -185,9 +150,9 @@ export function StudioPanel({ notebookId }: StudioPanelProps) {
             {loading && (
               <div className="flex flex-col items-center py-16 text-center animate-fade-in">
                 <div className="h-10 w-10 rounded-full border-2 border-primary border-t-transparent animate-spin mb-4" />
-                <p className="text-sm font-medium">Generating {label.toLowerCase()}...</p>
+                <p className="text-sm font-medium">{t("generating", { type: actionLabel })}</p>
                 <p className="text-xs text-muted-foreground mt-1">
-                  This may take 10-30 seconds for large documents.
+                  {t("generatingNote")}
                 </p>
               </div>
             )}
@@ -196,7 +161,7 @@ export function StudioPanel({ notebookId }: StudioPanelProps) {
               <div className="rounded-xl border border-destructive/20 bg-destructive/5 p-4 text-center">
                 <p className="text-sm text-destructive mb-3">{error}</p>
                 <Button variant="outline" size="sm" onClick={() => generate(selectedAction)}>
-                  Try Again
+                  {tc("tryAgain")}
                 </Button>
               </div>
             )}
@@ -217,14 +182,14 @@ export function StudioPanel({ notebookId }: StudioPanelProps) {
     <div className="h-full overflow-y-auto scrollbar-thin">
       <div className="px-4 py-8 max-w-2xl mx-auto">
         <div className="text-center mb-8">
-          <h2 className="text-lg font-semibold tracking-tight mb-1">Studio</h2>
+          <h2 className="text-lg font-semibold tracking-tight mb-1">{t("title")}</h2>
           <p className="text-sm text-muted-foreground">
-            Generate study materials and insights from your document.
+            {t("description")}
           </p>
         </div>
 
         <div className="grid grid-cols-1 min-[360px]:grid-cols-2 gap-3">
-          {FEATURES.map((feature) => {
+          {features.map((feature) => {
             const hasResult = generated.has(feature.action);
             return (
               <button
@@ -255,7 +220,7 @@ export function StudioPanel({ notebookId }: StudioPanelProps) {
         </div>
 
         <p className="text-center text-[11px] text-muted-foreground/50 mt-8">
-          Generated content is AI-produced and may not be perfectly accurate. Always verify against the source document.
+          {t("disclaimer")}
         </p>
       </div>
     </div>

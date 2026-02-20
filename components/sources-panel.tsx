@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useCallback, useEffect } from "react";
+import { useTranslations } from "next-intl";
 import { PdfViewerModal } from "@/components/pdf-viewer-modal";
 import type { NotebookFile } from "@/types";
 
@@ -10,6 +11,7 @@ interface SourcesPanelProps {
 }
 
 export function SourcesPanel({ notebookId, initialFiles }: SourcesPanelProps) {
+  const t = useTranslations("sources");
   const [files, setFiles] = useState<NotebookFile[]>(initialFiles);
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
@@ -28,11 +30,11 @@ export function SourcesPanel({ notebookId, initialFiles }: SourcesPanelProps) {
 
   const handleUpload = useCallback(async (file: File) => {
     if (file.type !== "application/pdf") {
-      setError("Only PDF files are supported");
+      setError(t("pdfOnly"));
       return;
     }
     if (file.size > 5 * 1024 * 1024) {
-      setError("File must be under 5 MB");
+      setError(t("fileTooLarge"));
       return;
     }
 
@@ -83,7 +85,7 @@ export function SourcesPanel({ notebookId, initialFiles }: SourcesPanelProps) {
         setUploadProgress(0);
       }, 500);
     }
-  }, [notebookId]);
+  }, [notebookId, t]);
 
   async function handleDelete(fileId: string) {
     setConfirmDeleteId(null);
@@ -148,7 +150,7 @@ export function SourcesPanel({ notebookId, initialFiles }: SourcesPanelProps) {
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3 border-b shrink-0">
         <div className="flex items-center gap-2">
-          <h2 className="text-sm font-semibold">Sources</h2>
+          <h2 className="text-sm font-semibold">{t("title")}</h2>
           {files.length > 0 && (
             <span className="text-[10px] text-muted-foreground bg-muted rounded-full px-1.5 py-0.5">
               {files.length}
@@ -172,7 +174,7 @@ export function SourcesPanel({ notebookId, initialFiles }: SourcesPanelProps) {
             <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
             </svg>
-            Add
+            {t("add")}
           </button>
         </div>
       </div>
@@ -191,7 +193,7 @@ export function SourcesPanel({ notebookId, initialFiles }: SourcesPanelProps) {
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
           </svg>
           <span className="text-xs text-muted-foreground">
-            {dragging ? "Drop PDF here" : "Drop PDF or click to add"}
+            {dragging ? t("dropHere") : t("dropOrClick")}
           </span>
         </div>
       </div>
@@ -206,7 +208,7 @@ export function SourcesPanel({ notebookId, initialFiles }: SourcesPanelProps) {
             />
           </div>
           <p className="text-[10px] text-muted-foreground mt-1">
-            {uploadProgress < 80 ? "Uploading..." : "Processing..."}
+            {uploadProgress < 80 ? t("uploading") : t("processing")}
           </p>
         </div>
       )}
@@ -218,13 +220,13 @@ export function SourcesPanel({ notebookId, initialFiles }: SourcesPanelProps) {
             <svg className="h-10 w-10 text-muted-foreground/30 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
             </svg>
-            <p className="text-xs font-medium text-muted-foreground">No sources yet</p>
-            <p className="text-[10px] text-muted-foreground/60 mt-1">Add a PDF to start chatting</p>
+            <p className="text-xs font-medium text-muted-foreground">{t("noSources")}</p>
+            <p className="text-[10px] text-muted-foreground/60 mt-1">{t("addPdfToStart")}</p>
             <button
               onClick={() => inputRef.current?.click()}
               className="mt-3 text-xs text-primary hover:text-primary/80 font-medium transition-colors"
             >
-              Upload PDF
+              {t("uploadPdf")}
             </button>
           </div>
         ) : (
@@ -253,11 +255,11 @@ export function SourcesPanel({ notebookId, initialFiles }: SourcesPanelProps) {
                   </p>
                   <p className="text-[10px] text-muted-foreground">
                     {file.status === "ready" && file.page_count
-                      ? `${file.page_count} pages`
+                      ? t("pages", { count: file.page_count })
                       : file.status === "processing"
-                      ? "Processing..."
+                      ? t("processing")
                       : file.status === "error"
-                      ? "Failed"
+                      ? t("failed")
                       : ""}
                   </p>
                 </div>
@@ -265,7 +267,7 @@ export function SourcesPanel({ notebookId, initialFiles }: SourcesPanelProps) {
                 {/* Actions */}
                 {confirmDeleteId === file.id ? (
                   <div className="flex items-center gap-1 shrink-0">
-                    <span className="text-[10px] text-destructive mr-1">Delete?</span>
+                    <span className="text-[10px] text-destructive mr-1">{t("deleteConfirm")}</span>
                     <button
                       onClick={() => handleDelete(file.id)}
                       className="h-5 w-5 flex items-center justify-center rounded text-destructive hover:bg-destructive/10"
@@ -294,7 +296,7 @@ export function SourcesPanel({ notebookId, initialFiles }: SourcesPanelProps) {
                         trigger={
                           <button
                             className="h-6 w-6 flex items-center justify-center rounded text-muted-foreground hover:text-foreground hover:bg-accent"
-                            aria-label="View PDF"
+                            aria-label={t("viewPdf")}
                           >
                             <svg className="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -307,7 +309,7 @@ export function SourcesPanel({ notebookId, initialFiles }: SourcesPanelProps) {
                     <button
                       onClick={() => setConfirmDeleteId(file.id)}
                       className="h-6 w-6 flex items-center justify-center rounded text-muted-foreground hover:text-destructive hover:bg-destructive/10"
-                      aria-label="Delete file"
+                      aria-label={t("deleteFile")}
                     >
                       <svg className="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />

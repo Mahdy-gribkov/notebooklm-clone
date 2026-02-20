@@ -1,10 +1,12 @@
 "use client";
 
 import { useTheme } from "@/components/theme-provider";
+import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 
 export function ThemeToggle() {
   const { theme, toggleTheme } = useTheme();
+  const t = useTranslations("common");
 
   return (
     <Button
@@ -12,7 +14,7 @@ export function ThemeToggle() {
       size="sm"
       onClick={toggleTheme}
       className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground"
-      aria-label={`Switch to ${theme === "dark" ? "light" : "dark"} mode`}
+      aria-label={theme === "dark" ? t("switchToLight") : t("switchToDark")}
     >
       {theme === "dark" ? (
         <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

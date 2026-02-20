@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import type { Notebook, NotebookFile } from "@/types";
 
@@ -14,25 +15,25 @@ interface NotebookCardProps {
 
 const statusConfig: Record<Notebook["status"], { label: string; icon: string; className: string; dotClass?: string }> = {
   processing: {
-    label: "Processing",
+    label: "processing",
     icon: "spinner",
     className: "bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-500/20",
     dotClass: "bg-amber-500 animate-pulse",
   },
   ready: {
-    label: "Ready",
+    label: "ready",
     icon: "check",
     className: "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20",
   },
   error: {
-    label: "Failed",
+    label: "failed",
     icon: "x",
     className: "bg-red-500/10 text-red-700 dark:text-red-400 border border-red-500/20",
   },
 };
 
 const timedOutConfig = {
-  label: "Timed out",
+  label: "timedOut",
   icon: "clock",
   className: "bg-orange-500/10 text-orange-700 dark:text-orange-400 border border-orange-500/20",
 };
@@ -56,6 +57,8 @@ function relativeTime(dateStr: string): string {
 export function NotebookCard({ notebook, files = [], timedOut = false, onDelete }: NotebookCardProps) {
   const [deleting, setDeleting] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const t = useTranslations("notebookCard");
+  const tc = useTranslations("common");
   const status = timedOut ? timedOutConfig : statusConfig[notebook.status];
   const isClickable = notebook.status === "ready" && !timedOut;
 
@@ -131,25 +134,25 @@ export function NotebookCard({ notebook, files = [], timedOut = false, onDelete 
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
               )}
-              {status.label}
+              {t(status.label)}
             </span>
 
             {/* File count */}
             {files.length > 0 && (
               <span className="text-[10px] text-muted-foreground">
-                {files.length} file{files.length !== 1 ? "s" : ""}
+                {t("files", { count: files.length })}
               </span>
             )}
             {notebook.page_count && (
               <span className="text-[10px] text-muted-foreground">
-                {notebook.page_count} pg{notebook.page_count !== 1 ? "s" : ""}
+                {t("pages", { count: notebook.page_count })}
               </span>
             )}
           </div>
 
           {(notebook.status === "error" || timedOut) && (
             <span className="text-[10px] text-muted-foreground">
-              {timedOut ? "Try re-uploading" : "Upload failed"}
+              {timedOut ? t("reUpload") : t("uploadFailed")}
             </span>
           )}
         </div>
@@ -159,8 +162,8 @@ export function NotebookCard({ notebook, files = [], timedOut = false, onDelete 
       {confirmDelete ? (
         <div className="absolute inset-0 flex items-center justify-center bg-card/95 backdrop-blur-sm animate-fade-in z-10 rounded-xl">
           <div className="text-center space-y-3">
-            <p className="text-sm font-medium">Delete this notebook?</p>
-            <p className="text-xs text-muted-foreground">This cannot be undone.</p>
+            <p className="text-sm font-medium">{t("deleteTitle")}</p>
+            <p className="text-xs text-muted-foreground">{t("cannotUndo")}</p>
             <div className="flex items-center gap-2 justify-center">
               <Button
                 variant="ghost"
@@ -168,7 +171,7 @@ export function NotebookCard({ notebook, files = [], timedOut = false, onDelete 
                 onClick={handleCancelDelete}
                 className="h-8 text-xs"
               >
-                Cancel
+                {tc("cancel")}
               </Button>
               <Button
                 variant="destructive"
@@ -177,7 +180,7 @@ export function NotebookCard({ notebook, files = [], timedOut = false, onDelete 
                 disabled={deleting}
                 className="h-8 text-xs"
               >
-                {deleting ? "Deleting..." : "Delete"}
+                {deleting ? t("deleting") : tc("delete")}
               </Button>
             </div>
           </div>

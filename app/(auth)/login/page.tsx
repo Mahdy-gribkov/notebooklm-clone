@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { useTranslations } from "next-intl";
 
 export default function LoginPage() {
   return (
@@ -22,6 +23,7 @@ function LoginContent() {
   const [error, setError] = useState<string | null>(null);
   const searchParams = useSearchParams();
   const authFailed = searchParams.get("error") === "auth_failed";
+  const t = useTranslations("login");
 
   async function handleGitHub() {
     setLoading(true);
@@ -34,7 +36,7 @@ function LoginContent() {
       },
     });
     if (error) {
-      setError("GitHub sign-in failed. Please try email instead.");
+      setError(t("githubFailed"));
       setLoading(false);
     }
   }
@@ -87,39 +89,38 @@ function LoginContent() {
 
           <div className="space-y-5 max-w-lg">
             <h1 className="text-4xl font-bold leading-[1.1] tracking-tight animate-slide-up">
-              Chat with any PDF.
+              {t("heroTitle1")}
               <br />
               <span className="bg-gradient-to-r from-white via-[oklch(0.85_0.1_275)] to-[oklch(0.75_0.15_290)] bg-clip-text text-transparent">
-                Get answers instantly.
+                {t("heroTitle2")}
               </span>
             </h1>
             <p className="text-base leading-relaxed text-white/60 animate-slide-up [animation-delay:100ms]">
-              Upload a research paper, contract, or report. Ask questions in plain
-              English. DocChat reads your document and answers with cited sources.
+              {t("heroDescription")}
             </p>
 
             <div className="space-y-2.5 animate-slide-up [animation-delay:200ms]">
               <FeatureCard
                 icon={<TargetIcon />}
-                title="Grounded answers"
-                description="Every response comes from your document, not the internet"
+                title={t("feature1Title")}
+                description={t("feature1Desc")}
               />
               <FeatureCard
                 icon={<HistoryIcon />}
-                title="Persistent history"
-                description="Full chat history saved across sessions"
+                title={t("feature2Title")}
+                description={t("feature2Desc")}
               />
               <FeatureCard
                 icon={<ShieldIcon />}
-                title="Private and secure"
-                description="Your files are encrypted and only accessible to you"
+                title={t("feature3Title")}
+                description={t("feature3Desc")}
               />
             </div>
           </div>
 
           <div className="space-y-1">
             <p className="text-xs text-white/30">
-              Powered by Groq, Gemini Embeddings, and pgvector
+              {t("poweredBy")}
             </p>
             <p className="text-xs text-white/20">
               Built by{" "}
@@ -147,17 +148,17 @@ function LoginContent() {
 
           <div className="space-y-2">
             <h2 className="text-2xl font-bold tracking-tight">
-              Sign in to your account
+              {t("title")}
             </h2>
             <p className="text-sm text-muted-foreground">
-              New here? Signing in creates your account automatically.
+              {t("subtitle")}
             </p>
           </div>
 
           {authFailed && (
             <div className="rounded-xl border border-destructive/20 bg-destructive/5 px-4 py-3">
               <p className="text-sm text-destructive">
-                Sign-in failed. Please try again or use email instead.
+                {t("authFailed")}
               </p>
             </div>
           )}
@@ -171,11 +172,10 @@ function LoginContent() {
                   </div>
                   <div>
                     <p className="text-sm font-medium text-green-800 dark:text-green-300">
-                      Check your inbox
+                      {t("checkInbox")}
                     </p>
                     <p className="mt-1 text-sm text-green-700 dark:text-green-400">
-                      We sent a sign-in link to <strong>{email}</strong>. Click it to
-                      continue. The link expires in 1 hour.
+                      {t("linkSentTo", { email })}
                     </p>
                   </div>
                 </div>
@@ -184,7 +184,7 @@ function LoginContent() {
                 onClick={() => { setSent(false); setEmail(""); }}
                 className="text-sm text-muted-foreground hover:text-foreground transition-colors underline underline-offset-2"
               >
-                Use a different email
+                {t("differentEmail")}
               </button>
             </div>
           ) : (
@@ -196,7 +196,7 @@ function LoginContent() {
                 disabled={loading}
               >
                 <GitHubIcon />
-                Continue with GitHub
+                {t("githubButton")}
               </Button>
 
               <div className="relative">
@@ -205,7 +205,7 @@ function LoginContent() {
                 </div>
                 <div className="relative flex justify-center text-xs">
                   <span className="bg-background px-3 text-muted-foreground">
-                    or sign in with email
+                    {t("emailDivider")}
                   </span>
                 </div>
               </div>
@@ -216,12 +216,12 @@ function LoginContent() {
                     htmlFor="email"
                     className="text-sm font-medium"
                   >
-                    Email address
+                    {t("emailLabel")}
                   </label>
                   <Input
                     id="email"
                     type="email"
-                    placeholder="you@example.com"
+                    placeholder={t("emailPlaceholder")}
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     disabled={loading}
@@ -234,14 +234,14 @@ function LoginContent() {
                   {loading ? (
                     <span className="flex items-center gap-2">
                       <LoadingSpinner />
-                      Sending...
+                      {t("sending")}
                     </span>
                   ) : (
-                    "Email me a sign-in link"
+                    t("emailButton")
                   )}
                 </Button>
                 <p className="text-xs text-center text-muted-foreground">
-                  No password needed. We&apos;ll email you a one-click sign-in link.
+                  {t("emailNote")}
                 </p>
               </form>
 

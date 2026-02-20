@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, useCallback } from "react";
+import { useEffect, useRef, useState, useCallback, useMemo } from "react";
 import { useChat } from "ai/react";
 import type { Message as AIMessage } from "ai";
 import ReactMarkdown from "react-markdown";
@@ -8,6 +8,7 @@ import rehypeSanitize from "rehype-sanitize";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { SourcePanel } from "@/components/source-panel";
+import { useTranslations } from "next-intl";
 import type { Message, Source } from "@/types";
 
 interface ChatInterfaceProps {
@@ -15,17 +16,18 @@ interface ChatInterfaceProps {
   initialMessages: Message[];
 }
 
-const STARTER_PROMPTS = [
-  { text: "Summarize the key points of this document", icon: "list" },
-  { text: "What are the main conclusions or findings?", icon: "target" },
-  { text: "What topics does this document cover?", icon: "book" },
-  { text: "What questions does this document answer?", icon: "question" },
-];
-
 export function ChatInterface({ notebookId, initialMessages }: ChatInterfaceProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const t = useTranslations("chat");
+
+  const starterPrompts = [
+    { text: t("starter1"), icon: "list" },
+    { text: t("starter2"), icon: "target" },
+    { text: t("starter3"), icon: "book" },
+    { text: t("starter4"), icon: "question" },
+  ];
 
   // Auto-dismiss error after 8s
   useEffect(() => {
@@ -50,10 +52,10 @@ export function ChatInterface({ notebookId, initialMessages }: ChatInterfaceProp
         const msg = error.message ?? "";
         if (msg.includes("429") || msg.toLowerCase().includes("too many")) {
           setErrorMessage(
-            "Rate limit reached. You can send up to 10 messages per minute."
+            t("rateLimitError")
           );
         } else {
-          setErrorMessage("Something went wrong. Please try again.");
+          setErrorMessage(t("genericError"));
         }
       },
     });
@@ -102,10 +104,14 @@ export function ChatInterface({ notebookId, initialMessages }: ChatInterfaceProp
     }
   }, []);
 
-  const sourcesById = Object.fromEntries(
-    initialMessages
-      .filter((m) => m.role === "assistant" && m.sources)
-      .map((m) => [m.id, m.sources as Source[]])
+  const sourcesById = useMemo(
+    () =>
+      Object.fromEntries(
+        initialMessages
+          .filter((m) => m.role === "assistant" && m.sources)
+          .map((m) => [m.id, m.sources as Source[]])
+      ),
+    [initialMessages]
   );
 
   return (
@@ -150,13 +156,13 @@ export function ChatInterface({ notebookId, initialMessages }: ChatInterfaceProp
                   </svg>
                 </div>
                 <p className="text-base font-semibold mb-1">
-                  Ask anything about your sources
+                  {t("askAnything")}
                 </p>
                 <p className="text-sm text-muted-foreground mb-8">
-                  All answers come directly from your uploaded PDFs.
+                  {t("allAnswers")}
                 </p>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 w-full max-w-md">
-                  {STARTER_PROMPTS.map((prompt) => (
+                  {starterPrompts.map((prompt) => (
                     <button
                       key={prompt.text}
                       onClick={() => handleStarterPrompt(prompt.text)}
@@ -218,7 +224,7 @@ export function ChatInterface({ notebookId, initialMessages }: ChatInterfaceProp
                           <button
                             onClick={() => copyMessage(message.id, message.content)}
                             className="absolute top-2 right-2 opacity-0 group-hover/msg:opacity-100 transition-opacity p-1 rounded-md hover:bg-muted text-muted-foreground hover:text-foreground"
-                            aria-label="Copy message"
+                            aria-label={t("copyMessage")}
                           >
                             {copiedId === message.id ? (
                               <svg className="h-3.5 w-3.5 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -288,7 +294,7 @@ export function ChatInterface({ notebookId, initialMessages }: ChatInterfaceProp
               value={input}
               onChange={handleInputChange}
               onKeyDown={handleKeyDown}
-              placeholder="Ask anything about your sources..."
+              placeholder={t("placeholder")}
               className="min-h-[48px] max-h-32 resize-none pr-4 rounded-xl border-border/60 focus:border-primary/40 transition-colors"
               disabled={isLoading}
               rows={1}
@@ -317,7 +323,7 @@ export function ChatInterface({ notebookId, initialMessages }: ChatInterfaceProp
           </Button>
         </form>
         <p className="mt-2 text-center text-[11px] text-muted-foreground/50 max-w-2xl lg:max-w-3xl mx-auto">
-          Enter to send. Shift+Enter for new line. Sources shown below each reply.
+          {t("sendHint")}
         </p>
       </div>
     </div>

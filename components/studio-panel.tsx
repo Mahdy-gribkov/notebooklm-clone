@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useCallback } from "react";
-import { useChat } from "ai/react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { FlashcardsView } from "@/components/studio/flashcards";
@@ -71,18 +70,12 @@ export function StudioPanel({ notebookId }: StudioPanelProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // We use useChat to handle streaming from the studio API
-  const { messages, setMessages } = useChat({
-    api: "/api/studio",
-  });
-
   const generate = useCallback(
     async (action: StudioAction) => {
       setSelectedAction(action);
       setResult(null);
       setError(null);
       setLoading(true);
-      setMessages([]);
 
       try {
         const res = await fetch("/api/studio", {
@@ -135,7 +128,7 @@ export function StudioPanel({ notebookId }: StudioPanelProps) {
         setLoading(false);
       }
     },
-    [notebookId, setMessages]
+    [notebookId]
   );
 
   function goBack() {

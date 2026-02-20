@@ -57,3 +57,32 @@ export async function GET(request: Request) {
 
   return NextResponse.json(notebooks);
 }
+
+// DELETE /api/notebooks — delete all notebooks for the user
+export async function DELETE(request: Request) {
+  const auth = await authenticateRequest(request);
+  if (!auth) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  // Get all storage paths to clean up
+  const { data: files } = await supabase
+    .from("notebook_files")
+    .select("storage_path")
+    .eq("user_id", user.id);
+
+  const paths = (files ?? []).map((f: { storage_path: string }) => f.storage_path).filter(Boolean);
+  if (paths.length > 0) {
+    await supabase.storage.from("pdf-uploads").remove(paths);
+  }
+
+  const { error } = await supabase
+    .from("notebooks")
+    .delete()
+    .eq("user_id", user.id);
+
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  return NextResponse.json({ success: true });
+}

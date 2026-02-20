@@ -8,6 +8,19 @@ import { createClient } from "@/lib/supabase/client";
 import { useTheme } from "@/components/theme-provider";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/theme-toggle";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+
+type AIStyle = "concise" | "balanced" | "detailed";
 
 export default function SettingsPage() {
   const router = useRouter();
@@ -18,13 +31,20 @@ export default function SettingsPage() {
   const [locale, setLocale] = useState("en");
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [aiStyle, setAIStyle] = useState<AIStyle>("balanced");
+  const [savingPrefs, setSavingPrefs] = useState(false);
+  const [exporting, setExporting] = useState(false);
+  const [deletingAll, setDeletingAll] = useState(false);
 
   useEffect(() => {
     const supabase = createClient();
     supabase.auth.getUser().then(({ data }) => {
       setEmail(data.user?.email ?? null);
+      const meta = data.user?.user_metadata;
+      if (meta?.ai_style && ["concise", "balanced", "detailed"].includes(meta.ai_style)) {
+        setAIStyle(meta.ai_style as AIStyle);
+      }
     });
-    // Read current locale from cookie
     const match = document.cookie.match(/(?:^|;\s*)locale=([^;]*)/);
     if (match) setLocale(match[1]);
   }, []);
@@ -35,10 +55,54 @@ export default function SettingsPage() {
     router.refresh();
   }
 
+  async function handleAIStyleChange(style: AIStyle) {
+    setAIStyle(style);
+    setSavingPrefs(true);
+    try {
+      await fetch("/api/user/preferences", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ai_style: style }),
+      });
+    } finally {
+      setSavingPrefs(false);
+    }
+  }
+
   async function handleSignOut() {
     const supabase = createClient();
     await supabase.auth.signOut();
     window.location.href = "/login";
+  }
+
+  async function handleExportData() {
+    setExporting(true);
+    try {
+      const res = await fetch("/api/user/export");
+      if (res.ok) {
+        const blob = await res.blob();
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `docchat-export-${new Date().toISOString().split("T")[0]}.json`;
+        a.click();
+        URL.revokeObjectURL(url);
+      }
+    } finally {
+      setExporting(false);
+    }
+  }
+
+  async function handleDeleteAllNotebooks() {
+    setDeletingAll(true);
+    try {
+      const res = await fetch("/api/notebooks", { method: "DELETE" });
+      if (res.ok) {
+        router.refresh();
+      }
+    } finally {
+      setDeletingAll(false);
+    }
   }
 
   async function handleDeleteAccount() {
@@ -53,6 +117,12 @@ export default function SettingsPage() {
       setConfirmDelete(false);
     }
   }
+
+  const aiStyles: { key: AIStyle; label: string; desc: string }[] = [
+    { key: "concise", label: t("aiConcise"), desc: t("aiConciseDesc") },
+    { key: "balanced", label: t("aiBalanced"), desc: t("aiBalancedDesc") },
+    { key: "detailed", label: t("aiDetailed"), desc: t("aiDetailedDesc") },
+  ];
 
   return (
     <div className="min-h-screen bg-background">
@@ -132,6 +202,99 @@ export default function SettingsPage() {
                   </button>
                 </div>
               </div>
+            </div>
+          </div>
+        </section>
+
+        {/* AI Preferences */}
+        <section className="space-y-4">
+          <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
+            {t("aiPreferences")}
+          </h2>
+          <div className="rounded-xl border bg-card p-4 space-y-3">
+            <p className="text-sm font-medium">{t("responseStyle")}</p>
+            <div className="space-y-2">
+              {aiStyles.map((style) => (
+                <button
+                  key={style.key}
+                  onClick={() => handleAIStyleChange(style.key)}
+                  disabled={savingPrefs}
+                  className={`w-full flex items-center gap-3 rounded-lg px-3 py-2.5 text-left transition-colors ${
+                    aiStyle === style.key
+                      ? "bg-primary/10 border border-primary/20"
+                      : "hover:bg-accent/50 border border-transparent"
+                  }`}
+                >
+                  <div className={`h-4 w-4 rounded-full border-2 flex items-center justify-center shrink-0 ${
+                    aiStyle === style.key ? "border-primary" : "border-muted-foreground/30"
+                  }`}>
+                    {aiStyle === style.key && <div className="h-2 w-2 rounded-full bg-primary" />}
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium">{style.label}</p>
+                    <p className="text-xs text-muted-foreground">{style.desc}</p>
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* Privacy & Data */}
+        <section className="space-y-4">
+          <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
+            {t("privacyData")}
+          </h2>
+          <div className="rounded-xl border bg-card p-4 space-y-4">
+            <p className="text-xs text-muted-foreground leading-relaxed">
+              {t("privacyInfo")}
+            </p>
+
+            <div className="flex items-center justify-between border-t pt-4">
+              <div>
+                <p className="text-sm font-medium">{t("exportData")}</p>
+                <p className="text-xs text-muted-foreground">{t("exportDataDesc")}</p>
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleExportData}
+                disabled={exporting}
+                className="text-xs"
+              >
+                {exporting ? tc("loading") : t("exportData")}
+              </Button>
+            </div>
+
+            <div className="flex items-center justify-between border-t pt-4">
+              <div>
+                <p className="text-sm font-medium text-destructive">{t("deleteAllNotebooks")}</p>
+                <p className="text-xs text-muted-foreground">{t("deleteAllNotebooksDesc")}</p>
+              </div>
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={deletingAll}
+                    className="text-xs text-destructive border-destructive/30 hover:bg-destructive/5"
+                  >
+                    {deletingAll ? tc("loading") : tc("delete")}
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>{t("deleteAllNotebooks")}</AlertDialogTitle>
+                    <AlertDialogDescription>{t("deleteAllNotebooksConfirm")}</AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>{tc("cancel")}</AlertDialogCancel>
+                    <AlertDialogAction onClick={handleDeleteAllNotebooks} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                      {tc("delete")}
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
             </div>
           </div>
         </section>

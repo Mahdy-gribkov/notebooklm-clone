@@ -97,7 +97,16 @@ export async function POST(request: Request) {
     ? `\n\nDocument context:\n${context}`
     : "\n\n(No relevant passages were found for this query.)";
 
-  const systemWithContext = `${SYSTEM_PROMPT}${contextBlock}`;
+  // Append AI style instruction based on user preference
+  const aiStyle = user.user_metadata?.ai_style as string | undefined;
+  let styleInstruction = "";
+  if (aiStyle === "concise") {
+    styleInstruction = "\n\nKeep responses brief and to the point.";
+  } else if (aiStyle === "detailed") {
+    styleInstruction = "\n\nProvide thorough, detailed responses with examples.";
+  }
+
+  const systemWithContext = `${SYSTEM_PROMPT}${styleInstruction}${contextBlock}`;
 
   // Save user message
   const serviceClient = getServiceClient();

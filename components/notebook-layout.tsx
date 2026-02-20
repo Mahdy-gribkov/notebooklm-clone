@@ -30,7 +30,7 @@ interface NotebookLayoutProps {
 
 export function NotebookLayout({ notebookId, notebookTitle, notebookFiles, initialMessages }: NotebookLayoutProps) {
   const [sourcesOpen, setSourcesOpen] = useState(true);
-  const [studioOpen, setStudioOpen] = useState(false);
+  const [studioOpen, setStudioOpen] = useState(true);
   // Track which mobile overlay is open (mutual exclusion)
   const [mobilePanel, setMobilePanel] = useState<"sources" | "studio" | null>(null);
   const t = useTranslations("notebook");
@@ -113,10 +113,10 @@ export function NotebookLayout({ notebookId, notebookTitle, notebookFiles, initi
         {/* Left: Sources panel (desktop lg+) */}
         <div
           className={`hidden lg:flex flex-col border-r bg-background shrink-0 transition-[width] duration-300 ease-in-out overflow-hidden ${
-            sourcesOpen ? "w-[280px]" : "w-0 border-r-0"
+            sourcesOpen ? "w-[260px]" : "w-0 border-r-0"
           }`}
         >
-          <div className="w-[280px] h-full min-w-[280px]">
+          <div className="w-[260px] h-full min-w-[260px]">
             <SourcesPanel notebookId={notebookId} initialFiles={notebookFiles} />
           </div>
         </div>
@@ -129,10 +129,10 @@ export function NotebookLayout({ notebookId, notebookTitle, notebookFiles, initi
         {/* Right: Studio panel (desktop lg+) */}
         <div
           className={`hidden lg:flex flex-col border-l bg-background shrink-0 transition-[width] duration-300 ease-in-out overflow-hidden ${
-            studioOpen ? "w-[400px]" : "w-0 border-l-0"
+            studioOpen ? "w-[320px]" : "w-0 border-l-0"
           }`}
         >
-          <div className="w-[400px] h-full min-w-[400px]">
+          <div className="w-[320px] h-full min-w-[320px]">
             <StudioPanel notebookId={notebookId} />
           </div>
         </div>

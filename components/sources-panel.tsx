@@ -102,8 +102,12 @@ export function SourcesPanel({ notebookId, initialFiles }: SourcesPanelProps) {
   }
 
   function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    if (file) handleUpload(file);
+    const fileList = e.target.files;
+    if (!fileList || fileList.length === 0) return;
+    const selected = Array.from(fileList).slice(0, 10);
+    for (const file of selected) {
+      handleUpload(file);
+    }
     e.target.value = "";
   }
 
@@ -135,8 +139,10 @@ export function SourcesPanel({ notebookId, initialFiles }: SourcesPanelProps) {
     e.stopPropagation();
     setDragging(false);
     dragCounterRef.current = 0;
-    const file = e.dataTransfer.files[0];
-    if (file) handleUpload(file);
+    const dropped = Array.from(e.dataTransfer.files).slice(0, 10);
+    for (const file of dropped) {
+      handleUpload(file);
+    }
   }
 
   return (
@@ -162,6 +168,7 @@ export function SourcesPanel({ notebookId, initialFiles }: SourcesPanelProps) {
             ref={inputRef}
             type="file"
             accept="application/pdf"
+            multiple
             className="hidden"
             onChange={handleFileChange}
             disabled={uploading}

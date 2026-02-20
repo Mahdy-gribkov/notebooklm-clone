@@ -9,7 +9,8 @@ import { ReportView } from "@/components/studio/report";
 import { MindMapView } from "@/components/studio/mindmap";
 import { DataTableView } from "@/components/studio/datatable";
 
-type StudioAction = "flashcards" | "quiz" | "report" | "mindmap" | "datatable";
+type StudioAction = "flashcards" | "quiz" | "report" | "mindmap" | "datatable" | "infographic" | "slidedeck";
+type StubAction = "audio" | "video";
 
 interface StudioPanelProps {
   notebookId: string;
@@ -40,12 +41,19 @@ export function StudioPanel({ notebookId }: StudioPanelProps) {
   const [error, setError] = useState<string | null>(null);
   const [generated, setGenerated] = useState<Set<StudioAction>>(new Set());
 
-  const features = [
-    { action: "flashcards" as StudioAction, label: t("flashcards"), description: t("flashcardsDesc"), icon: "cards" },
-    { action: "quiz" as StudioAction, label: t("quiz"), description: t("quizDesc"), icon: "quiz" },
-    { action: "report" as StudioAction, label: t("report"), description: t("reportDesc"), icon: "report" },
-    { action: "mindmap" as StudioAction, label: t("mindmap"), description: t("mindmapDesc"), icon: "mindmap" },
-    { action: "datatable" as StudioAction, label: t("datatable"), description: t("datatableDesc"), icon: "table" },
+  const features: { action: StudioAction; label: string; description: string; icon: string; color: string }[] = [
+    { action: "flashcards", label: t("flashcards"), description: t("flashcardsDesc"), icon: "cards", color: "bg-blue-500/15 text-blue-600 dark:text-blue-400" },
+    { action: "quiz", label: t("quiz"), description: t("quizDesc"), icon: "quiz", color: "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400" },
+    { action: "report", label: t("report"), description: t("reportDesc"), icon: "report", color: "bg-violet-500/15 text-violet-600 dark:text-violet-400" },
+    { action: "mindmap", label: t("mindmap"), description: t("mindmapDesc"), icon: "mindmap", color: "bg-amber-500/15 text-amber-600 dark:text-amber-400" },
+    { action: "datatable", label: t("datatable"), description: t("datatableDesc"), icon: "table", color: "bg-cyan-500/15 text-cyan-600 dark:text-cyan-400" },
+    { action: "infographic", label: t("infographic"), description: t("infographicDesc"), icon: "infographic", color: "bg-rose-500/15 text-rose-600 dark:text-rose-400" },
+    { action: "slidedeck", label: t("slidedeck"), description: t("slidedeckDesc"), icon: "slides", color: "bg-orange-500/15 text-orange-600 dark:text-orange-400" },
+  ];
+
+  const stubs: { action: StubAction; label: string; description: string; icon: string; color: string }[] = [
+    { action: "audio", label: t("audioOverview"), description: t("audioOverviewDesc"), icon: "audio", color: "bg-pink-500/15 text-pink-600 dark:text-pink-400" },
+    { action: "video", label: t("videoOverview"), description: t("videoOverviewDesc"), icon: "video", color: "bg-indigo-500/15 text-indigo-600 dark:text-indigo-400" },
   ];
 
   const actionLabel = selectedAction ? t(selectedAction) : "";
@@ -171,6 +179,8 @@ export function StudioPanel({ notebookId }: StudioPanelProps) {
             {result && selectedAction === "report" && <ReportView data={result as ReportSection[]} />}
             {result && selectedAction === "mindmap" && <MindMapView data={result as MindMapNode} />}
             {result && selectedAction === "datatable" && <DataTableView data={result as DataTableData} />}
+            {result && selectedAction === "infographic" && <ReportView data={result as ReportSection[]} />}
+            {result && selectedAction === "slidedeck" && <ReportView data={result as ReportSection[]} />}
           </div>
         </div>
       </div>
@@ -188,14 +198,14 @@ export function StudioPanel({ notebookId }: StudioPanelProps) {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 min-[360px]:grid-cols-2 gap-3">
+        <div className="grid grid-cols-2 gap-2.5">
           {features.map((feature) => {
             const hasResult = generated.has(feature.action);
             return (
               <button
                 key={feature.action}
                 onClick={() => generate(feature.action)}
-                className="group relative flex flex-col items-center gap-2 rounded-xl border bg-card p-4 text-center transition-all hover:shadow-md hover:border-primary/30 hover:-translate-y-0.5"
+                className="group relative flex flex-col items-start gap-2 rounded-xl border bg-card p-3 text-left transition-all hover:shadow-md hover:border-primary/30 hover:-translate-y-0.5"
               >
                 {hasResult && (
                   <span className="absolute top-2 right-2 flex h-2 w-2">
@@ -203,20 +213,32 @@ export function StudioPanel({ notebookId }: StudioPanelProps) {
                     <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500" />
                   </span>
                 )}
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary group-hover:bg-primary/15 transition-colors">
+                <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${feature.color} transition-colors`}>
                   <FeatureIcon type={feature.icon} />
                 </div>
                 <div className="min-w-0">
-                  <p className="text-sm font-semibold mb-0.5">
-                    {feature.label}
-                  </p>
-                  <p className="text-[11px] text-muted-foreground leading-snug">
-                    {feature.description}
-                  </p>
+                  <p className="text-xs font-semibold mb-0.5">{feature.label}</p>
+                  <p className="text-[10px] text-muted-foreground leading-snug line-clamp-2">{feature.description}</p>
                 </div>
               </button>
             );
           })}
+          {/* Disabled stubs */}
+          {stubs.map((stub) => (
+            <div
+              key={stub.action}
+              className="relative flex flex-col items-start gap-2 rounded-xl border bg-card p-3 text-left opacity-50 cursor-not-allowed"
+              title={t("comingSoon")}
+            >
+              <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${stub.color}`}>
+                <FeatureIcon type={stub.icon} />
+              </div>
+              <div className="min-w-0">
+                <p className="text-xs font-semibold mb-0.5">{stub.label}</p>
+                <p className="text-[10px] text-muted-foreground leading-snug">{t("comingSoon")}</p>
+              </div>
+            </div>
+          ))}
         </div>
 
         <p className="text-center text-[11px] text-muted-foreground/50 mt-8">
@@ -228,7 +250,7 @@ export function StudioPanel({ notebookId }: StudioPanelProps) {
 }
 
 function FeatureIcon({ type }: { type: string }) {
-  const cls = "h-5 w-5";
+  const cls = "h-4 w-4";
   switch (type) {
     case "cards":
       return (
@@ -258,6 +280,30 @@ function FeatureIcon({ type }: { type: string }) {
       return (
         <svg className={cls} fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 10h18M3 14h18m-9-4v8m-7 0h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+        </svg>
+      );
+    case "infographic":
+      return (
+        <svg className={cls} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 3v18h18M7 16V8m4 8v-5m4 5V5m4 11v-3" />
+        </svg>
+      );
+    case "slides":
+      return (
+        <svg className={cls} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 5a2 2 0 012-2h14a2 2 0 012 2v10a2 2 0 01-2 2H5a2 2 0 01-2-2V5zm9 12v4m-4 0h8" />
+        </svg>
+      );
+    case "audio":
+      return (
+        <svg className={cls} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m-4 0h8M12 15a3 3 0 003-3V6a3 3 0 00-6 0v6a3 3 0 003 3z" />
+        </svg>
+      );
+    case "video":
+      return (
+        <svg className={cls} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
         </svg>
       );
     default:

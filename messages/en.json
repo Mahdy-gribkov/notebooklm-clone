@@ -147,6 +147,8 @@
     "ready": "Ready",
     "failed": "Failed",
     "timedOut": "Timed out",
+    "sources": "{count} {count, plural, one {source} other {sources}}",
+    "open": "Open",
     "files": "{count} {count, plural, one {file} other {files}}",
     "pages": "{count} {count, plural, one {pg} other {pgs}}",
     "reUpload": "Try re-uploading",

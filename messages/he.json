@@ -147,6 +147,8 @@
     "ready": "מוכן",
     "failed": "נכשל",
     "timedOut": "פג תוקף",
+    "sources": "{count} {count, plural, one {מקור} other {מקורות}}",
+    "open": "פתח",
     "files": "{count} {count, plural, one {קובץ} other {קבצים}}",
     "pages": "{count} {count, plural, one {עמ׳} other {עמ׳}}",
     "reUpload": "נסה להעלות שוב",

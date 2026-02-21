@@ -54,12 +54,12 @@ export default function DashboardPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState<SortKey>("newest");
   const [activeTab, setActiveTab] = useState<TabKey>("all");
-  const [gridDensity, setGridDensity] = useState<GridDensity>(() => {
-    if (typeof window !== "undefined") {
-      return (localStorage.getItem("grid-density") as GridDensity) || "default";
-    }
-    return "default";
-  });
+  const [gridDensity, setGridDensity] = useState<GridDensity>("default");
+
+  useEffect(() => {
+    const saved = localStorage.getItem("grid-density") as GridDensity;
+    if (saved) setGridDensity(saved);
+  }, []);
   const pollAttemptRef = useRef(0);
   const t = useTranslations("dashboard");
   const tf = useTranslations("featured");
@@ -398,7 +398,7 @@ export default function DashboardPage() {
                 <button
                   onClick={handleCreateNotebook}
                   disabled={creatingNotebook}
-                  className="flex flex-col items-center justify-center gap-3 rounded-2xl border border-dashed border-primary/20 bg-primary/[0.02] p-6 text-primary hover:border-primary/40 hover:bg-primary/[0.04] transition-all duration-300 ease-out min-h-[140px] cursor-pointer disabled:opacity-50 hover:shadow-lg hover:shadow-primary/5 hover:-translate-y-0.5"
+                  className="flex flex-col items-center justify-center gap-3 rounded-2xl border border-dashed border-primary/20 bg-primary/[0.02] p-6 text-primary hover:border-primary/40 hover:bg-primary/[0.04] transition-all duration-300 ease-out min-h-[190px] h-full cursor-pointer disabled:opacity-50 hover:shadow-lg hover:shadow-primary/5 hover:-translate-y-0.5"
                 >
                   <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-muted/50">
                     <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -502,52 +502,49 @@ function FeaturedCarousel({
       <button
         key={fn.slug}
         onClick={() => onOpenFeatured(fn.slug)}
-        className="relative shrink-0 rounded-xl overflow-hidden group hover:scale-[1.02] hover:shadow-xl transition-all duration-200 featured-shadow cursor-pointer"
+        className={`relative shrink-0 rounded-2xl overflow-hidden group hover:scale-[1.02] hover:-translate-y-1 hover:shadow-2xl transition-all duration-300 featured-shadow cursor-pointer border-0 ${fn.bgClass}`}
         style={{
           width: fullWidth ? "100%" : CARD_WIDTH,
-          height: 220,
+          height: 240,
           scrollSnapAlign: fullWidth ? undefined : "start",
           animationDelay: `${i * 60}ms`,
         }}
       >
-        {/* Gradient background */}
-        <div className={`absolute inset-0 bg-gradient-to-br ${fn.gradient}`} />
         {/* Decorative pattern */}
-        <div className="absolute inset-0 opacity-[0.08]">
+        <div className="absolute inset-0 opacity-[0.04]">
           <CardPattern pattern={fn.pattern} />
         </div>
         {/* Mesh overlay */}
-        <div className="absolute inset-0 featured-mesh" />
+        <div className="absolute inset-0 featured-mesh opacity-50 mix-blend-overlay" />
 
         {/* Large decorative icon */}
-        <div className="absolute top-3 right-3 text-3xl opacity-30 z-10 drop-shadow-sm">
+        <div className="absolute -top-4 -right-4 text-8xl opacity-10 z-10 transition-transform duration-500 group-hover:scale-110 group-hover:-rotate-3">
           <FeaturedIcon type={fn.icon} />
         </div>
 
         {/* Author badge (top-left) */}
-        <div className="absolute top-3 left-3 flex items-center gap-2 z-10">
-          <div className="h-6 w-6 rounded-full bg-white/20 backdrop-blur-sm border border-white/30 flex items-center justify-center text-xs">
+        <div className="absolute top-5 left-5 flex items-center gap-2 z-10">
+          <div className="h-7 w-7 rounded-full bg-black/5 dark:bg-white/10 backdrop-blur-md flex items-center justify-center text-xs">
             <FeaturedIcon type={fn.icon} />
           </div>
-          <span className="text-xs font-medium text-white/90 drop-shadow-sm">
+          <span className="text-xs font-semibold tracking-wide drop-shadow-sm opacity-90 uppercase">
             {fn.author}
           </span>
         </div>
 
         {/* Content (bottom) */}
-        <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black/60 via-black/30 to-transparent z-10">
-          <h3 className="text-white font-semibold text-base leading-tight mb-1 drop-shadow-sm">
+        <div className="absolute bottom-0 left-0 right-0 p-6 z-10 text-left">
+          <h3 className="font-bold text-2xl tracking-tight leading-none mb-2 drop-shadow-sm opacity-100">
             {tf(fn.titleKey)}
           </h3>
-          <p className="text-white/70 text-xs leading-snug mb-2 line-clamp-2">
+          <p className="text-sm font-medium leading-snug opacity-80 mb-4 line-clamp-2">
             {tf(fn.descriptionKey)}
           </p>
-          <div className="flex items-center gap-2 text-xs text-white/60">
-            <span>{fn.date}</span>
-            <span className="text-white/30">&middot;</span>
+          <div className="flex items-center gap-3 text-xs font-semibold opacity-60">
+            <span className="bg-black/10 dark:bg-white/10 px-2 py-1 rounded-md">{fn.date}</span>
             <span className="flex items-center gap-1">
-              <svg className="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+              <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
               </svg>
               {fn.sourceCount} sources
             </span>
@@ -558,18 +555,18 @@ function FeaturedCarousel({
   }
 
   return (
-    <section className="animate-slide-up [animation-delay:100ms]">
-      <div className="flex items-center justify-between mb-4">
-        <h2 className="text-title">{t("featuredNotebooks")}</h2>
+    <section className="animate-slide-up [animation-delay:100ms] mb-8">
+      <div className="flex items-center justify-between mb-6">
+        <h2 className="text-2xl font-bold tracking-tight text-foreground">{t("featuredNotebooks")}</h2>
         <div className="flex items-center gap-2">
           {activeTab === "all" && (
             <button
               onClick={onSeeAll}
-              className="text-sm text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1"
+              className="text-sm font-semibold text-muted-foreground hover:text-primary transition-colors flex items-center gap-1"
             >
               {t("seeAll")}
               <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" />
               </svg>
             </button>
           )}
@@ -578,7 +575,7 @@ function FeaturedCarousel({
 
       {isGridMode ? (
         /* Grid layout for "Featured notebooks" tab */
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
           {notebooks.map((fn, i) => renderCard(fn, i, true))}
         </div>
       ) : (

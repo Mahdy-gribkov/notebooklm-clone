@@ -73,10 +73,10 @@ export function NotebookCard({ notebook, files = [], timedOut = false, onDelete,
   const isError = notebook.status === "error" || timedOut;
 
   return (
-    <div className="group relative rounded-2xl border bg-card overflow-hidden transition-all duration-200 shadow-sm shadow-black/[0.03] dark:shadow-none hover:shadow-lg hover:shadow-black/5 dark:hover:shadow-black/20 hover:-translate-y-0.5 min-h-[180px]">
+    <div className="group relative flex flex-col h-full rounded-2xl border bg-card overflow-hidden transition-all duration-200 shadow-sm shadow-black/[0.03] dark:shadow-none hover:shadow-lg hover:shadow-black/5 dark:hover:shadow-black/20 hover:-translate-y-0.5 min-h-[190px]">
       <Link
         href={isClickable ? `/notebook/${notebook.id}` : "#"}
-        className={`block p-5 ${!isClickable ? "pointer-events-none" : ""}`}
+        className={`flex flex-col flex-1 p-5 ${!isClickable ? "pointer-events-none" : ""}`}
         aria-disabled={!isClickable}
       >
         {/* Large icon */}
@@ -90,47 +90,51 @@ export function NotebookCard({ notebook, files = [], timedOut = false, onDelete,
         </h3>
 
         {/* Description */}
-        {(description || notebook.description) && (
-          <p className="text-xs text-muted-foreground line-clamp-1 mt-1 pr-4">
-            {description || notebook.description}
-          </p>
-        )}
-
-        {/* Meta row */}
-        <div className="flex items-center gap-2 mt-2.5">
-          <span className="text-caption">
-            {relativeTime(notebook.created_at)}
-          </span>
-          {files.length > 0 && (
-            <>
-              <span className="text-muted-foreground/30">&middot;</span>
-              <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
-                <svg className="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
-                </svg>
-                {t("sources", { count: files.length })}
-              </span>
-            </>
+        <div className="h-4 mt-1 mb-2">
+          {(description || notebook.description) && (
+            <p className="text-xs text-muted-foreground line-clamp-1 pr-4">
+              {description || notebook.description}
+            </p>
           )}
         </div>
 
-        {/* Status indicators */}
-        {isProcessing && (
-          <div className="flex items-center gap-1.5 mt-3">
-            <span className="h-1.5 w-1.5 rounded-full bg-primary animate-pulse" />
-            <span className="text-[11px] text-primary">{t("processing")}</span>
-          </div>
-        )}
-        {isError && (
-          <div className="flex items-center gap-1.5 mt-3">
-            <svg className="h-3 w-3 text-destructive" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4.5c-.77-.833-2.694-.833-3.464 0L3.34 16.5c-.77.833.192 2.5 1.732 2.5z" />
-            </svg>
-            <span className="text-[11px] text-destructive">
-              {timedOut ? t("timedOut") : t("failed")}
+        <div className="mt-auto">
+          {/* Meta row */}
+          <div className="flex items-center gap-2">
+            <span className="text-caption">
+              {relativeTime(notebook.created_at)}
             </span>
+            {files.length > 0 && (
+              <>
+                <span className="text-muted-foreground/30">&middot;</span>
+                <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
+                  <svg className="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                  </svg>
+                  {t("sources", { count: files.length })}
+                </span>
+              </>
+            )}
           </div>
-        )}
+
+          {/* Status indicators */}
+          {isProcessing && (
+            <div className="flex items-center gap-1.5 mt-3">
+              <span className="h-1.5 w-1.5 rounded-full bg-primary animate-pulse" />
+              <span className="text-[11px] text-primary">{t("processing")}</span>
+            </div>
+          )}
+          {isError && (
+            <div className="flex items-center gap-1.5 mt-3">
+              <svg className="h-3 w-3 text-destructive" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4.5c-.77-.833-2.694-.833-3.464 0L3.34 16.5c-.77.833.192 2.5 1.732 2.5z" />
+              </svg>
+              <span className="text-[11px] text-destructive">
+                {timedOut ? t("timedOut") : t("failed")}
+              </span>
+            </div>
+          )}
+        </div>
       </Link>
 
       {/* Kebab menu */}

@@ -72,11 +72,11 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
 
 const TYPE_STYLES: Record<ToastType, string> = {
   success:
-    "border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300",
+    "border-black/5 bg-[#F0F0EB] text-[#191919] dark:border-white/5 dark:bg-[#262626] dark:text-[#FAFAF7]",
   error:
-    "border-red-500/30 bg-red-500/10 text-red-700 dark:text-red-300",
+    "border-[#BF4D43]/20 bg-[#BF4D43]/10 text-[#BF4D43] dark:bg-[#BF4D43]/20",
   info:
-    "border-primary/30 bg-primary/10 text-primary",
+    "border-black/5 bg-[#F0F0EB] text-[#191919] dark:border-white/5 dark:bg-[#262626] dark:text-[#FAFAF7]",
 };
 
 const TYPE_ICONS: Record<ToastType, React.ReactNode> = {
@@ -115,9 +115,8 @@ function ToastItem({
 
   return (
     <div
-      className={`pointer-events-auto flex items-start gap-2.5 rounded-xl border px-4 py-3 shadow-lg backdrop-blur-md transition-all duration-300 min-w-[280px] max-w-[380px] ${
-        TYPE_STYLES[toast.type]
-      } ${exiting ? "opacity-0 translate-x-4" : "animate-slide-in-right"}`}
+      className={`pointer-events-auto relative flex items-start gap-2.5 rounded-xl border px-4 py-3 shadow-lg backdrop-blur-md transition-all duration-300 min-w-[280px] max-w-[380px] ${TYPE_STYLES[toast.type]
+        } ${exiting ? "opacity-0 translate-x-4" : "animate-slide-in-right"}`}
     >
       {TYPE_ICONS[toast.type]}
       <p className="text-sm font-medium flex-1">{toast.message}</p>

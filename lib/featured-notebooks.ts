@@ -2,7 +2,7 @@ export interface FeaturedNotebook {
   slug: string;
   titleKey: string;
   descriptionKey: string;
-  gradient: string;
+  bgClass: string;
   icon: string;
   author: string;
   date: string;
@@ -16,7 +16,7 @@ export const featuredNotebooks: FeaturedNotebook[] = [
     slug: "getting-started",
     titleKey: "gettingStarted",
     descriptionKey: "gettingStartedDesc",
-    gradient: "from-blue-500 via-cyan-500 to-teal-500",
+    bgClass: "bg-[#191919] text-[#FAFAF7]", // Slate Dark
     icon: "rocket",
     author: "DocChat Team",
     date: "Feb 2026",
@@ -27,7 +27,7 @@ export const featuredNotebooks: FeaturedNotebook[] = [
     slug: "research-analysis",
     titleKey: "researchAnalysis",
     descriptionKey: "researchAnalysisDesc",
-    gradient: "from-violet-600 via-purple-500 to-fuchsia-500",
+    bgClass: "bg-[#CC785C] text-[#FAFAF7]", // Book Cloth
     icon: "research",
     author: "DocChat Team",
     date: "Feb 2026",
@@ -38,7 +38,7 @@ export const featuredNotebooks: FeaturedNotebook[] = [
     slug: "meeting-organizer",
     titleKey: "meetingOrganizer",
     descriptionKey: "meetingOrganizerDesc",
-    gradient: "from-emerald-500 via-green-500 to-teal-400",
+    bgClass: "bg-[#D4A27F] text-[#191919]", // Kraft
     icon: "meeting",
     author: "DocChat Team",
     date: "Feb 2026",
@@ -49,7 +49,7 @@ export const featuredNotebooks: FeaturedNotebook[] = [
     slug: "study-guide",
     titleKey: "studyGuide",
     descriptionKey: "studyGuideDesc",
-    gradient: "from-amber-500 via-orange-500 to-red-400",
+    bgClass: "bg-[#40403E] text-[#FAFAF7]", // Slate Light
     icon: "study",
     author: "DocChat Team",
     date: "Feb 2026",
@@ -60,7 +60,7 @@ export const featuredNotebooks: FeaturedNotebook[] = [
     slug: "data-analysis",
     titleKey: "dataAnalysis",
     descriptionKey: "dataAnalysisDesc",
-    gradient: "from-indigo-600 via-blue-500 to-cyan-400",
+    bgClass: "bg-[#FAFAF7] text-[#191919] border border-black/5 dark:bg-[#262626] dark:text-[#FAFAF7] dark:border-white/5", // Ivory Light
     icon: "data",
     author: "DocChat Team",
     date: "Feb 2026",
@@ -71,7 +71,7 @@ export const featuredNotebooks: FeaturedNotebook[] = [
     slug: "legal-review",
     titleKey: "legalReview",
     descriptionKey: "legalReviewDesc",
-    gradient: "from-slate-600 via-gray-500 to-zinc-400",
+    bgClass: "bg-[#262626] text-[#FAFAF7]", // Slate Medium
     icon: "legal",
     author: "DocChat Team",
     date: "Feb 2026",
@@ -82,7 +82,7 @@ export const featuredNotebooks: FeaturedNotebook[] = [
     slug: "product-specs",
     titleKey: "productSpecs",
     descriptionKey: "productSpecsDesc",
-    gradient: "from-rose-500 via-pink-500 to-fuchsia-400",
+    bgClass: "bg-[#666666] text-[#FAFAF7]", // Cloud Dark
     icon: "product",
     author: "DocChat Team",
     date: "Feb 2026",
@@ -93,7 +93,7 @@ export const featuredNotebooks: FeaturedNotebook[] = [
     slug: "literature-review",
     titleKey: "literatureReview",
     descriptionKey: "literatureReviewDesc",
-    gradient: "from-teal-600 via-emerald-500 to-green-400",
+    bgClass: "bg-[#E5E4DF] text-[#191919] dark:bg-[#40403E] dark:text-[#FAFAF7]", // Ivory Dark
     icon: "literature",
     author: "DocChat Team",
     date: "Feb 2026",

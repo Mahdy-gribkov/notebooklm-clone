@@ -10,3 +10,7 @@ deploy.sh
 docker-compose*.yml
 Dockerfile
 .dockerignore
+__tests__
+vitest.config.ts
+coverage
+.vscode

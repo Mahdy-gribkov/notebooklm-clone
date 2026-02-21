@@ -26,7 +26,7 @@ DocChat is a NotebookLM-style research assistant. Upload PDFs, DOCX, text files,
 |-------|-----------|
 | Frontend | Next.js 16, React 19, TypeScript 5, Tailwind CSS v4, shadcn/ui |
 | AI/LLM | Groq (Llama 3.3 70B) with Gemini fallback, via Vercel AI SDK v4 |
-| Embeddings | Google text-embedding-004 (768-dim) via LangChain |
+| Embeddings | Google Gemini Embedding 001 (768-dim) |
 | Vector search | pgvector (cosine similarity) |
 | Database | Supabase PostgreSQL with Row-Level Security |
 | Auth | Supabase Auth (email, magic link, GitHub, Google) |
@@ -201,6 +201,10 @@ nginx/                       nginx reverse proxy config (for VPS deployments)
 | GET | /api/notebooks/[id]/generations | User | Studio generation history |
 | POST | /api/notebooks/[id]/audio | User | Generate audio overview |
 | POST | /api/studio | User | Generate studio content |
+| POST/DELETE | /api/user/avatar | User | Upload or remove avatar |
+| GET | /api/user/export | User | Download all user data as JSON |
+| PATCH | /api/user/preferences | User | Update display name, accent color |
+| DELETE | /api/account | User | Delete account and all data |
 | GET | /api/shared/[token] | None | Public notebook data |
 | POST | /api/shared/[token]/chat | None | Anonymous chat (3/hr/IP) |
 
@@ -210,7 +214,7 @@ nginx/                       nginx reverse proxy config (for VPS deployments)
 |----------|-------|-----|
 | Chat | 10/min | user_id |
 | File upload | 3/hr | user_id |
-| Studio generation | 5/hr | user_id |
+| Studio generation | 30/hr | user_id |
 | Share link creation | 10/hr | user_id |
 | Member invitation | 20/hr | user_id |
 | Export | 5/hr | user_id |

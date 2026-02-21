@@ -295,10 +295,9 @@ export default function SharedNotebookPage() {
             {data.notes.map((note) => (
               <div key={note.id} className="rounded-xl border bg-card p-5">
                 <h3 className="font-semibold">{note.title}</h3>
-                <div
-                  className="mt-2 text-sm text-muted-foreground prose prose-sm max-w-none"
-                  dangerouslySetInnerHTML={{ __html: note.content }}
-                />
+                <div className="mt-2 text-sm text-muted-foreground whitespace-pre-wrap">
+                  {note.content}
+                </div>
               </div>
             ))}
           </div>

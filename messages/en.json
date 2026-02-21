@@ -134,7 +134,12 @@
     "starter3": "What topics does this document cover?",
     "starter4": "What questions does this document answer?",
     "saveToNote": "Save to note",
-    "processingState": "Your sources are being processed..."
+    "processingState": "Your sources are being processed...",
+    "uploadToStart": "Upload a document to start chatting",
+    "uploadToStartDesc": "Drop files in the Sources panel or click Add Source.",
+    "uploadFirst": "Upload a document first...",
+    "browseFiles": "Browse files",
+    "uploading": "Uploading..."
   },
   "sources": {
     "title": "Sources",

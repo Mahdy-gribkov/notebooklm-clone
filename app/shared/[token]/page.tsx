@@ -106,13 +106,17 @@ export default function SharedNotebookPage() {
         for (const line of lines) {
           if (line.startsWith("0:")) {
             // ai SDK data stream text chunk
-            const text = JSON.parse(line.slice(2));
-            assistantContent += text;
-            setChatMessages((prev) => {
-              const updated = [...prev];
-              updated[updated.length - 1] = { role: "assistant", content: assistantContent };
-              return updated;
-            });
+            try {
+              const text = JSON.parse(line.slice(2));
+              assistantContent += text;
+              setChatMessages((prev) => {
+                const updated = [...prev];
+                updated[updated.length - 1] = { role: "assistant", content: assistantContent };
+                return updated;
+              });
+            } catch {
+              // Malformed stream chunk, skip
+            }
           }
         }
       }

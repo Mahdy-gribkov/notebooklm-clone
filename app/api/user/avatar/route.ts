@@ -42,7 +42,8 @@ export async function POST(request: Request) {
     );
   }
 
-  const ext = file.type.split("/")[1] === "jpeg" ? "jpg" : file.type.split("/")[1];
+  const extMap: Record<string, string> = { "image/jpeg": "jpg", "image/png": "png", "image/webp": "webp" };
+  const ext = extMap[file.type] ?? "jpg";
   const path = `${user.id}/avatar.${ext}`;
 
   // Delete old avatar if exists

@@ -134,7 +134,12 @@
     "starter3": "אילו נושאים המסמך מכסה?",
     "starter4": "על אילו שאלות המסמך עונה?",
     "saveToNote": "שמור להערה",
-    "processingState": "המקורות שלך מעובדים..."
+    "processingState": "המקורות שלך מעובדים...",
+    "uploadToStart": "העלה מסמך כדי להתחיל לשוחח",
+    "uploadToStartDesc": "גרור קבצים לפאנל המקורות או לחץ על הוסף מקור.",
+    "uploadFirst": "העלה מסמך תחילה...",
+    "browseFiles": "עיין בקבצים",
+    "uploading": "מעלה..."
   },
   "sources": {
     "title": "מקורות",

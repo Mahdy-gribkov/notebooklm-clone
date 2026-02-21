@@ -14,6 +14,9 @@ export async function generateSpeech(
     text = text.slice(0, 10_000);
   }
 
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 30_000);
+
   const res = await fetch(TTS_URL, {
     method: "POST",
     headers: {
@@ -26,7 +29,10 @@ export async function generateSpeech(
       voice,
       response_format: "mp3",
     }),
+    signal: controller.signal,
   });
+
+  clearTimeout(timeout);
 
   if (!res.ok) {
     const body = await res.text().catch(() => "");

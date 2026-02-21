@@ -15,13 +15,16 @@ interface ChatInterfaceProps {
   notebookId: string;
   initialMessages: Message[];
   isProcessing?: boolean;
+  hasFiles?: boolean;
 }
 
-export function ChatInterface({ notebookId, initialMessages, isProcessing = false }: ChatInterfaceProps) {
+export function ChatInterface({ notebookId, initialMessages, isProcessing = false, hasFiles = true }: ChatInterfaceProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [savedNoteId, setSavedNoteId] = useState<string | null>(null);
+  const [centerUploading, setCenterUploading] = useState(false);
   const t = useTranslations("chat");
 
   const starterPrompts = [
@@ -122,6 +125,25 @@ export function ChatInterface({ notebookId, initialMessages, isProcessing = fals
     }
   }, [notebookId]);
 
+  function handleCenterFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setCenterUploading(true);
+    const formData = new FormData();
+    formData.append("file", file);
+    fetch(`/api/notebooks/${notebookId}/files`, { method: "POST", body: formData })
+      .then((res) => {
+        if (res.ok) {
+          window.location.reload();
+        } else {
+          return res.json().then((b) => setErrorMessage(b.error ?? t("genericError")));
+        }
+      })
+      .catch(() => setErrorMessage(t("genericError")))
+      .finally(() => setCenterUploading(false));
+    e.target.value = "";
+  }
+
   const sourcesById = useMemo(
     () =>
       Object.fromEntries(
@@ -136,14 +158,14 @@ export function ChatInterface({ notebookId, initialMessages, isProcessing = fals
     <div className="flex h-full flex-col min-h-0">
       {/* Error toast - top right */}
       {errorMessage && (
-        <div className="fixed top-4 right-4 z-50 flex items-center gap-2 bg-destructive/10 border border-destructive/20 px-3 py-2.5 rounded-lg text-xs text-destructive animate-slide-up max-w-sm shadow-lg">
+        <div className="fixed top-4 end-4 z-50 flex items-center gap-2 bg-destructive/10 border border-destructive/20 px-3 py-2.5 rounded-lg text-xs text-destructive animate-slide-up max-w-sm shadow-lg">
           <svg className="h-4 w-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
           </svg>
           <span>{errorMessage}</span>
           <button
             onClick={() => setErrorMessage(null)}
-            className="ml-1 text-destructive/60 hover:text-destructive"
+            className="ms-1 text-destructive/60 hover:text-destructive"
           >
             <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -156,9 +178,41 @@ export function ChatInterface({ notebookId, initialMessages, isProcessing = fals
       <div ref={scrollRef} className="flex-1 overflow-y-auto min-h-0 scrollbar-thin">
         <div className="px-4 py-6">
           <div className="space-y-5 max-w-2xl lg:max-w-3xl mx-auto">
-            {messages.length === 0 && (
+            {messages.length === 0 && !hasFiles && !isProcessing && (
+              <div className="flex flex-col items-center py-20 text-center animate-fade-in">
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept=".pdf,.txt,.docx,.jpg,.jpeg,.png,.webp"
+                  className="hidden"
+                  onChange={handleCenterFileChange}
+                />
+                <div className="mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-muted/50 border border-dashed border-muted-foreground/20">
+                  <svg className="h-8 w-8 text-muted-foreground/30" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m3.75 9v6m3-3H9m1.5-12H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
+                  </svg>
+                </div>
+                <p className="text-base font-semibold mb-1">{t("uploadToStart")}</p>
+                <p className="text-sm text-muted-foreground mb-4">{t("uploadToStartDesc")}</p>
+                <button
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={centerUploading}
+                  className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-50"
+                >
+                  {centerUploading ? (
+                    <div className="h-4 w-4 rounded-full border-2 border-primary-foreground border-t-transparent animate-spin" />
+                  ) : (
+                    <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                    </svg>
+                  )}
+                  {centerUploading ? t("uploading") : t("browseFiles")}
+                </button>
+              </div>
+            )}
+
+            {messages.length === 0 && (hasFiles || isProcessing) && (
               <div className="flex flex-col items-center py-16 text-center animate-fade-in">
-                {/* Processing state */}
                 {isProcessing && (
                   <div className="flex items-center gap-2.5 mb-6 px-4 py-2.5 rounded-lg bg-amber-500/10 border border-amber-500/20">
                     <div className="h-4 w-4 rounded-full border-2 border-amber-500 border-t-transparent animate-spin shrink-0" />
@@ -191,7 +245,8 @@ export function ChatInterface({ notebookId, initialMessages, isProcessing = fals
                     <button
                       key={prompt.text}
                       onClick={() => handleStarterPrompt(prompt.text)}
-                      className="group flex items-start gap-2.5 rounded-xl border p-3 text-left text-xs text-muted-foreground hover:bg-accent/50 hover:text-foreground hover:border-primary/20 transition-all"
+                      disabled={isProcessing}
+                      className="group flex items-start gap-2.5 rounded-xl border p-3 text-left text-xs text-muted-foreground hover:bg-accent/50 hover:text-foreground hover:border-primary/20 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       <StarterIcon type={prompt.icon} />
                       <span className="leading-relaxed">{prompt.text}</span>
@@ -246,7 +301,7 @@ export function ChatInterface({ notebookId, initialMessages, isProcessing = fals
 
                         {/* Action buttons (AI messages only) */}
                         {!isUser && message.content && (
-                          <div className="absolute top-2 right-2 flex items-center gap-0.5 opacity-0 group-hover/msg:opacity-100 transition-opacity">
+                          <div className="absolute top-2 end-2 flex items-center gap-0.5 opacity-0 group-hover/msg:opacity-100 transition-opacity">
                             <button
                               onClick={() => copyMessage(message.id, message.content)}
                               className="p-1 rounded-md hover:bg-muted text-muted-foreground hover:text-foreground"
@@ -336,9 +391,9 @@ export function ChatInterface({ notebookId, initialMessages, isProcessing = fals
               value={input}
               onChange={handleInputChange}
               onKeyDown={handleKeyDown}
-              placeholder={t("placeholder")}
+              placeholder={!hasFiles && messages.length === 0 ? t("uploadFirst") : t("placeholder")}
               className="min-h-[48px] max-h-32 resize-none pr-4 rounded-xl border-border/60 focus:border-primary/40 transition-colors"
-              disabled={isLoading}
+              disabled={isLoading || (!hasFiles && messages.length === 0)}
               rows={1}
             />
           </div>

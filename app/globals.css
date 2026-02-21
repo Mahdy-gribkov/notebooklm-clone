@@ -309,10 +309,47 @@
   box-shadow: 0 8px 30px -5px oklch(0 0 0 / 0.4);
 }
 
+/* Hidden scrollbar (for carousels) */
+.scrollbar-none {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+}
+
+/* Carousel fade edges */
+.carousel-fade-edges {
+  mask-image: linear-gradient(to right, transparent, black 40px, black calc(100% - 40px), transparent);
+  -webkit-mask-image: linear-gradient(to right, transparent, black 40px, black calc(100% - 40px), transparent);
+}
+
 /* Toast progress bar */
 @keyframes toast-progress {
   from { width: 100%; }
   to { width: 0%; }
+}
+
+/* RTL layout overrides */
+[dir="rtl"] .animate-slide-in-left {
+  animation-name: slide-in-right;
+}
+[dir="rtl"] .animate-slide-in-right {
+  animation-name: slide-in-left;
+}
+
+/* Flip chat bubble corners in RTL */
+[dir="rtl"] .rounded-br-md {
+  border-radius: 1rem 1rem 1rem 0.375rem;
+}
+[dir="rtl"] .rounded-bl-md {
+  border-radius: 1rem 1rem 0.375rem 1rem;
+}
+
+/* Flip carousel fade edges in RTL */
+[dir="rtl"] .carousel-fade-edges {
+  mask-image: linear-gradient(to left, transparent, black 40px, black calc(100% - 40px), transparent);
+  -webkit-mask-image: linear-gradient(to left, transparent, black 40px, black calc(100% - 40px), transparent);
 }
 
 /* Respect reduced motion preference */

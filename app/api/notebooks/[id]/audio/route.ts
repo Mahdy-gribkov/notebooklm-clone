@@ -66,7 +66,7 @@ export async function POST(
 
     if (!documentText.trim()) {
       return NextResponse.json(
-        { error: "No document content available" },
+        { error: "Upload documents first to generate an audio overview." },
         { status: 400 }
       );
     }

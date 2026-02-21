@@ -17,6 +17,8 @@ const StudioPanel = dynamic(
   }
 );
 import { ThemeToggle } from "@/components/theme-toggle";
+import { LanguageToggle } from "@/components/language-toggle";
+import { ShareDialog } from "@/components/share-dialog";
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import type { Message, NotebookFile } from "@/types";
@@ -35,7 +37,9 @@ export function NotebookLayout({ notebookId, notebookTitle, notebookFiles, initi
   const [title, setTitle] = useState(notebookTitle);
   const [editingTitle, setEditingTitle] = useState(false);
   const [editValue, setEditValue] = useState(notebookTitle);
+  const [shareOpen, setShareOpen] = useState(false);
   const t = useTranslations("notebook");
+  const ts = useTranslations("share");
 
   const toggleSources = useCallback(() => {
     setSourcesOpen((prev) => !prev);
@@ -164,16 +168,31 @@ export function NotebookLayout({ notebookId, notebookTitle, notebookFiles, initi
             {t("studio")}
           </button>
 
+          {/* Share button */}
+          <button
+            onClick={() => setShareOpen(true)}
+            className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-accent transition-all"
+            aria-label={ts("title")}
+          >
+            <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+            </svg>
+            <span className="hidden sm:inline">{ts("title")}</span>
+          </button>
+
+          <LanguageToggle />
           <ThemeToggle />
         </div>
       </header>
+
+      <ShareDialog notebookId={notebookId} open={shareOpen} onClose={() => setShareOpen(false)} />
 
       {/* Main content: three-panel layout */}
       <div className="flex flex-1 overflow-hidden min-h-0">
         {/* Left: Sources panel (desktop lg+) */}
         <div
-          className={`hidden lg:flex flex-col border-r bg-background shrink-0 transition-[width] duration-300 ease-in-out overflow-hidden ${
-            sourcesOpen ? "w-[260px]" : "w-0 border-r-0"
+          className={`hidden lg:flex flex-col border-e bg-background shrink-0 transition-[width] duration-300 ease-in-out overflow-hidden ${
+            sourcesOpen ? "w-[260px]" : "w-0 border-e-0"
           }`}
         >
           <div className="w-[260px] h-full min-w-[260px]">
@@ -187,13 +206,14 @@ export function NotebookLayout({ notebookId, notebookTitle, notebookFiles, initi
             notebookId={notebookId}
             initialMessages={initialMessages}
             isProcessing={hasProcessingFiles && !hasReadyFiles}
+            hasFiles={notebookFiles.length > 0}
           />
         </div>
 
         {/* Right: Studio panel (desktop lg+) */}
         <div
-          className={`hidden lg:flex flex-col border-l bg-background shrink-0 transition-[width] duration-300 ease-in-out overflow-hidden ${
-            studioOpen ? "w-[320px]" : "w-0 border-l-0"
+          className={`hidden lg:flex flex-col border-s bg-background shrink-0 transition-[width] duration-300 ease-in-out overflow-hidden ${
+            studioOpen ? "w-[320px]" : "w-0 border-s-0"
           }`}
         >
           <div className="w-[320px] h-full min-w-[320px]">
@@ -208,7 +228,7 @@ export function NotebookLayout({ notebookId, notebookTitle, notebookFiles, initi
               className="absolute inset-0 bg-black/40 backdrop-blur-sm animate-fade-in"
               onClick={closeMobilePanel}
             />
-            <div className="absolute left-0 top-0 bottom-0 w-[90vw] max-w-[320px] bg-background border-r shadow-2xl animate-slide-in-left">
+            <div className="absolute inset-inline-start-0 top-0 bottom-0 w-[90vw] max-w-[320px] bg-background border-e shadow-2xl animate-slide-in-left">
               <div className="flex items-center justify-between border-b px-4 py-3">
                 <h2 className="text-sm font-semibold">{t("sources")}</h2>
                 <button
@@ -234,7 +254,7 @@ export function NotebookLayout({ notebookId, notebookTitle, notebookFiles, initi
               className="absolute inset-0 bg-black/40 backdrop-blur-sm animate-fade-in"
               onClick={closeMobilePanel}
             />
-            <div className="absolute right-0 top-0 bottom-0 w-[90vw] max-w-[420px] bg-background border-l shadow-2xl animate-slide-in-right">
+            <div className="absolute inset-inline-end-0 top-0 bottom-0 w-[90vw] max-w-[420px] bg-background border-s shadow-2xl animate-slide-in-right">
               <div className="flex items-center justify-between border-b px-4 py-3">
                 <h2 className="text-sm font-semibold">{t("studio")}</h2>
                 <button
@@ -258,7 +278,7 @@ export function NotebookLayout({ notebookId, notebookTitle, notebookFiles, initi
           <>
             <button
               onClick={openMobileSources}
-              className="lg:hidden fixed bottom-24 left-4 z-40 flex h-12 w-12 items-center justify-center rounded-full bg-secondary text-secondary-foreground shadow-lg hover:shadow-xl transition-all hover:scale-105 active:scale-95"
+              className="lg:hidden fixed bottom-24 start-4 z-40 flex h-12 w-12 items-center justify-center rounded-full bg-secondary text-secondary-foreground shadow-lg hover:shadow-xl transition-all hover:scale-105 active:scale-95"
               aria-label={t("sources")}
             >
               <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -268,7 +288,7 @@ export function NotebookLayout({ notebookId, notebookTitle, notebookFiles, initi
 
             <button
               onClick={openMobileStudio}
-              className="lg:hidden fixed bottom-24 right-4 z-40 flex h-12 w-12 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg hover:shadow-xl transition-all hover:scale-105 active:scale-95"
+              className="lg:hidden fixed bottom-24 end-4 z-40 flex h-12 w-12 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg hover:shadow-xl transition-all hover:scale-105 active:scale-95"
               aria-label={t("studio")}
             >
               <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

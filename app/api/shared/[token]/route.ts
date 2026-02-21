@@ -7,7 +7,10 @@ export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ token: string }> }
 ) {
-  const ip = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
+  // x-real-ip is set by Vercel/reverse proxies; x-forwarded-for can be spoofed in some configs
+  const ip = request.headers.get("x-real-ip")
+    || request.headers.get("x-forwarded-for")?.split(",")[0]?.trim()
+    || "unknown";
   if (!checkRateLimit(`ip:${ip}:shared`, 30, 60_000)) {
     return NextResponse.json(
       { error: "Too many requests. Please slow down." },

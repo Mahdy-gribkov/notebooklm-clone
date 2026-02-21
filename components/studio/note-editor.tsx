@@ -38,6 +38,7 @@ export function NoteEditor({ note, notebookId, onBack, onUpdate, onDelete }: Not
   const savedTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const editor = useEditor({
+    immediatelyRender: false,
     extensions: [
       StarterKit,
       Placeholder.configure({ placeholder: t("notePlaceholder") }),

@@ -23,7 +23,10 @@ export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ token: string }> }
 ) {
-  const ip = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
+  // x-real-ip is set by Vercel/reverse proxies; x-forwarded-for can be spoofed in some configs
+  const ip = request.headers.get("x-real-ip")
+    || request.headers.get("x-forwarded-for")?.split(",")[0]?.trim()
+    || "unknown";
 
   // Strict rate limit for anonymous: 3 messages per hour per IP
   if (!checkRateLimit(`ip:${ip}:shared-chat`, 3, 3_600_000)) {

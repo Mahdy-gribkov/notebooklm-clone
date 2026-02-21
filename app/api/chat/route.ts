@@ -121,7 +121,7 @@ export async function POST(request: Request) {
 
   const contextBlock = sources.length > 0
     ? `\n\n===BEGIN DOCUMENT===\n${context}\n===END DOCUMENT===`
-    : "\n\n(No relevant passages were found for this query.)";
+    : "\n\nThe user has not uploaded any documents yet, or no relevant passages matched their query. Politely tell them to upload documents or try a different question. Do not mention internal systems, formatting markers, or how retrieval works.";
 
   // Append AI style instruction based on user preference
   const aiStyle = user.user_metadata?.ai_style as string | undefined;

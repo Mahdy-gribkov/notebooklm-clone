@@ -12,6 +12,7 @@ import { featuredNotebooks } from "@/lib/featured-notebooks";
 import type { FeaturedNotebook } from "@/lib/featured-notebooks";
 import { useToast } from "@/components/toast";
 import { Logo } from "@/components/logo";
+import { LanguageToggle } from "@/components/language-toggle";
 import type { Notebook, NotebookFile } from "@/types";
 import { useTranslations } from "next-intl";
 import {
@@ -111,8 +112,28 @@ export default function DashboardPage() {
     }
   }
 
-  function handleOpenFeatured(slug: string) {
-    router.push(`/notebook/featured/${slug}`);
+  const [cloningSlug, setCloningSlug] = useState<string | null>(null);
+
+  async function handleOpenFeatured(slug: string) {
+    if (cloningSlug) return;
+    setCloningSlug(slug);
+    try {
+      const res = await fetch("/api/notebooks/clone-featured", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ slug }),
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error || "Clone failed");
+      }
+      const { notebookId } = await res.json();
+      router.push(`/notebook/${notebookId}`);
+    } catch (e) {
+      console.error("[dashboard] Clone featured failed:", e);
+      addToast("Failed to open featured notebook. Try again.", "error");
+      setCloningSlug(null);
+    }
   }
 
   function handleNotebookDeleted(id: string) {
@@ -218,6 +239,7 @@ export default function DashboardPage() {
         <div className="mx-auto flex max-w-6xl items-center justify-between px-4 sm:px-6 lg:px-8 py-3">
           <Logo />
           <div className="flex items-center gap-2">
+            <LanguageToggle />
             <ThemeToggle />
             {userEmail && <UserDropdown email={userEmail} avatarUrl={userAvatar} />}
           </div>
@@ -500,7 +522,7 @@ function FeaturedCarousel({
         {canScrollLeft && (
           <button
             onClick={() => scroll("left")}
-            className="absolute left-0 top-1/2 -translate-y-1/2 z-20 h-10 w-10 rounded-full bg-background/90 border shadow-lg flex items-center justify-center text-foreground opacity-0 group-hover/carousel:opacity-100 transition-opacity -translate-x-1/2 hover:bg-background"
+            className="absolute left-0 top-1/2 -translate-y-1/2 z-20 h-10 w-10 rounded-full bg-background/90 border shadow-lg flex items-center justify-center text-foreground transition-opacity -translate-x-1/2 hover:bg-background hidden sm:flex"
             aria-label="Scroll left"
           >
             <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -513,7 +535,7 @@ function FeaturedCarousel({
         {canScrollRight && (
           <button
             onClick={() => scroll("right")}
-            className="absolute right-0 top-1/2 -translate-y-1/2 z-20 h-10 w-10 rounded-full bg-background/90 border shadow-lg flex items-center justify-center text-foreground opacity-0 group-hover/carousel:opacity-100 transition-opacity translate-x-1/2 hover:bg-background"
+            className="absolute right-0 top-1/2 -translate-y-1/2 z-20 h-10 w-10 rounded-full bg-background/90 border shadow-lg flex items-center justify-center text-foreground transition-opacity translate-x-1/2 hover:bg-background hidden sm:flex"
             aria-label="Scroll right"
           >
             <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -525,15 +547,15 @@ function FeaturedCarousel({
         {/* Cards container */}
         <div
           ref={scrollRef}
-          className="flex gap-4 overflow-x-auto pb-3 scrollbar-thin"
+          className="flex gap-4 overflow-x-auto pb-3 scrollbar-none carousel-fade-edges"
           style={{ scrollSnapType: "x mandatory" }}
         >
           {notebooks.map((fn, i) => (
             <button
               key={fn.slug}
               onClick={() => onOpenFeatured(fn.slug)}
-              className="relative shrink-0 rounded-xl overflow-hidden group hover:scale-[1.02] transition-transform featured-shadow cursor-pointer"
-              style={{ width: CARD_WIDTH, height: 200, scrollSnapAlign: "start", animationDelay: `${i * 60}ms` }}
+              className="relative shrink-0 rounded-xl overflow-hidden group hover:scale-[1.02] hover:shadow-xl transition-all duration-200 featured-shadow cursor-pointer"
+              style={{ width: CARD_WIDTH, height: 220, scrollSnapAlign: "start", animationDelay: `${i * 60}ms` }}
             >
               {/* Gradient background */}
               <div className={`absolute inset-0 bg-gradient-to-br ${fn.gradient}`} />

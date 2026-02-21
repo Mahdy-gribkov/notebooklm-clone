@@ -113,11 +113,10 @@ export function NotebookLayout({ notebookId, notebookTitle, notebookFiles, initi
           {/* Desktop sources toggle */}
           <button
             onClick={toggleSources}
-            className={`hidden lg:flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium transition-all ${
-              sourcesOpen
+            className={`hidden lg:flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium transition-all ${sourcesOpen
                 ? "bg-primary/10 text-primary border border-primary/20"
                 : "text-muted-foreground hover:text-foreground hover:bg-accent"
-            }`}
+              }`}
           >
             <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
@@ -156,11 +155,10 @@ export function NotebookLayout({ notebookId, notebookTitle, notebookFiles, initi
           {/* Desktop studio toggle */}
           <button
             onClick={toggleStudio}
-            className={`hidden lg:flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium transition-all ${
-              studioOpen
+            className={`hidden lg:flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium transition-all ${studioOpen
                 ? "bg-primary/10 text-primary border border-primary/20"
                 : "text-muted-foreground hover:text-foreground hover:bg-accent"
-            }`}
+              }`}
           >
             <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M9.75 3.104v5.714a2.25 2.25 0 01-.659 1.591L5 14.5M9.75 3.104c-.251.023-.501.05-.75.082m.75-.082a24.301 24.301 0 014.5 0m0 0v5.714a2.25 2.25 0 00.659 1.591L19 14.5M14.25 3.104c.251.023.501.05.75.082M19 14.5l-2.47 2.47a2.25 2.25 0 00-.659 1.59v1.69m-11.742 0A2.923 2.923 0 005 19.748V21" />
@@ -191,9 +189,8 @@ export function NotebookLayout({ notebookId, notebookTitle, notebookFiles, initi
       <div className="flex flex-1 overflow-hidden min-h-0">
         {/* Left: Sources panel (desktop lg+) */}
         <div
-          className={`hidden lg:flex flex-col border-e bg-background shrink-0 transition-[width] duration-300 ease-in-out overflow-hidden ${
-            sourcesOpen ? "w-[260px]" : "w-0 border-e-0"
-          }`}
+          className={`hidden lg:flex flex-col border-e bg-background shrink-0 transition-[width] duration-300 ease-in-out overflow-hidden ${sourcesOpen ? "w-[260px]" : "w-0 border-e-0"
+            }`}
         >
           <div className="w-[260px] h-full min-w-[260px]">
             <SourcesPanel notebookId={notebookId} initialFiles={notebookFiles} />
@@ -212,9 +209,8 @@ export function NotebookLayout({ notebookId, notebookTitle, notebookFiles, initi
 
         {/* Right: Studio panel (desktop lg+) */}
         <div
-          className={`hidden lg:flex flex-col border-s bg-background shrink-0 transition-[width] duration-300 ease-in-out overflow-hidden ${
-            studioOpen ? "w-[320px]" : "w-0 border-s-0"
-          }`}
+          className={`hidden lg:flex flex-col border-s bg-background shrink-0 transition-[width] duration-300 ease-in-out overflow-hidden ${studioOpen ? "w-[320px]" : "w-0 border-s-0"
+            }`}
         >
           <div className="w-[320px] h-full min-w-[320px]">
             <StudioPanel notebookId={notebookId} />
@@ -228,7 +224,7 @@ export function NotebookLayout({ notebookId, notebookTitle, notebookFiles, initi
               className="absolute inset-0 bg-black/40 backdrop-blur-sm animate-fade-in"
               onClick={closeMobilePanel}
             />
-            <div className="absolute inset-inline-start-0 top-0 bottom-0 w-[90vw] max-w-[320px] bg-background border-e shadow-2xl animate-slide-in-left">
+            <div className="absolute inset-inline-start-0 top-0 bottom-0 w-[90vw] max-w-[320px] bg-background border-e shadow-xl shadow-black/[0.05] animate-slide-in-left">
               <div className="flex items-center justify-between border-b px-4 py-3">
                 <h2 className="text-sm font-semibold">{t("sources")}</h2>
                 <button
@@ -254,7 +250,7 @@ export function NotebookLayout({ notebookId, notebookTitle, notebookFiles, initi
               className="absolute inset-0 bg-black/40 backdrop-blur-sm animate-fade-in"
               onClick={closeMobilePanel}
             />
-            <div className="absolute inset-inline-end-0 top-0 bottom-0 w-[90vw] max-w-[420px] bg-background border-s shadow-2xl animate-slide-in-right">
+            <div className="absolute inset-inline-end-0 top-0 bottom-0 w-[90vw] max-w-[420px] bg-background border-s shadow-xl shadow-black/[0.05] animate-slide-in-right">
               <div className="flex items-center justify-between border-b px-4 py-3">
                 <h2 className="text-sm font-semibold">{t("studio")}</h2>
                 <button

@@ -255,11 +255,10 @@ export default function DashboardPage() {
               <button
                 key={tab.key}
                 onClick={() => setActiveTab(tab.key)}
-                className={`px-4 py-2 text-sm font-medium rounded-lg transition-all ${
-                  activeTab === tab.key
-                    ? "bg-accent text-foreground"
+                className={`px-4 py-2 text-sm font-medium rounded-lg transition-all duration-300 ease-out ${activeTab === tab.key
+                    ? "bg-primary text-primary-foreground shadow-sm shadow-black/[0.02] hover:-translate-y-0.5"
                     : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
-                }`}
+                  }`}
               >
                 {tab.label}
               </button>
@@ -274,9 +273,8 @@ export default function DashboardPage() {
                 <button
                   key={d}
                   onClick={() => handleDensityChange(d)}
-                  className={`h-9 w-9 flex items-center justify-center transition-colors ${
-                    gridDensity === d ? "text-foreground bg-accent" : "text-muted-foreground hover:text-foreground"
-                  } ${d === "compact" ? "rounded-l-lg" : d === "spacious" ? "rounded-r-lg" : ""}`}
+                  className={`h-9 w-9 flex items-center justify-center transition-all duration-300 ease-out ${gridDensity === d ? "text-primary bg-primary/10" : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
+                    } ${d === "compact" ? "rounded-l-lg" : d === "spacious" ? "rounded-r-lg" : ""}`}
                   title={d.charAt(0).toUpperCase() + d.slice(1)}
                   aria-label={`${d} grid layout`}
                 >
@@ -401,7 +399,7 @@ export default function DashboardPage() {
                 <button
                   onClick={handleCreateNotebook}
                   disabled={creatingNotebook}
-                  className="flex flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed border-muted-foreground/20 bg-transparent p-6 text-muted-foreground hover:border-primary/40 hover:text-primary hover:bg-primary/[0.02] transition-all duration-200 min-h-[140px] cursor-pointer disabled:opacity-50"
+                  className="flex flex-col items-center justify-center gap-3 rounded-2xl border border-dashed border-primary/20 bg-primary/[0.02] p-6 text-primary hover:border-primary/40 hover:bg-primary/[0.04] transition-all duration-300 ease-out min-h-[140px] cursor-pointer disabled:opacity-50 hover:shadow-lg hover:shadow-primary/5 hover:-translate-y-0.5"
                 >
                   <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-muted/50">
                     <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -628,11 +626,10 @@ function FeaturedCarousel({
               <button
                 key={fn.slug}
                 onClick={() => scrollToIndex(i)}
-                className={`h-2 rounded-full transition-all ${
-                  i === activeIndex
+                className={`h-2 rounded-full transition-all ${i === activeIndex
                     ? "w-6 bg-primary"
                     : "w-2 bg-muted-foreground/20 hover:bg-muted-foreground/40"
-                }`}
+                  }`}
                 aria-label={`Go to ${tf(fn.titleKey)}`}
               />
             ))}

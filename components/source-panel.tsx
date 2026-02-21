@@ -56,9 +56,8 @@ export function SourcePanel({ sources }: SourcePanelProps) {
             <div className="flex items-center justify-between gap-2 mb-1.5">
               <span className="text-xs font-medium flex items-center gap-1.5">
                 <svg
-                  className={`h-3 w-3 shrink-0 text-muted-foreground transition-transform ${
-                    expanded === i ? "rotate-90" : ""
-                  }`}
+                  className={`h-3 w-3 shrink-0 text-muted-foreground transition-transform ${expanded === i ? "rotate-90" : ""
+                    }`}
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -86,7 +85,7 @@ export function SourcePanel({ sources }: SourcePanelProps) {
                   aria-label={t("copySource")}
                 >
                   {copiedIdx === i ? (
-                    <svg className="h-3 w-3 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className="h-3 w-3 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                     </svg>
                   ) : (

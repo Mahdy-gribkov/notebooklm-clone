@@ -214,9 +214,9 @@ export function ChatInterface({ notebookId, initialMessages, isProcessing = fals
             {messages.length === 0 && (hasFiles || isProcessing) && (
               <div className="flex flex-col items-center py-16 text-center animate-fade-in">
                 {isProcessing && (
-                  <div className="flex items-center gap-2.5 mb-6 px-4 py-2.5 rounded-lg bg-amber-500/10 border border-amber-500/20">
-                    <div className="h-4 w-4 rounded-full border-2 border-amber-500 border-t-transparent animate-spin shrink-0" />
-                    <span className="text-xs text-amber-600 dark:text-amber-400">{t("processingState")}</span>
+                  <div className="flex items-center gap-2.5 mb-6 px-4 py-2.5 rounded-xl bg-primary/10 border border-primary/20">
+                    <div className="h-4 w-4 rounded-full border-2 border-primary border-t-transparent animate-spin shrink-0" />
+                    <span className="text-xs text-primary">{t("processingState")}</span>
                   </div>
                 )}
                 <div className="mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/5">
@@ -278,16 +278,14 @@ export function ChatInterface({ notebookId, initialMessages, isProcessing = fals
                       </div>
                     )}
                     <div
-                      className={`space-y-2.5 ${
-                        isUser ? "items-end" : "items-start"
-                      } flex flex-col min-w-0`}
+                      className={`space-y-2.5 ${isUser ? "items-end" : "items-start"
+                        } flex flex-col min-w-0`}
                     >
                       <div
-                        className={`group/msg relative rounded-2xl px-4 py-3 text-sm leading-relaxed ${
-                          isUser
-                            ? "bg-gradient-to-br from-primary to-[oklch(0.40_0.16_250)] text-white rounded-br-md shadow-sm"
-                            : "bg-muted/40 border rounded-bl-md"
-                        }`}
+                        className={`group/msg relative rounded-2xl px-5 py-3.5 text-sm leading-relaxed ${isUser
+                            ? "bg-primary text-primary-foreground rounded-br-md shadow-sm shadow-black/[0.04]"
+                            : "bg-muted/30 border border-border/50 rounded-bl-md shadow-sm shadow-black/[0.02] dark:shadow-none"
+                          }`}
                       >
                         {isUser ? (
                           <p className="whitespace-pre-wrap break-words">{message.content}</p>

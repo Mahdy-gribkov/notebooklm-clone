@@ -331,19 +331,18 @@ export default function SettingsPage() {
                 <p className="text-xs text-muted-foreground mb-3">{t("accentColorDesc")}</p>
                 <div className="flex gap-2.5">
                   {[
-                    { hue: 250, label: "Blue", color: "bg-blue-500" },
-                    { hue: 290, label: "Violet", color: "bg-violet-500" },
-                    { hue: 350, label: "Rose", color: "bg-rose-500" },
-                    { hue: 80, label: "Amber", color: "bg-amber-500" },
-                    { hue: 155, label: "Emerald", color: "bg-emerald-500" },
-                    { hue: 200, label: "Cyan", color: "bg-cyan-500" },
+                    { hue: 250, label: "Blue", color: "bg-[oklch(0.62_0.12_250)]" },
+                    { hue: 290, label: "Violet", color: "bg-[oklch(0.62_0.12_290)]" },
+                    { hue: 350, label: "Rose", color: "bg-[oklch(0.62_0.12_350)]" },
+                    { hue: 45, label: "Amber", color: "bg-[oklch(0.62_0.12_45)]" },
+                    { hue: 155, label: "Emerald", color: "bg-[oklch(0.62_0.12_155)]" },
+                    { hue: 200, label: "Cyan", color: "bg-[oklch(0.62_0.12_200)]" },
                   ].map((swatch) => (
                     <button
                       key={swatch.hue}
                       onClick={() => handleAccentChange(swatch.hue)}
-                      className={`h-8 w-8 rounded-full ${swatch.color} flex items-center justify-center transition-transform hover:scale-110 ${
-                        accentHue === swatch.hue ? "ring-2 ring-offset-2 ring-offset-card ring-foreground/30 scale-110" : ""
-                      }`}
+                      className={`h-8 w-8 rounded-full ${swatch.color} flex items-center justify-center transition-transform hover:scale-110 ${accentHue === swatch.hue ? "ring-2 ring-offset-2 ring-offset-card ring-foreground/30 scale-110" : ""
+                        }`}
                       title={swatch.label}
                       aria-label={`${swatch.label} accent color`}
                     >
@@ -369,21 +368,19 @@ export default function SettingsPage() {
                 <div className="flex gap-1">
                   <button
                     onClick={() => handleLocaleChange("en")}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
-                      locale === "en"
+                    className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${locale === "en"
                         ? "bg-primary/10 text-primary border border-primary/20"
                         : "text-muted-foreground hover:text-foreground hover:bg-accent"
-                    }`}
+                      }`}
                   >
                     {t("english")}
                   </button>
                   <button
                     onClick={() => handleLocaleChange("he")}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
-                      locale === "he"
+                    className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${locale === "he"
                         ? "bg-primary/10 text-primary border border-primary/20"
                         : "text-muted-foreground hover:text-foreground hover:bg-accent"
-                    }`}
+                      }`}
                   >
                     {t("hebrew")}
                   </button>
@@ -406,15 +403,13 @@ export default function SettingsPage() {
                   key={style.key}
                   onClick={() => handleAIStyleChange(style.key)}
                   disabled={savingPrefs}
-                  className={`w-full flex items-center gap-3 rounded-lg px-3 py-2.5 text-left transition-colors ${
-                    aiStyle === style.key
+                  className={`w-full flex items-center gap-3 rounded-lg px-3 py-2.5 text-left transition-colors ${aiStyle === style.key
                       ? "bg-primary/10 border border-primary/20"
                       : "hover:bg-accent/50 border border-transparent"
-                  }`}
+                    }`}
                 >
-                  <div className={`h-4 w-4 rounded-full border-2 flex items-center justify-center shrink-0 ${
-                    aiStyle === style.key ? "border-primary" : "border-muted-foreground/30"
-                  }`}>
+                  <div className={`h-4 w-4 rounded-full border-2 flex items-center justify-center shrink-0 ${aiStyle === style.key ? "border-primary" : "border-muted-foreground/30"
+                    }`}>
                     {aiStyle === style.key && <div className="h-2 w-2 rounded-full bg-primary" />}
                   </div>
                   <div>

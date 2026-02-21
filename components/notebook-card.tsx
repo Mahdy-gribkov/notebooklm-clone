@@ -20,14 +20,12 @@ interface NotebookCardProps {
 }
 
 const ICON_COLORS = [
-  "bg-blue-500/15 text-blue-600 dark:text-blue-400",
-  "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400",
-  "bg-violet-500/15 text-violet-600 dark:text-violet-400",
-  "bg-amber-500/15 text-amber-600 dark:text-amber-400",
-  "bg-rose-500/15 text-rose-600 dark:text-rose-400",
-  "bg-cyan-500/15 text-cyan-600 dark:text-cyan-400",
-  "bg-orange-500/15 text-orange-600 dark:text-orange-400",
-  "bg-pink-500/15 text-pink-600 dark:text-pink-400",
+  "bg-[oklch(0.62_0.12_45)]/10 text-[oklch(0.62_0.12_45)] dark:text-[oklch(0.70_0.10_50)]",
+  "bg-[oklch(0.48_0.006_90)]/10 text-[oklch(0.48_0.006_90)] dark:text-[oklch(0.63_0.006_90)]",
+  "bg-[oklch(0.91_0.008_85)]/40 text-[oklch(0.40_0.005_90)] dark:bg-[oklch(0.24_0.005_90)] dark:text-[oklch(0.80_0.005_90)]",
+  "bg-[oklch(0.70_0.10_50)]/10 text-[oklch(0.70_0.10_50)] dark:text-[oklch(0.80_0.12_50)]",
+  "bg-[oklch(0.55_0.18_25)]/10 text-[oklch(0.55_0.18_25)] dark:text-[oklch(0.60_0.18_25)]",
+  "bg-primary/10 text-primary dark:text-primary",
 ];
 
 function hashTitle(title: string): number {
@@ -119,16 +117,16 @@ export function NotebookCard({ notebook, files = [], timedOut = false, onDelete,
         {/* Status indicators */}
         {isProcessing && (
           <div className="flex items-center gap-1.5 mt-3">
-            <span className="h-1.5 w-1.5 rounded-full bg-amber-500 animate-pulse" />
-            <span className="text-[11px] text-amber-600 dark:text-amber-400">{t("processing")}</span>
+            <span className="h-1.5 w-1.5 rounded-full bg-primary animate-pulse" />
+            <span className="text-[11px] text-primary">{t("processing")}</span>
           </div>
         )}
         {isError && (
           <div className="flex items-center gap-1.5 mt-3">
-            <svg className="h-3 w-3 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="h-3 w-3 text-destructive" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4.5c-.77-.833-2.694-.833-3.464 0L3.34 16.5c-.77.833.192 2.5 1.732 2.5z" />
             </svg>
-            <span className="text-[11px] text-red-600 dark:text-red-400">
+            <span className="text-[11px] text-destructive">
               {timedOut ? t("timedOut") : t("failed")}
             </span>
           </div>

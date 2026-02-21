@@ -250,16 +250,16 @@ function LoginContent() {
 
           {signUpDone ? (
             <div className="space-y-4 animate-slide-up">
-              <div className="rounded-xl border border-green-500/20 bg-green-500/5 px-4 py-4">
+              <div className="rounded-xl border border-primary/20 bg-primary/5 px-4 py-4">
                 <div className="flex items-start gap-3">
-                  <div className="mt-0.5 flex h-5 w-5 items-center justify-center rounded-full bg-green-500/10">
-                    <CheckIcon className="h-3 w-3 text-green-600 dark:text-green-400" />
+                  <div className="mt-0.5 flex h-5 w-5 items-center justify-center rounded-full bg-primary/10">
+                    <CheckIcon className="h-3 w-3 text-primary" />
                   </div>
                   <div>
-                    <p className="text-sm font-medium text-green-800 dark:text-green-300">
+                    <p className="text-sm font-medium text-foreground">
                       {t("signUpSuccess")}
                     </p>
-                    <p className="mt-1 text-sm text-green-700 dark:text-green-400">
+                    <p className="mt-1 text-sm text-primary">
                       {email}
                     </p>
                   </div>
@@ -274,16 +274,16 @@ function LoginContent() {
             </div>
           ) : sent ? (
             <div className="space-y-4 animate-slide-up">
-              <div className="rounded-xl border border-green-500/20 bg-green-500/5 px-4 py-4">
+              <div className="rounded-xl border border-primary/20 bg-primary/5 px-4 py-4">
                 <div className="flex items-start gap-3">
-                  <div className="mt-0.5 flex h-5 w-5 items-center justify-center rounded-full bg-green-500/10">
-                    <CheckIcon className="h-3 w-3 text-green-600 dark:text-green-400" />
+                  <div className="mt-0.5 flex h-5 w-5 items-center justify-center rounded-full bg-primary/10">
+                    <CheckIcon className="h-3 w-3 text-primary" />
                   </div>
                   <div>
-                    <p className="text-sm font-medium text-green-800 dark:text-green-300">
+                    <p className="text-sm font-medium text-foreground">
                       {t("checkInbox")}
                     </p>
-                    <p className="mt-1 text-sm text-green-700 dark:text-green-400">
+                    <p className="mt-1 text-sm text-primary">
                       {t("linkSentTo", { email })}
                     </p>
                   </div>

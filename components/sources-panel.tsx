@@ -222,18 +222,18 @@ export function SourcesPanel({ notebookId, initialFiles, isUploading: externalUp
 
       {/* Drop zone */}
       <div
-        className={`mx-3 mt-3 rounded-lg border-2 border-dashed px-3 py-3 text-center cursor-pointer transition-all shrink-0 ${
+        className={`mx-3 mt-3 rounded-xl border-2 border-dashed px-3 py-4 text-center cursor-pointer transition-all shrink-0 ${
           dragging
-            ? "border-primary bg-primary/5 scale-[1.01]"
-            : "border-muted-foreground/20 hover:border-primary/40 hover:bg-primary/[0.02]"
+            ? "border-primary bg-primary/8 scale-[1.02] shadow-sm shadow-primary/10"
+            : "border-muted-foreground/25 hover:border-primary/50 hover:bg-primary/[0.03]"
         } ${uploading ? "pointer-events-none opacity-60" : ""}`}
         onClick={() => !uploading && files.length < MAX_FILES && inputRef.current?.click()}
       >
-        <div className="flex items-center justify-center gap-2">
-          <svg className="h-4 w-4 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <div className="flex flex-col items-center justify-center gap-1.5">
+          <svg className={`h-5 w-5 transition-colors ${dragging ? "text-primary" : "text-muted-foreground/50"}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
           </svg>
-          <span className="text-xs text-muted-foreground">
+          <span className="text-[11px] text-muted-foreground">
             {dragging ? t("dropHere") : t("dropOrClick")}
           </span>
         </div>
@@ -284,14 +284,14 @@ export function SourcesPanel({ notebookId, initialFiles, isUploading: externalUp
             {files.map((file) => (
               <div
                 key={file.id}
-                className="group flex items-center gap-2.5 rounded-lg px-2 py-2 hover:bg-accent/50 transition-colors relative"
+                className="group flex items-center gap-2.5 rounded-lg px-2.5 py-2.5 hover:bg-accent/60 transition-all relative"
               >
                 {/* Status dot + icon */}
                 <div className="relative shrink-0">
-                  <svg className="h-4 w-4 text-muted-foreground/50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="h-[1.125rem] w-[1.125rem] text-muted-foreground/40" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
                   </svg>
-                  <span className={`absolute -top-0.5 -right-0.5 h-2 w-2 rounded-full border border-background ${
+                  <span className={`absolute -top-0.5 -right-0.5 h-2.5 w-2.5 rounded-full border-2 border-background ${
                     file.status === "ready" ? "bg-primary" :
                     file.status === "processing" ? "bg-[#D4A27F] animate-pulse" :
                     "bg-destructive"

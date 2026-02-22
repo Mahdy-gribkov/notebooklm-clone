@@ -28,6 +28,15 @@ const ICON_COLORS = [
   "bg-primary/10 text-primary dark:text-primary",
 ];
 
+const ACCENT_COLORS = [
+  "bg-[oklch(0.62_0.12_45)]",
+  "bg-[oklch(0.48_0.006_90)]",
+  "bg-[oklch(0.91_0.008_85)]",
+  "bg-[oklch(0.70_0.10_50)]",
+  "bg-[oklch(0.55_0.18_25)]",
+  "bg-primary",
+];
+
 function hashTitle(title: string): number {
   let hash = 0;
   for (let i = 0; i < title.length; i++) {
@@ -57,7 +66,9 @@ export function NotebookCard({ notebook, files = [], timedOut = false, onDelete,
   const t = useTranslations("notebookCard");
   const tc = useTranslations("common");
   const isClickable = notebook.status === "ready" && !timedOut;
-  const colorClass = ICON_COLORS[hashTitle(notebook.title) % ICON_COLORS.length];
+  const colorIndex = hashTitle(notebook.title) % ICON_COLORS.length;
+  const colorClass = ICON_COLORS[colorIndex];
+  const accentColor = ACCENT_COLORS[colorIndex];
 
   async function handleDelete() {
     setDeleting(true);
@@ -73,26 +84,28 @@ export function NotebookCard({ notebook, files = [], timedOut = false, onDelete,
   const isError = notebook.status === "error" || timedOut;
 
   return (
-    <div className="group relative flex flex-col h-full rounded-2xl border bg-card overflow-hidden transition-all duration-200 shadow-sm shadow-black/[0.03] dark:shadow-none hover:shadow-lg hover:shadow-black/5 dark:hover:shadow-black/20 hover:-translate-y-0.5 min-h-[190px]">
+    <div className="group relative flex flex-col h-full rounded-2xl border bg-card overflow-hidden transition-all duration-200 shadow-md shadow-black/[0.04] dark:shadow-black/[0.15] hover:shadow-xl hover:shadow-black/8 dark:hover:shadow-black/30 hover:-translate-y-1 min-h-[190px]">
+      {/* Top accent bar */}
+      <div className={`h-1 w-full ${accentColor} opacity-60`} />
       <Link
         href={isClickable ? `/notebook/${notebook.id}` : "#"}
-        className={`flex flex-col flex-1 p-5 ${!isClickable ? "pointer-events-none" : ""}`}
+        className={`flex flex-col flex-1 p-6 ${!isClickable ? "pointer-events-none" : ""}`}
         aria-disabled={!isClickable}
       >
         {/* Large icon */}
-        <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-xl ${colorClass} text-base font-bold mb-3`}>
+        <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl ${colorClass} text-sm font-bold mb-3`}>
           {notebook.title.charAt(0).toUpperCase()}
         </div>
 
         {/* Title */}
-        <h3 className="text-heading leading-snug line-clamp-2 pr-6 min-h-[2.5rem]">
+        <h3 className="text-base font-bold leading-snug line-clamp-2 pr-6 min-h-[2.5rem]">
           {notebook.title}
         </h3>
 
         {/* Description */}
-        <div className="h-4 mt-1 mb-2">
+        <div className="h-5 mt-1 mb-2">
           {(description || notebook.description) && (
-            <p className="text-xs text-muted-foreground line-clamp-1 pr-4">
+            <p className="text-sm text-muted-foreground line-clamp-1 pr-4">
               {description || notebook.description}
             </p>
           )}
@@ -101,19 +114,16 @@ export function NotebookCard({ notebook, files = [], timedOut = false, onDelete,
         <div className="mt-auto">
           {/* Meta row */}
           <div className="flex items-center gap-2">
-            <span className="text-caption">
+            <span className="text-[11px] text-muted-foreground/60">
               {relativeTime(notebook.created_at, t)}
             </span>
             {files.length > 0 && (
-              <>
-                <span className="text-muted-foreground/30">&middot;</span>
-                <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
-                  <svg className="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
-                  </svg>
-                  {t("sources", { count: files.length })}
-                </span>
-              </>
+              <span className="inline-flex items-center gap-1 text-[11px] text-muted-foreground bg-muted/60 dark:bg-muted/30 rounded-full px-2 py-0.5">
+                <svg className="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                </svg>
+                {t("sources", { count: files.length })}
+              </span>
             )}
           </div>
 

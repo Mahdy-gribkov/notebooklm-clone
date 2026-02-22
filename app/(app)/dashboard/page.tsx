@@ -235,8 +235,8 @@ export default function DashboardPage() {
   return (
     <div className="min-h-screen bg-background flex flex-col">
       {/* Header */}
-      <header className="border-b bg-background/80 backdrop-blur-md sticky top-0 z-10">
-        <div className="mx-auto flex max-w-[1400px] items-center justify-between px-4 sm:px-6 lg:px-8 py-3">
+      <header className="bg-background/80 backdrop-blur-md sticky top-0 z-10 border-b border-border/40">
+        <div className="mx-auto flex max-w-[1400px] items-center justify-between px-4 sm:px-6 lg:px-8 py-4">
           <Logo />
           <div className="flex items-center gap-2">
             <LanguageToggle />
@@ -248,16 +248,16 @@ export default function DashboardPage() {
 
       <main className="mx-auto max-w-[1400px] px-4 sm:px-6 lg:px-8 py-6 flex-1 w-full space-y-6">
         {/* Tab bar + Toolbar */}
-        <div className="flex flex-col sm:flex-row sm:items-center gap-3 border-b pb-3 animate-slide-up [animation-delay:50ms]">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-3 pb-0 animate-slide-up [animation-delay:50ms]">
           {/* Tabs */}
-          <div className="flex gap-1 flex-1">
+          <div className="flex gap-0 flex-1 border-b border-border/40">
             {tabs.map((tab) => (
               <button
                 key={tab.key}
                 onClick={() => setActiveTab(tab.key)}
-                className={`px-4 py-2 text-sm font-medium rounded-lg transition-all duration-300 ease-out ${activeTab === tab.key
-                  ? "bg-primary text-primary-foreground shadow-sm shadow-black/[0.02] hover:-translate-y-0.5"
-                  : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
+                className={`px-4 py-2.5 text-sm font-medium transition-all duration-200 relative ${activeTab === tab.key
+                  ? "text-foreground after:absolute after:bottom-0 after:left-2 after:right-2 after:h-[2px] after:bg-primary after:rounded-full"
+                  : "text-muted-foreground hover:text-foreground"
                   }`}
               >
                 {tab.label}
@@ -372,15 +372,21 @@ export default function DashboardPage() {
                 ))}
               </div>
             ) : notebooks.length === 0 ? (
-              <div className="flex flex-col items-center py-16 text-center animate-fade-in">
-                <div className="mb-6">
+              <div className="flex flex-col items-center py-20 text-center animate-fade-in">
+                <div className="mb-8">
                   <Mascot size="lg" mood="neutral" />
                 </div>
-                <h2 className="text-heading mb-1">{t("emptyTitle")}</h2>
-                <p className="text-sm text-muted-foreground mb-6 max-w-xs">
+                <h2 className="text-xl font-bold mb-2">{t("emptyTitle")}</h2>
+                <p className="text-sm text-muted-foreground mb-3 max-w-sm">
                   {t("emptyDescription")}
                 </p>
-                <Button onClick={handleCreateNotebook} disabled={creatingNotebook}>
+                <div className="flex items-center gap-2 mb-6 text-xs text-muted-foreground/50">
+                  <span className="bg-muted/50 rounded-full px-2.5 py-1">PDF</span>
+                  <span className="bg-muted/50 rounded-full px-2.5 py-1">DOCX</span>
+                  <span className="bg-muted/50 rounded-full px-2.5 py-1">TXT</span>
+                  <span className="bg-muted/50 rounded-full px-2.5 py-1">Images</span>
+                </div>
+                <Button onClick={handleCreateNotebook} disabled={creatingNotebook} size="lg" className="shadow-md shadow-primary/20">
                   {creatingNotebook ? t("creating") : t("createNew")}
                 </Button>
               </div>
@@ -397,14 +403,14 @@ export default function DashboardPage() {
                 <button
                   onClick={handleCreateNotebook}
                   disabled={creatingNotebook}
-                  className="flex flex-col items-center justify-center gap-3 rounded-2xl border border-dashed border-primary/20 bg-primary/[0.02] p-6 text-primary hover:border-primary/40 hover:bg-primary/[0.04] transition-all duration-300 ease-out min-h-[190px] h-full cursor-pointer disabled:opacity-50 hover:shadow-lg hover:shadow-primary/5 hover:-translate-y-0.5"
+                  className="group flex flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed border-primary/25 bg-gradient-to-br from-primary/[0.03] to-primary/[0.08] p-6 text-primary hover:border-primary/50 hover:from-primary/[0.05] hover:to-primary/[0.12] transition-all duration-300 ease-out min-h-[190px] h-full cursor-pointer disabled:opacity-50 hover:shadow-xl hover:shadow-primary/10 hover:-translate-y-1 hover:scale-[1.01]"
                 >
-                  <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-muted/50">
-                    <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 transition-transform group-hover:scale-110">
+                    <svg className="h-7 w-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 4v16m8-8H4" />
                     </svg>
                   </div>
-                  <span className="text-sm font-medium">
+                  <span className="text-sm font-semibold">
                     {creatingNotebook ? t("creating") : t("createNewNotebook")}
                   </span>
                 </button>

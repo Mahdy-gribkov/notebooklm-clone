@@ -219,12 +219,18 @@ export function ChatInterface({ notebookId, initialMessages, isProcessing = fals
                 <div className="mb-6 cursor-pointer" onClick={() => fileInputRef.current?.click()}>
                   <Mascot size="lg" mood="happy" />
                 </div>
-                <p className="text-base font-semibold mb-1">{t("uploadToStart")}</p>
-                <p className="text-sm text-muted-foreground mb-4">{t("uploadToStartDesc")}</p>
+                <p className="text-lg font-bold mb-1">{t("uploadToStart")}</p>
+                <p className="text-sm text-muted-foreground mb-3">{t("uploadToStartDesc")}</p>
+                <div className="flex items-center gap-1.5 mb-5 text-[10px] text-muted-foreground/50">
+                  <span className="bg-muted/50 rounded-full px-2 py-0.5">PDF</span>
+                  <span className="bg-muted/50 rounded-full px-2 py-0.5">DOCX</span>
+                  <span className="bg-muted/50 rounded-full px-2 py-0.5">TXT</span>
+                  <span className="bg-muted/50 rounded-full px-2 py-0.5">Images</span>
+                </div>
                 <button
                   onClick={() => fileInputRef.current?.click()}
                   disabled={centerUploading || !!externalUploading}
-                  className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-50"
+                  className="inline-flex items-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-all shadow-md shadow-primary/20 hover:shadow-lg hover:shadow-primary/30 disabled:opacity-50"
                 >
                   {centerUploading ? (
                     <div className="h-4 w-4 rounded-full border-2 border-primary-foreground border-t-transparent animate-spin" />
@@ -263,16 +269,18 @@ export function ChatInterface({ notebookId, initialMessages, isProcessing = fals
                 <p className="text-sm text-muted-foreground mb-8">
                   {t("allAnswers")}
                 </p>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 w-full max-w-md">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 w-full max-w-md">
                   {starterPrompts.map((prompt) => (
                     <button
                       key={prompt.text}
                       onClick={() => handleStarterPrompt(prompt.text)}
                       disabled={isProcessing}
-                      className="group flex items-start gap-2.5 rounded-xl border p-3 text-left text-xs text-muted-foreground hover:bg-accent/50 hover:text-foreground hover:border-primary/20 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="group flex items-start gap-3 rounded-xl border border-border/60 bg-card p-4 text-left text-xs text-muted-foreground hover:bg-accent/60 hover:text-foreground hover:border-primary/30 hover:shadow-md hover:-translate-y-0.5 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                      <StarterIcon type={prompt.icon} />
-                      <span className="leading-relaxed">{prompt.text}</span>
+                      <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-primary/10 mt-0.5">
+                        <StarterIcon type={prompt.icon} />
+                      </div>
+                      <span className="leading-relaxed pt-1">{prompt.text}</span>
                     </button>
                   ))}
                 </div>
@@ -306,8 +314,8 @@ export function ChatInterface({ notebookId, initialMessages, isProcessing = fals
                     >
                       <div
                         className={`group/msg relative rounded-2xl px-5 py-3.5 text-sm leading-relaxed ${isUser
-                          ? "bg-primary text-primary-foreground rounded-br-md shadow-sm shadow-black/[0.04]"
-                          : "bg-muted/30 border border-border/50 border-l-2 border-l-primary/30 rounded-bl-md shadow-sm shadow-black/[0.02] dark:shadow-none"
+                          ? "bg-gradient-to-br from-primary to-primary/85 text-primary-foreground rounded-br-md shadow-sm shadow-primary/20"
+                          : "bg-[#FAF9F7] dark:bg-muted/20 border border-border/40 border-l-2 border-l-primary/30 rounded-bl-md shadow-sm shadow-black/[0.03]"
                           }`}
                       >
                         {isUser ? (
@@ -405,7 +413,7 @@ export function ChatInterface({ notebookId, initialMessages, isProcessing = fals
       <div className="border-t bg-background/80 backdrop-blur-sm p-4 shrink-0">
         <form
           onSubmit={handleFormSubmit}
-          className="max-w-2xl lg:max-w-3xl mx-auto flex gap-2 items-end"
+          className="max-w-2xl lg:max-w-3xl mx-auto flex gap-2.5 items-end"
         >
           <div className="relative flex-1">
             <Textarea
@@ -413,7 +421,7 @@ export function ChatInterface({ notebookId, initialMessages, isProcessing = fals
               onChange={handleInputChange}
               onKeyDown={handleKeyDown}
               placeholder={!hasFiles && messages.length === 0 ? t("uploadFirst") : t("placeholder")}
-              className="min-h-[48px] max-h-32 resize-none pr-4 rounded-xl border-border/60 focus:border-primary/40 transition-colors"
+              className="min-h-[52px] max-h-32 resize-none pr-4 rounded-xl border-border/50 bg-muted/30 shadow-inner shadow-black/[0.03] focus:bg-background focus:border-primary/40 focus:shadow-none transition-all"
               disabled={isLoading || (!hasFiles && messages.length === 0)}
               rows={1}
             />
@@ -422,7 +430,7 @@ export function ChatInterface({ notebookId, initialMessages, isProcessing = fals
             type="submit"
             size="sm"
             disabled={isLoading || !input.trim()}
-            className="h-12 w-12 shrink-0 rounded-xl p-0"
+            className="h-[52px] w-[52px] shrink-0 rounded-xl p-0 shadow-md shadow-primary/20 hover:shadow-lg hover:shadow-primary/30 transition-all"
             aria-label={t("send")}
           >
             <svg
@@ -449,7 +457,7 @@ export function ChatInterface({ notebookId, initialMessages, isProcessing = fals
 }
 
 function StarterIcon({ type }: { type: string }) {
-  const cls = "h-4 w-4 shrink-0 mt-0.5 text-primary/40 group-hover:text-primary/60 transition-colors";
+  const cls = "h-3.5 w-3.5 shrink-0 text-primary/50 group-hover:text-primary/70 transition-colors";
   switch (type) {
     case "list":
       return (

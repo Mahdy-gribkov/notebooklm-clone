@@ -339,7 +339,7 @@ export function SourcesPanel({ notebookId, initialFiles, isUploading: externalUp
                   </div>
                 ) : (
                   <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
-                    {file.status === "ready" && (
+                    {file.status === "ready" && !file.storage_path.startsWith("featured/") && (
                       <PdfViewerModal
                         notebookId={notebookId}
                         fileId={file.id}

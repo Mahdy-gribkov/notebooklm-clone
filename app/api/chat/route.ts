@@ -149,6 +149,20 @@ export async function POST(request: Request) {
     console.error("[chat] RAG chain failed:", e);
   }
 
+  // Detect embedding mismatch: chunks exist but similarity search returned nothing
+  if (sources.length === 0) {
+    const { count } = await serviceClient
+      .from("chunks")
+      .select("id", { count: "exact", head: true })
+      .eq("notebook_id", notebookId);
+    if (count && count > 0) {
+      console.warn(
+        `[chat] Notebook ${notebookId} has ${count} chunks but RAG returned 0 sources. ` +
+        `Possible embedding mismatch or threshold too high.`,
+      );
+    }
+  }
+
   // Save user message
   await serviceClient.from("messages").insert({
     notebook_id: notebookId,

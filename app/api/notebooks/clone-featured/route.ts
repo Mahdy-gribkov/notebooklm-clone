@@ -6,6 +6,8 @@ import { embedText } from "@/lib/rag";
 import { RecursiveCharacterTextSplitter } from "@langchain/textsplitters";
 import { NextResponse } from "next/server";
 
+export const maxDuration = 60;
+
 export async function POST(request: Request) {
   const supabase = await createClient();
   const {
@@ -30,7 +32,6 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Featured notebook not found" }, { status: 404 });
   }
 
-  // Use the English title directly (translation keys map to the same base name)
   const titleMap: Record<string, string> = {
     gettingStarted: "Getting Started with DocChat",
     researchAnalysis: "Research Paper Analysis",
@@ -43,14 +44,15 @@ export async function POST(request: Request) {
   };
 
   const title = titleMap[featured.titleKey] ?? featured.titleKey;
+  const serviceClient = getServiceClient();
 
-  // Create notebook with description
+  // Create notebook in "processing" state — only set "ready" after embedding succeeds
   const { data: notebook, error: nbError } = await supabase
     .from("notebooks")
     .insert({
       title,
       user_id: user.id,
-      status: "ready",
+      status: "processing",
       description: content.description,
     })
     .select("id")
@@ -61,7 +63,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Failed to create notebook" }, { status: 500 });
   }
 
-  // Insert synthetic file entries for each file in the featured content
+  // Insert file entries in "processing" state
   const fileEntries: { id: string; fileName: string; content: string }[] = [];
   let totalPages = 0;
 
@@ -76,7 +78,7 @@ export async function POST(request: Request) {
         user_id: user.id,
         file_name: file.fileName,
         storage_path: `featured/${slug}/${file.fileName}`,
-        status: "ready",
+        status: "processing",
         page_count: estimatedPages,
       })
       .select("id")
@@ -94,7 +96,7 @@ export async function POST(request: Request) {
     });
   }
 
-  // Insert pre-generated studio content as generations
+  // Insert pre-generated studio content
   const actions: { action: string; result: unknown }[] = [
     { action: "quiz", result: content.quiz },
     { action: "flashcards", result: content.flashcards },
@@ -102,87 +104,102 @@ export async function POST(request: Request) {
     { action: "mindmap", result: content.mindmap },
   ];
 
-  const generationRows = actions.map((a) => ({
-    notebook_id: notebook.id,
-    user_id: user.id,
-    action: a.action,
-    result: a.result,
-  }));
-
   const { error: genError } = await supabase
     .from("studio_generations")
-    .insert(generationRows);
+    .insert(
+      actions.map((a) => ({
+        notebook_id: notebook.id,
+        user_id: user.id,
+        action: a.action,
+        result: a.result,
+      })),
+    );
 
   if (genError) {
     console.error("[clone-featured] Failed to insert generations:", genError);
   }
 
-  // Return immediately so the user can start using the notebook.
-  // Embeddings run in the background (fire-and-forget).
+  // Embed all file content synchronously — featured content is small (~6-9 chunks)
   if (fileEntries.length > 0) {
-    const nbId = notebook.id;
-    const uid = user.id;
-    void (async () => {
-      try {
-        const splitter = new RecursiveCharacterTextSplitter({
-          chunkSize: 2000,
-          chunkOverlap: 200,
-        });
-        const serviceClient = getServiceClient();
+    try {
+      const splitter = new RecursiveCharacterTextSplitter({
+        chunkSize: 2000,
+        chunkOverlap: 200,
+      });
 
-        let globalChunkIndex = 0;
-        const allChunkRows: {
-          notebook_id: string;
-          user_id: string;
-          content: string;
-          embedding: string;
-          chunk_index: number;
-          metadata: { file_id: string; file_name: string };
-        }[] = [];
+      let globalChunkIndex = 0;
+      const allChunkRows: {
+        notebook_id: string;
+        user_id: string;
+        content: string;
+        embedding: string;
+        chunk_index: number;
+        metadata: { file_id: string; file_name: string };
+      }[] = [];
 
-        for (const file of fileEntries) {
-          const docs = await splitter.createDocuments([file.content]);
-          const chunks = docs.map((d) => d.pageContent);
+      for (const file of fileEntries) {
+        const docs = await splitter.createDocuments([file.content]);
+        const chunks = docs.map((d) => d.pageContent);
 
-          const BATCH_SIZE = 5;
-          for (let i = 0; i < chunks.length; i += BATCH_SIZE) {
-            const batch = chunks.slice(i, i + BATCH_SIZE);
-            const embeddings = await Promise.all(batch.map((chunk) => embedText(chunk)));
+        const BATCH_SIZE = 5;
+        for (let i = 0; i < chunks.length; i += BATCH_SIZE) {
+          const batch = chunks.slice(i, i + BATCH_SIZE);
+          const embeddings = await Promise.all(batch.map((chunk) => embedText(chunk)));
 
-            for (let idx = 0; idx < batch.length; idx++) {
-              allChunkRows.push({
-                notebook_id: nbId,
-                user_id: uid,
-                content: batch[idx],
-                embedding: JSON.stringify(embeddings[idx]),
-                chunk_index: globalChunkIndex++,
-                metadata: { file_id: file.id, file_name: file.fileName },
-              });
-            }
-
-            if (i + BATCH_SIZE < chunks.length) {
-              await new Promise((r) => setTimeout(r, 6500));
-            }
+          for (let idx = 0; idx < batch.length; idx++) {
+            allChunkRows.push({
+              notebook_id: notebook.id,
+              user_id: user.id,
+              content: batch[idx],
+              embedding: JSON.stringify(embeddings[idx]),
+              chunk_index: globalChunkIndex++,
+              metadata: { file_id: file.id, file_name: file.fileName },
+            });
           }
 
-          await new Promise((r) => setTimeout(r, 6500));
-        }
-
-        if (allChunkRows.length > 0) {
-          const { error: chunkError } = await serviceClient.from("chunks").insert(allChunkRows);
-          if (chunkError) {
-            console.error("[clone-featured] Failed to insert chunks:", chunkError.message);
+          // Rate limit delay between batches within a file
+          if (i + BATCH_SIZE < chunks.length) {
+            await new Promise((r) => setTimeout(r, 6500));
           }
         }
-
-        await getServiceClient()
-          .from("notebooks")
-          .update({ page_count: totalPages })
-          .eq("id", nbId);
-      } catch (e) {
-        console.error("[clone-featured] Background embedding failed:", e);
       }
-    })();
+
+      if (allChunkRows.length > 0) {
+        const { error: chunkError } = await serviceClient.from("chunks").insert(allChunkRows);
+        if (chunkError) {
+          console.error("[clone-featured] Failed to insert chunks:", chunkError.message);
+          throw new Error("Failed to store document chunks");
+        }
+      }
+
+      // Embedding succeeded — mark everything as ready
+      await serviceClient
+        .from("notebook_files")
+        .update({ status: "ready" })
+        .eq("notebook_id", notebook.id)
+        .eq("user_id", user.id);
+
+      await serviceClient
+        .from("notebooks")
+        .update({ status: "ready", page_count: totalPages })
+        .eq("id", notebook.id);
+    } catch (e) {
+      console.error("[clone-featured] Embedding failed:", e);
+
+      // Mark as error so the user sees the failure
+      await serviceClient
+        .from("notebooks")
+        .update({ status: "error" })
+        .eq("id", notebook.id);
+
+      await serviceClient
+        .from("notebook_files")
+        .update({ status: "error" })
+        .eq("notebook_id", notebook.id)
+        .eq("user_id", user.id);
+
+      return NextResponse.json({ error: "Failed to process featured content" }, { status: 500 });
+    }
   }
 
   return NextResponse.json({ notebookId: notebook.id }, { status: 201 });

@@ -78,6 +78,14 @@ export async function GET(
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 
+  // Featured files are synthetic text, not real storage objects
+  if (storagePath.startsWith("featured/")) {
+    return NextResponse.json(
+      { error: "This source is text-based and has no downloadable PDF." },
+      { status: 404 },
+    );
+  }
+
   const serviceClient = getServiceClient();
   const { data, error } = await serviceClient.storage
     .from("pdf-uploads")

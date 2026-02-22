@@ -303,7 +303,7 @@ async function generateNotebookMeta(notebookId: string, sampleText: string): Pro
 
   const { text } = await generateText({
     model: getLLM(),
-    system: 'You generate a short title and one-sentence description for a document. Return JSON only: {"title": "...", "description": "..."}. Title max 60 chars. Description max 150 chars. No markdown.',
+    system: 'You generate metadata for a document. Return JSON only: {"title": "...", "description": "...", "starterPrompts": ["...", "...", "...", "..."]}. Title max 60 chars. Description max 150 chars. Each starterPrompt is a question a user might ask about this document, max 80 chars. No markdown.',
     messages: [{ role: "user", content: `Document excerpt:\n${sampleText.slice(0, 3000)}` }],
   });
 
@@ -312,11 +312,18 @@ async function generateNotebookMeta(notebookId: string, sampleText: string): Pro
     if (cleaned.startsWith("```")) {
       cleaned = cleaned.replace(/^```(?:json)?\n?/, "").replace(/\n?```$/, "");
     }
-    const meta = JSON.parse(cleaned) as { title?: string; description?: string };
+    const meta = JSON.parse(cleaned) as { title?: string; description?: string; starterPrompts?: string[] };
     if (meta.title && meta.description) {
+      const updateData: Record<string, unknown> = {
+        title: meta.title,
+        description: meta.description,
+      };
+      if (Array.isArray(meta.starterPrompts) && meta.starterPrompts.length > 0) {
+        updateData.starter_prompts = meta.starterPrompts.slice(0, 4);
+      }
       await supabase
         .from("notebooks")
-        .update({ title: meta.title, description: meta.description })
+        .update(updateData)
         .eq("id", notebookId);
     }
   } catch {

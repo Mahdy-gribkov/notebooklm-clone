@@ -19,7 +19,7 @@ export async function GET(
   }
 
   const { token } = await params;
-  if (!token || token.length < 10 || token.length > 64) {
+  if (!token || token.length < 32 || token.length > 64) {
     return NextResponse.json({ error: "Invalid token" }, { status: 400 });
   }
 

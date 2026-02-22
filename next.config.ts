@@ -30,6 +30,7 @@ const securityHeaders = [
 ];
 
 const nextConfig: NextConfig = {
+  poweredByHeader: false,
   output: "standalone",
   serverExternalPackages: ["pdf-parse"],
   async headers() {

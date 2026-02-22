@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useMemo } from "react";
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { FlashcardsView } from "@/components/studio/flashcards";
@@ -64,23 +64,28 @@ export function StudioPanel({ notebookId }: StudioPanelProps) {
   // Persisted history
   const [history, setHistory] = useState<StudioGeneration[]>([]);
 
-  // Notes
+  // Notes (lazy-loaded on first expand)
   const [notes, setNotes] = useState<Note[]>([]);
+  const [notesLoaded, setNotesLoaded] = useState(false);
   const [editingNote, setEditingNote] = useState<Note | null>(null);
   const [creatingNote, setCreatingNote] = useState(false);
 
-  // Load history + notes on mount
+  // Load history on mount (needed for green dots on feature cards)
   useEffect(() => {
     fetch(`/api/notebooks/${notebookId}/generations`)
       .then((r) => (r.ok ? r.json() : []))
       .then((data) => setHistory(data))
       .catch(() => {});
+  }, [notebookId]);
 
+  // Lazy-load notes on first interaction
+  useEffect(() => {
+    if (!notesLoaded) return;
     fetch(`/api/notebooks/${notebookId}/notes`)
       .then((r) => (r.ok ? r.json() : []))
       .then((data) => setNotes(data))
       .catch(() => {});
-  }, [notebookId]);
+  }, [notebookId, notesLoaded]);
 
   async function handleCreateNote() {
     setCreatingNote(true);
@@ -110,15 +115,15 @@ export function StudioPanel({ notebookId }: StudioPanelProps) {
     setEditingNote(null);
   }
 
-  const features: { action: StudioAction; label: string; description: string; icon: string; color: string }[] = [
-    { action: "flashcards", label: t("flashcards"), description: t("flashcardsDesc"), icon: "cards", color: "bg-blue-500/15 text-blue-600 dark:text-blue-400" },
-    { action: "quiz", label: t("quiz"), description: t("quizDesc"), icon: "quiz", color: "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400" },
-    { action: "report", label: t("report"), description: t("reportDesc"), icon: "report", color: "bg-violet-500/15 text-violet-600 dark:text-violet-400" },
-    { action: "mindmap", label: t("mindmap"), description: t("mindmapDesc"), icon: "mindmap", color: "bg-amber-500/15 text-amber-600 dark:text-amber-400" },
-    { action: "datatable", label: t("datatable"), description: t("datatableDesc"), icon: "table", color: "bg-cyan-500/15 text-cyan-600 dark:text-cyan-400" },
-    { action: "infographic", label: t("infographic"), description: t("infographicDesc"), icon: "infographic", color: "bg-rose-500/15 text-rose-600 dark:text-rose-400" },
-    { action: "slidedeck", label: t("slidedeck"), description: t("slidedeckDesc"), icon: "slides", color: "bg-orange-500/15 text-orange-600 dark:text-orange-400" },
-  ];
+  const features = useMemo<{ action: StudioAction; label: string; description: string; icon: string; color: string }[]>(() => [
+    { action: "flashcards", label: t("flashcards"), description: t("flashcardsDesc"), icon: "cards", color: "bg-primary/15 text-primary" },
+    { action: "quiz", label: t("quiz"), description: t("quizDesc"), icon: "quiz", color: "bg-[#D4A27F]/15 text-[#D4A27F]" },
+    { action: "report", label: t("report"), description: t("reportDesc"), icon: "report", color: "bg-[#666666]/15 text-[#666666] dark:bg-[#91918D]/15 dark:text-[#91918D]" },
+    { action: "mindmap", label: t("mindmap"), description: t("mindmapDesc"), icon: "mindmap", color: "bg-[#6B8F71]/15 text-[#6B8F71]" },
+    { action: "datatable", label: t("datatable"), description: t("datatableDesc"), icon: "table", color: "bg-[#EBDBBC]/30 text-[#8B7355]" },
+    { action: "infographic", label: t("infographic"), description: t("infographicDesc"), icon: "infographic", color: "bg-[#BF4D43]/15 text-[#BF4D43]" },
+    { action: "slidedeck", label: t("slidedeck"), description: t("slidedeckDesc"), icon: "slides", color: "bg-[#8B7355]/15 text-[#8B7355]" },
+  ], [t]);
 
   async function handleGenerateAudio() {
     setGeneratingAudio(true);
@@ -328,7 +333,7 @@ export function StudioPanel({ notebookId }: StudioPanelProps) {
               >
                 {hasHistory && !isGenerating && (
                   <span className="absolute top-2 right-2 flex h-2 w-2">
-                    <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500" />
+                    <span className="relative inline-flex h-2 w-2 rounded-full bg-primary" />
                   </span>
                 )}
                 {isGenerating && (
@@ -354,7 +359,7 @@ export function StudioPanel({ notebookId }: StudioPanelProps) {
           >
             {audioUrl && !generatingAudio && (
               <span className="absolute top-2 right-2 flex h-2 w-2">
-                <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500" />
+                <span className="relative inline-flex h-2 w-2 rounded-full bg-primary" />
               </span>
             )}
             {generatingAudio && (
@@ -362,7 +367,7 @@ export function StudioPanel({ notebookId }: StudioPanelProps) {
                 <span className="block h-3.5 w-3.5 rounded-full border-2 border-primary border-t-transparent animate-spin" />
               </span>
             )}
-            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-pink-500/15 text-pink-600 dark:text-pink-400 transition-colors">
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#61AAF2]/15 text-[#61AAF2] transition-colors">
               <FeatureIcon type="audio" />
             </div>
             <div className="min-w-0">
@@ -449,13 +454,13 @@ export function StudioPanel({ notebookId }: StudioPanelProps) {
         )}
 
         {/* Notes section */}
-        <div className="mt-6 border-t pt-5">
+        <div className="mt-6 border-t pt-5" onClick={() => !notesLoaded && setNotesLoaded(true)}>
           <div className="flex items-center justify-between mb-3">
             <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
               {t("notes")}
             </h3>
             <button
-              onClick={handleCreateNote}
+              onClick={() => { if (!notesLoaded) setNotesLoaded(true); handleCreateNote(); }}
               disabled={creatingNote}
               className="flex items-center gap-1 text-xs text-primary hover:text-primary/80 transition-colors disabled:opacity-50"
             >

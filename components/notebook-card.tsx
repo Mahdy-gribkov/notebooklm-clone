@@ -36,16 +36,16 @@ function hashTitle(title: string): number {
   return Math.abs(hash);
 }
 
-function relativeTime(dateStr: string): string {
+function relativeTime(dateStr: string, t: (key: string, values?: Record<string, number>) => string): string {
   const now = Date.now();
   const diff = now - new Date(dateStr).getTime();
   const mins = Math.floor(diff / 60000);
-  if (mins < 1) return "Just now";
-  if (mins < 60) return `${mins}m ago`;
+  if (mins < 1) return t("justNow");
+  if (mins < 60) return t("minutesAgo", { count: mins });
   const hours = Math.floor(mins / 60);
-  if (hours < 24) return `${hours}h ago`;
+  if (hours < 24) return t("hoursAgo", { count: hours });
   const days = Math.floor(hours / 24);
-  if (days < 7) return `${days}d ago`;
+  if (days < 7) return t("daysAgo", { count: days });
   return new Date(dateStr).toLocaleDateString(undefined, {
     month: "short",
     day: "numeric",
@@ -102,7 +102,7 @@ export function NotebookCard({ notebook, files = [], timedOut = false, onDelete,
           {/* Meta row */}
           <div className="flex items-center gap-2">
             <span className="text-caption">
-              {relativeTime(notebook.created_at)}
+              {relativeTime(notebook.created_at, t)}
             </span>
             {files.length > 0 && (
               <>

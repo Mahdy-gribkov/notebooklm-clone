@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, memo } from "react";
 
 interface Slide {
   heading: string;
@@ -11,7 +11,7 @@ interface SlideDeckViewProps {
   data: Slide[];
 }
 
-export function SlideDeckView({ data }: SlideDeckViewProps) {
+export const SlideDeckView = memo(function SlideDeckView({ data }: SlideDeckViewProps) {
   const [currentSlide, setCurrentSlide] = useState(0);
 
   if (!Array.isArray(data) || data.length === 0) {
@@ -75,4 +75,4 @@ export function SlideDeckView({ data }: SlideDeckViewProps) {
       </div>
     </div>
   );
-}
+});

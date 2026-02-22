@@ -3,6 +3,7 @@ interface Entry {
   resetAt: number;
 }
 
+const MAX_ENTRIES = 10_000;
 const store = new Map<string, Entry>();
 
 export function checkRateLimit(
@@ -15,6 +16,11 @@ export function checkRateLimit(
   // Clean up expired entries on each call
   for (const [k, v] of store) {
     if (v.resetAt <= now) store.delete(k);
+  }
+
+  // Prevent unbounded growth from spoofed keys
+  if (store.size > MAX_ENTRIES) {
+    store.clear();
   }
 
   const entry = store.get(key);

@@ -95,7 +95,10 @@
     "createNew": "יצירה",
     "createNewNotebook": "יצירת מחברת חדשה",
     "recentNotebooks": "מחברות אחרונות",
-    "seeAll": "הצג הכל"
+    "seeAll": "הצג הכל",
+    "notebookCreated": "המחברת נוצרה",
+    "cloneFailed": "לא ניתן לפתוח מחברת מומלצת. נסה שוב.",
+    "notebookDeleted": "המחברת נמחקה"
   },
   "featured": {
     "gettingStarted": "התחלה עם DocChat",
@@ -133,13 +136,15 @@
     "starter2": "מהן המסקנות או הממצאים העיקריים?",
     "starter3": "אילו נושאים המסמך מכסה?",
     "starter4": "על אילו שאלות המסמך עונה?",
+    "notebookSummary": "אודות מחברת זו",
     "saveToNote": "שמור להערה",
     "processingState": "המקורות שלך מעובדים...",
     "uploadToStart": "העלה מסמך כדי להתחיל לשוחח",
     "uploadToStartDesc": "גרור קבצים לפאנל המקורות או לחץ על הוסף מקור.",
     "uploadFirst": "העלה מסמך תחילה...",
     "browseFiles": "עיין בקבצים",
-    "uploading": "מעלה..."
+    "uploading": "מעלה...",
+    "send": "שלח הודעה"
   },
   "sources": {
     "title": "מקורות",
@@ -158,7 +163,8 @@
     "unsupportedType": "סוג קובץ לא נתמך. העלה PDF, DOCX, TXT או תמונות.",
     "fileTooLarge": "הקובץ גדול מדי",
     "pages": "{count} עמודים",
-    "failed": "נכשל"
+    "failed": "נכשל",
+    "duplicateFile": "קובץ זה כבר הועלה"
   },
   "sourcePanel": {
     "sourcesCited": "מקורות מצוטטים",
@@ -231,7 +237,11 @@
     "uploadFailed": "ההעלאה נכשלה",
     "deleteTitle": "למחוק את המחברת?",
     "cannotUndo": "לא ניתן לבטל פעולה זו.",
-    "deleting": "מוחק..."
+    "deleting": "מוחק...",
+    "justNow": "עכשיו",
+    "minutesAgo": "לפני {count} דק׳",
+    "hoursAgo": "לפני {count} שע׳",
+    "daysAgo": "לפני {count} ימים"
   },
   "notFound": {
     "title": "הדף לא נמצא",
@@ -289,7 +299,8 @@
     "signUpCta": "הרשמה לגישה מלאה",
     "expire7": "7 ימים",
     "expire30": "30 ימים",
-    "expireNever": "לעולם לא"
+    "expireNever": "לעולם לא",
+    "createFailed": "יצירת הקישור נכשלה"
   },
   "export": {
     "title": "ייצוא",

@@ -68,10 +68,10 @@ export function ShareDialog({ notebookId, open, onClose }: ShareDialogProps) {
       } else if (res.status === 429) {
         setError(t("chatLimit"));
       } else {
-        setError("Failed to create link");
+        setError(t("createFailed"));
       }
     } catch {
-      setError("Failed to create link");
+      setError(t("createFailed"));
     } finally {
       setCreating(false);
     }
@@ -227,7 +227,7 @@ export function ShareDialog({ notebookId, open, onClose }: ShareDialogProps) {
                       <div className="flex items-center gap-1.5">
                         <span className={`inline-block rounded px-1.5 py-0.5 text-[10px] font-medium ${
                           link.permissions === "chat"
-                            ? "bg-blue-500/10 text-blue-600 dark:text-blue-400"
+                            ? "bg-primary/10 text-primary"
                             : "bg-muted text-muted-foreground"
                         }`}>
                           {link.permissions === "chat" ? t("viewAndChat") : t("viewOnly")}
@@ -245,7 +245,7 @@ export function ShareDialog({ notebookId, open, onClose }: ShareDialogProps) {
                       aria-label={t("copyLink")}
                     >
                       {copiedToken === link.token ? (
-                        <svg className="h-3.5 w-3.5 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg className="h-3.5 w-3.5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                         </svg>
                       ) : (

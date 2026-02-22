@@ -10,16 +10,20 @@ import { Textarea } from "@/components/ui/textarea";
 import { SourcePanel } from "@/components/source-panel";
 import { Mascot } from "@/components/mascot";
 import { useTranslations } from "next-intl";
-import type { Message, Source } from "@/types";
+import { validateUploadFile } from "@/lib/validate-file";
+import type { Message, NotebookFile, Source } from "@/types";
 
 interface ChatInterfaceProps {
   notebookId: string;
   initialMessages: Message[];
   isProcessing?: boolean;
   hasFiles?: boolean;
+  description?: string | null;
+  starterPrompts?: string[] | null;
+  onFileUploaded?: (file: NotebookFile) => void;
 }
 
-export function ChatInterface({ notebookId, initialMessages, isProcessing = false, hasFiles = true }: ChatInterfaceProps) {
+export function ChatInterface({ notebookId, initialMessages, isProcessing = false, hasFiles = true, description, starterPrompts: dynamicPrompts, onFileUploaded }: ChatInterfaceProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -28,12 +32,15 @@ export function ChatInterface({ notebookId, initialMessages, isProcessing = fals
   const [centerUploading, setCenterUploading] = useState(false);
   const t = useTranslations("chat");
 
-  const starterPrompts = [
-    { text: t("starter1"), icon: "list" },
-    { text: t("starter2"), icon: "target" },
-    { text: t("starter3"), icon: "book" },
-    { text: t("starter4"), icon: "question" },
-  ];
+  const iconTypes = ["list", "target", "book", "question"];
+  const starterPrompts = dynamicPrompts?.length
+    ? dynamicPrompts.map((text, i) => ({ text, icon: iconTypes[i % iconTypes.length] }))
+    : [
+        { text: t("starter1"), icon: "list" },
+        { text: t("starter2"), icon: "target" },
+        { text: t("starter3"), icon: "book" },
+        { text: t("starter4"), icon: "question" },
+      ];
 
   // Auto-dismiss error after 8s
   useEffect(() => {
@@ -54,7 +61,6 @@ export function ChatInterface({ notebookId, initialMessages, isProcessing = fals
       body: { notebookId },
       initialMessages: priorMessages,
       onError: (error) => {
-        console.error("[chat] useChat error:", error);
         const msg = error.message ?? "";
         if (msg.includes("429") || msg.toLowerCase().includes("too many")) {
           setErrorMessage(
@@ -129,15 +135,23 @@ export function ChatInterface({ notebookId, initialMessages, isProcessing = fals
   function handleCenterFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
+    const validation = validateUploadFile(file);
+    if (!validation.valid) {
+      setErrorMessage(t(validation.error === "unsupportedType" ? "genericError" : "genericError"));
+      e.target.value = "";
+      return;
+    }
     setCenterUploading(true);
     const formData = new FormData();
     formData.append("file", file);
     fetch(`/api/notebooks/${notebookId}/files`, { method: "POST", body: formData })
-      .then((res) => {
+      .then(async (res) => {
         if (res.ok) {
-          window.location.reload();
+          const uploaded: NotebookFile = await res.json();
+          onFileUploaded?.(uploaded);
         } else {
-          return res.json().then((b) => setErrorMessage(b.error ?? t("genericError")));
+          const b = await res.json();
+          setErrorMessage(b.error ?? t("genericError"));
         }
       })
       .catch(() => setErrorMessage(t("genericError")))
@@ -221,6 +235,14 @@ export function ChatInterface({ notebookId, initialMessages, isProcessing = fals
                 <div className="mb-6">
                   <Mascot size="lg" mood={isProcessing ? "thinking" : "neutral"} />
                 </div>
+                {description && (
+                  <div className="rounded-xl border bg-card/60 p-4 mb-6 text-center max-w-md mx-auto">
+                    <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1">
+                      {t("notebookSummary")}
+                    </p>
+                    <p className="text-sm text-foreground leading-relaxed">{description}</p>
+                  </div>
+                )}
                 <p className="text-base font-semibold mb-1">
                   {t("askAnything")}
                 </p>
@@ -293,7 +315,7 @@ export function ChatInterface({ notebookId, initialMessages, isProcessing = fals
                               aria-label={t("copyMessage")}
                             >
                               {copiedId === message.id ? (
-                                <svg className="h-3.5 w-3.5 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <svg className="h-3.5 w-3.5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                                 </svg>
                               ) : (
@@ -308,7 +330,7 @@ export function ChatInterface({ notebookId, initialMessages, isProcessing = fals
                               aria-label={t("saveToNote")}
                             >
                               {savedNoteId === message.id ? (
-                                <svg className="h-3.5 w-3.5 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <svg className="h-3.5 w-3.5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                                 </svg>
                               ) : (
@@ -387,7 +409,7 @@ export function ChatInterface({ notebookId, initialMessages, isProcessing = fals
             size="sm"
             disabled={isLoading || !input.trim()}
             className="h-12 w-12 shrink-0 rounded-xl p-0"
-            aria-label="Send message"
+            aria-label={t("send")}
           >
             <svg
               className="h-4.5 w-4.5"

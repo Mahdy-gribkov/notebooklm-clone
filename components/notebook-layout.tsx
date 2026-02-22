@@ -28,9 +28,11 @@ interface NotebookLayoutProps {
   notebookTitle: string;
   notebookFiles: NotebookFile[];
   initialMessages: Message[];
+  notebookDescription?: string | null;
+  starterPrompts?: string[] | null;
 }
 
-export function NotebookLayout({ notebookId, notebookTitle, notebookFiles, initialMessages }: NotebookLayoutProps) {
+export function NotebookLayout({ notebookId, notebookTitle, notebookFiles, initialMessages, notebookDescription, starterPrompts }: NotebookLayoutProps) {
   const [sourcesOpen, setSourcesOpen] = useState(true);
   const [studioOpen, setStudioOpen] = useState(true);
   const [mobilePanel, setMobilePanel] = useState<"sources" | "studio" | null>(null);
@@ -38,6 +40,11 @@ export function NotebookLayout({ notebookId, notebookTitle, notebookFiles, initi
   const [editingTitle, setEditingTitle] = useState(false);
   const [editValue, setEditValue] = useState(notebookTitle);
   const [shareOpen, setShareOpen] = useState(false);
+  const [files, setFiles] = useState<NotebookFile[]>(notebookFiles);
+
+  const handleFileUploaded = useCallback((file: NotebookFile) => {
+    setFiles(prev => [file, ...prev]);
+  }, []);
   const t = useTranslations("notebook");
   const ts = useTranslations("share");
 
@@ -93,8 +100,8 @@ export function NotebookLayout({ notebookId, notebookTitle, notebookFiles, initi
   }
 
   // Check if any files are still processing
-  const hasProcessingFiles = notebookFiles.some((f) => f.status === "processing");
-  const hasReadyFiles = notebookFiles.some((f) => f.status === "ready");
+  const hasProcessingFiles = files.some((f) => f.status === "processing");
+  const hasReadyFiles = files.some((f) => f.status === "ready");
 
   return (
     <div className="flex h-screen flex-col bg-background">
@@ -193,7 +200,7 @@ export function NotebookLayout({ notebookId, notebookTitle, notebookFiles, initi
             }`}
         >
           <div className="w-[260px] h-full min-w-[260px]">
-            <SourcesPanel notebookId={notebookId} initialFiles={notebookFiles} />
+            <SourcesPanel notebookId={notebookId} initialFiles={files} />
           </div>
         </div>
 
@@ -203,7 +210,10 @@ export function NotebookLayout({ notebookId, notebookTitle, notebookFiles, initi
             notebookId={notebookId}
             initialMessages={initialMessages}
             isProcessing={hasProcessingFiles && !hasReadyFiles}
-            hasFiles={notebookFiles.length > 0}
+            hasFiles={files.length > 0}
+            description={notebookDescription}
+            starterPrompts={starterPrompts}
+            onFileUploaded={handleFileUploaded}
           />
         </div>
 
@@ -237,7 +247,7 @@ export function NotebookLayout({ notebookId, notebookTitle, notebookFiles, initi
                 </button>
               </div>
               <div className="h-[calc(100%-49px)] overflow-hidden">
-                <SourcesPanel notebookId={notebookId} initialFiles={notebookFiles} />
+                <SourcesPanel notebookId={notebookId} initialFiles={files} />
               </div>
             </div>
           </div>

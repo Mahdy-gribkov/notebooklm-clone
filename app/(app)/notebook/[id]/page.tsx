@@ -21,7 +21,7 @@ export default async function NotebookPage({ params }: PageProps) {
 
   const { data: notebook } = await supabase
     .from("notebooks")
-    .select("id, user_id, title, file_url, status, page_count, description, created_at")
+    .select("id, user_id, title, file_url, status, page_count, description, starter_prompts, created_at")
     .eq("id", id)
     .eq("user_id", user.id)
     .single<Notebook>();
@@ -49,6 +49,8 @@ export default async function NotebookPage({ params }: PageProps) {
       notebookTitle={notebook.title}
       notebookFiles={(files ?? []) as NotebookFile[]}
       initialMessages={(messages ?? []) as Message[]}
+      notebookDescription={notebook.description}
+      starterPrompts={notebook.starter_prompts}
     />
   );
 }

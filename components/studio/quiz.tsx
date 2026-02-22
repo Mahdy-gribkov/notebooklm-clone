@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, memo } from "react";
 import { Button } from "@/components/ui/button";
 
 interface QuizQuestion {
@@ -14,7 +14,7 @@ interface QuizViewProps {
   data: QuizQuestion[];
 }
 
-export function QuizView({ data }: QuizViewProps) {
+export const QuizView = memo(function QuizView({ data }: QuizViewProps) {
   const [current, setCurrent] = useState(0);
   const [selected, setSelected] = useState<number | null>(null);
   const [checked, setChecked] = useState(false);
@@ -79,8 +79,8 @@ export function QuizView({ data }: QuizViewProps) {
                 key={i}
                 className={`rounded-lg border p-3 text-sm ${
                   isCorrect
-                    ? "border-emerald-500/20 bg-emerald-500/5"
-                    : "border-red-500/20 bg-red-500/5"
+                    ? "border-primary/20 bg-primary/5"
+                    : "border-destructive/20 bg-destructive/5"
                 }`}
               >
                 <p className="font-medium mb-1">
@@ -129,9 +129,9 @@ export function QuizView({ data }: QuizViewProps) {
           let optionClass = "border bg-card hover:border-primary/30";
           if (checked) {
             if (i === q.correctIndex) {
-              optionClass = "border-emerald-500 bg-emerald-500/10";
+              optionClass = "border-primary bg-primary/10";
             } else if (i === selected && i !== q.correctIndex) {
-              optionClass = "border-red-500 bg-red-500/10";
+              optionClass = "border-destructive bg-destructive/10";
             }
           } else if (i === selected) {
             optionClass = "border-primary bg-primary/5";
@@ -178,4 +178,4 @@ export function QuizView({ data }: QuizViewProps) {
       </div>
     </div>
   );
-}
+});

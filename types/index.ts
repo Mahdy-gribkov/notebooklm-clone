@@ -6,6 +6,7 @@ export interface Notebook {
   status: 'processing' | 'ready' | 'error';
   page_count: number | null;
   description: string | null;
+  starter_prompts?: string[] | null;
   created_at: string;
 }
 

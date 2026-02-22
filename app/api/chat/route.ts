@@ -49,14 +49,21 @@ export async function POST(request: Request) {
     );
   }
 
-  const body = await request.json();
-  const { messages, notebookId } = body as {
-    messages: Array<{ role: string; content: string }>;
-    notebookId: string;
-  };
+  let body: { messages?: Array<{ role: string; content: string }>; notebookId?: string };
+  try {
+    body = await request.json();
+  } catch {
+    return NextResponse.json({ error: "Invalid request body" }, { status: 400 });
+  }
+
+  const { messages, notebookId } = body;
 
   if (!notebookId || !isValidUUID(notebookId)) {
     return NextResponse.json({ error: "Invalid notebookId" }, { status: 400 });
+  }
+
+  if (!Array.isArray(messages) || messages.length === 0) {
+    return NextResponse.json({ error: "Messages required" }, { status: 400 });
   }
 
   const userMessage = messages[messages.length - 1]?.content ?? "";

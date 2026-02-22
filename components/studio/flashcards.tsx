@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, memo } from "react";
 import { Button } from "@/components/ui/button";
 
 interface Flashcard {
@@ -12,7 +12,7 @@ interface FlashcardsViewProps {
   data: Flashcard[];
 }
 
-export function FlashcardsView({ data }: FlashcardsViewProps) {
+export const FlashcardsView = memo(function FlashcardsView({ data }: FlashcardsViewProps) {
   const [cards, setCards] = useState(data);
   const [flipped, setFlipped] = useState<Set<number>>(new Set());
 
@@ -103,4 +103,4 @@ export function FlashcardsView({ data }: FlashcardsViewProps) {
       </div>
     </div>
   );
-}
+});

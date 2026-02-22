@@ -105,7 +105,7 @@ export default function DashboardPage() {
       });
       if (res.ok) {
         const notebook = await res.json();
-        addToast("Notebook created");
+        addToast(t("notebookCreated"));
         router.push(`/notebook/${notebook.id}`);
       }
     } finally {
@@ -130,9 +130,8 @@ export default function DashboardPage() {
       }
       const { notebookId } = await res.json();
       router.push(`/notebook/${notebookId}`);
-    } catch (e) {
-      console.error("[dashboard] Clone featured failed:", e);
-      addToast("Failed to open featured notebook. Try again.", "error");
+    } catch {
+      addToast(t("cloneFailed"), "error");
       setCloningSlug(null);
     }
   }
@@ -144,7 +143,7 @@ export default function DashboardPage() {
       delete next[id];
       return next;
     });
-    addToast("Notebook deleted");
+    addToast(t("notebookDeleted"));
   }
 
   // Polling for processing notebooks

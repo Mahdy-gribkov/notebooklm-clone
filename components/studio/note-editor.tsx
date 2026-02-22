@@ -151,7 +151,7 @@ export function NoteEditor({ note, notebookId, onBack, onUpdate, onDelete }: Not
         {/* Save status */}
         {saving && <span className="text-[10px] text-muted-foreground">{t("saving")}</span>}
         {saved && !saving && (
-          <span className="text-[10px] text-emerald-500 flex items-center gap-1">
+          <span className="text-[10px] text-primary flex items-center gap-1">
             <svg className="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
             </svg>

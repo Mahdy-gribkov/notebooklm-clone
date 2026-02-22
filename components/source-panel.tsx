@@ -9,9 +9,9 @@ interface SourcePanelProps {
 }
 
 function similarityColor(score: number): string {
-  if (score >= 0.8) return "from-emerald-500 to-emerald-400";
-  if (score >= 0.6) return "from-primary to-primary/80";
-  return "from-amber-500 to-amber-400";
+  if (score >= 0.8) return "from-primary to-primary/80";
+  if (score >= 0.6) return "from-chart-2 to-chart-2/80";
+  return "from-muted-foreground to-muted-foreground/60";
 }
 
 export function SourcePanel({ sources }: SourcePanelProps) {

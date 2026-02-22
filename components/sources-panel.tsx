@@ -3,6 +3,7 @@
 import { useState, useRef, useCallback, useEffect } from "react";
 import { useTranslations } from "next-intl";
 import { PdfViewerModal } from "@/components/pdf-viewer-modal";
+import { validateUploadFile } from "@/lib/validate-file";
 import type { NotebookFile } from "@/types";
 
 interface SourcesPanelProps {
@@ -29,23 +30,13 @@ export function SourcesPanel({ notebookId, initialFiles }: SourcesPanelProps) {
   }, [error]);
 
   const handleUpload = useCallback(async (file: File) => {
-    const ALLOWED = [
-      "application/pdf",
-      "text/plain",
-      "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-      "image/jpeg",
-      "image/png",
-      "image/webp",
-    ];
-    if (!ALLOWED.includes(file.type)) {
-      setError(t("unsupportedType"));
+    const validation = validateUploadFile(file);
+    if (!validation.valid) {
+      setError(t(validation.error === "unsupportedType" ? "unsupportedType" : "fileTooLarge"));
       return;
     }
-    const maxSize = file.type === "text/plain" ? 500 * 1024
-      : file.type.startsWith("application/vnd") ? 10 * 1024 * 1024
-      : 5 * 1024 * 1024;
-    if (file.size > maxSize) {
-      setError(t("fileTooLarge"));
+    if (files.some(f => f.file_name === file.name && f.status !== "error")) {
+      setError(t("duplicateFile"));
       return;
     }
 
@@ -64,6 +55,9 @@ export function SourcesPanel({ notebookId, initialFiles }: SourcesPanelProps) {
           if (e.lengthComputable) {
             setUploadProgress(Math.round((e.loaded / e.total) * 80));
           }
+        };
+        xhr.upload.onloadend = () => {
+          setUploadProgress(90);
         };
         xhr.onload = () => {
           if (xhr.status >= 200 && xhr.status < 300) {
@@ -96,7 +90,7 @@ export function SourcesPanel({ notebookId, initialFiles }: SourcesPanelProps) {
         setUploadProgress(0);
       }, 500);
     }
-  }, [notebookId, t]);
+  }, [notebookId, t, files]);
 
   async function handleDelete(fileId: string) {
     setConfirmDeleteId(null);
@@ -260,16 +254,16 @@ export function SourcesPanel({ notebookId, initialFiles }: SourcesPanelProps) {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
                   </svg>
                   <span className={`absolute -top-0.5 -right-0.5 h-2 w-2 rounded-full border border-background ${
-                    file.status === "ready" ? "bg-emerald-500" :
-                    file.status === "processing" ? "bg-amber-500 animate-pulse" :
-                    "bg-red-500"
+                    file.status === "ready" ? "bg-primary" :
+                    file.status === "processing" ? "bg-[#D4A27F] animate-pulse" :
+                    "bg-destructive"
                   }`} />
                 </div>
 
                 {/* File info */}
                 <div className="flex-1 min-w-0">
                   <p className="text-xs font-medium truncate" title={file.file_name}>
-                    {file.file_name.replace(/\.pdf$/i, "")}
+                    {file.file_name.replace(/\.(pdf|txt|docx|jpg|jpeg|png|webp)$/i, "")}
                   </p>
                   <p className="text-[10px] text-muted-foreground">
                     {file.status === "ready" && file.page_count

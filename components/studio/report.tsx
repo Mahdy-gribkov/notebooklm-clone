@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, memo } from "react";
 import { Button } from "@/components/ui/button";
 
 interface ReportSection {
@@ -12,7 +12,7 @@ interface ReportViewProps {
   data: ReportSection[];
 }
 
-export function ReportView({ data }: ReportViewProps) {
+export const ReportView = memo(function ReportView({ data }: ReportViewProps) {
   const [copied, setCopied] = useState(false);
 
   function copyToClipboard() {
@@ -50,4 +50,4 @@ export function ReportView({ data }: ReportViewProps) {
       </div>
     </div>
   );
-}
+});

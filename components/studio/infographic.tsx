@@ -1,5 +1,7 @@
 "use client";
 
+import { memo } from "react";
+
 interface InfographicSection {
   heading: string;
   content: string;
@@ -10,15 +12,15 @@ interface InfographicViewProps {
 }
 
 const SECTION_COLORS = [
-  "border-l-blue-500 bg-blue-500/5",
-  "border-l-emerald-500 bg-emerald-500/5",
-  "border-l-violet-500 bg-violet-500/5",
-  "border-l-amber-500 bg-amber-500/5",
-  "border-l-rose-500 bg-rose-500/5",
-  "border-l-cyan-500 bg-cyan-500/5",
+  "border-l-[#CC785C] bg-[#CC785C]/5",
+  "border-l-[#D4A27F] bg-[#D4A27F]/5",
+  "border-l-[#6B8F71] bg-[#6B8F71]/5",
+  "border-l-[#8B7355] bg-[#8B7355]/5",
+  "border-l-[#BF4D43] bg-[#BF4D43]/5",
+  "border-l-[#91918D] bg-[#91918D]/5",
 ];
 
-export function InfographicView({ data }: InfographicViewProps) {
+export const InfographicView = memo(function InfographicView({ data }: InfographicViewProps) {
   if (!Array.isArray(data) || data.length === 0) {
     return <p className="text-sm text-muted-foreground text-center py-8">No infographic data generated.</p>;
   }
@@ -38,4 +40,4 @@ export function InfographicView({ data }: InfographicViewProps) {
       ))}
     </div>
   );
-}
+});

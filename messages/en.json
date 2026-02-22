@@ -95,7 +95,10 @@
     "createNew": "Create new",
     "seeAll": "See all",
     "recentNotebooks": "Recent notebooks",
-    "createNewNotebook": "Create new notebook"
+    "createNewNotebook": "Create new notebook",
+    "notebookCreated": "Notebook created",
+    "cloneFailed": "Failed to open featured notebook. Try again.",
+    "notebookDeleted": "Notebook deleted"
   },
   "featured": {
     "gettingStarted": "Getting Started with DocChat",
@@ -133,13 +136,15 @@
     "starter2": "What are the main conclusions or findings?",
     "starter3": "What topics does this document cover?",
     "starter4": "What questions does this document answer?",
+    "notebookSummary": "About this notebook",
     "saveToNote": "Save to note",
     "processingState": "Your sources are being processed...",
     "uploadToStart": "Upload a document to start chatting",
     "uploadToStartDesc": "Drop files in the Sources panel or click Add Source.",
     "uploadFirst": "Upload a document first...",
     "browseFiles": "Browse files",
-    "uploading": "Uploading..."
+    "uploading": "Uploading...",
+    "send": "Send message"
   },
   "sources": {
     "title": "Sources",
@@ -158,7 +163,8 @@
     "unsupportedType": "Unsupported file type. Upload PDF, DOCX, TXT, or images.",
     "fileTooLarge": "File is too large",
     "pages": "{count} pages",
-    "failed": "Failed"
+    "failed": "Failed",
+    "duplicateFile": "This file has already been uploaded"
   },
   "sourcePanel": {
     "sourcesCited": "Sources Cited",
@@ -231,7 +237,11 @@
     "uploadFailed": "Upload failed",
     "deleteTitle": "Delete this notebook?",
     "cannotUndo": "This cannot be undone.",
-    "deleting": "Deleting..."
+    "deleting": "Deleting...",
+    "justNow": "Just now",
+    "minutesAgo": "{count}m ago",
+    "hoursAgo": "{count}h ago",
+    "daysAgo": "{count}d ago"
   },
   "notFound": {
     "title": "Page not found",
@@ -289,7 +299,8 @@
     "signUpCta": "Sign up for full access",
     "expire7": "7 days",
     "expire30": "30 days",
-    "expireNever": "Never"
+    "expireNever": "Never",
+    "createFailed": "Failed to create link"
   },
   "export": {
     "title": "Export",

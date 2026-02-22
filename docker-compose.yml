@@ -10,6 +10,11 @@ services:
     restart: unless-stopped
     ports:
       - "3000:3000"
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+          cpus: '2'
 
   nginx:
     image: nginx:alpine

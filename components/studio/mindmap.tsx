@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, memo } from "react";
 
 interface MindMapNode {
   label: string;
@@ -79,7 +79,7 @@ function TreeNode({
   );
 }
 
-export function MindMapView({ data }: MindMapViewProps) {
+export const MindMapView = memo(function MindMapView({ data }: MindMapViewProps) {
   return (
     <div className="space-y-3">
       <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
@@ -93,4 +93,4 @@ export function MindMapView({ data }: MindMapViewProps) {
       </p>
     </div>
   );
-}
+});

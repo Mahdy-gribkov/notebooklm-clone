@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, memo } from "react";
 
 interface DataTableData {
   columns: string[];
@@ -11,7 +11,7 @@ interface DataTableViewProps {
   data: DataTableData;
 }
 
-export function DataTableView({ data }: DataTableViewProps) {
+export const DataTableView = memo(function DataTableView({ data }: DataTableViewProps) {
   const [sortCol, setSortCol] = useState<number | null>(null);
   const [sortAsc, setSortAsc] = useState(true);
 
@@ -102,4 +102,4 @@ export function DataTableView({ data }: DataTableViewProps) {
       </div>
     </div>
   );
-}
+});

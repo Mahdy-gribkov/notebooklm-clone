@@ -28,9 +28,9 @@ describe("featuredNotebooks", () => {
     }
   });
 
-  it("all entries have sourceCount of 1 (each featured notebook has exactly 1 synthetic file)", () => {
+  it("all entries have sourceCount of 3 (each featured notebook has 3 synthetic files)", () => {
     for (const nb of featuredNotebooks) {
-      expect(nb.sourceCount).toBe(1);
+      expect(nb.sourceCount).toBe(3);
     }
   });
 

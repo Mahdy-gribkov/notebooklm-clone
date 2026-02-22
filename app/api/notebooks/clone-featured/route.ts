@@ -44,10 +44,15 @@ export async function POST(request: Request) {
 
   const title = titleMap[featured.titleKey] ?? featured.titleKey;
 
-  // Create notebook
+  // Create notebook with description
   const { data: notebook, error: nbError } = await supabase
     .from("notebooks")
-    .insert({ title, user_id: user.id, status: "ready" })
+    .insert({
+      title,
+      user_id: user.id,
+      status: "ready",
+      description: content.description,
+    })
     .select("id")
     .single();
 
@@ -56,27 +61,37 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Failed to create notebook" }, { status: 500 });
   }
 
-  // Calculate estimated pages from content length
-  const estimatedPages = content.content
-    ? Math.max(1, Math.ceil(content.content.length / 3000))
-    : 1;
+  // Insert synthetic file entries for each file in the featured content
+  const fileEntries: { id: string; fileName: string; content: string }[] = [];
+  let totalPages = 0;
 
-  // Insert a synthetic file entry so sources panel isn't empty
-  const { data: notebookFile, error: fileError } = await supabase
-    .from("notebook_files")
-    .insert({
-      notebook_id: notebook.id,
-      user_id: user.id,
-      file_name: `${title}.pdf`,
-      storage_path: `featured/${slug}`,
-      status: "ready",
-      page_count: estimatedPages,
-    })
-    .select("id")
-    .single();
+  for (const file of content.files) {
+    const estimatedPages = Math.max(1, Math.ceil(file.content.length / 3000));
+    totalPages += estimatedPages;
 
-  if (fileError || !notebookFile) {
-    console.error("[clone-featured] Failed to insert file entry:", fileError);
+    const { data: notebookFile, error: fileError } = await supabase
+      .from("notebook_files")
+      .insert({
+        notebook_id: notebook.id,
+        user_id: user.id,
+        file_name: file.fileName,
+        storage_path: `featured/${slug}/${file.fileName}`,
+        status: "ready",
+        page_count: estimatedPages,
+      })
+      .select("id")
+      .single();
+
+    if (fileError || !notebookFile) {
+      console.error("[clone-featured] Failed to insert file entry:", fileError);
+      continue;
+    }
+
+    fileEntries.push({
+      id: notebookFile.id,
+      fileName: file.fileName,
+      content: file.content,
+    });
   }
 
   // Insert pre-generated studio content as generations
@@ -103,46 +118,67 @@ export async function POST(request: Request) {
   }
 
   // Split content into chunks and generate embeddings for RAG
-  if (notebookFile && content.content) {
+  if (fileEntries.length > 0) {
     try {
       const splitter = new RecursiveCharacterTextSplitter({
         chunkSize: 2000,
         chunkOverlap: 200,
       });
-      const docs = await splitter.createDocuments([content.content]);
-      const chunks = docs.map((d) => d.pageContent);
       const serviceClient = getServiceClient();
 
-      const BATCH_SIZE = 5;
-      for (let i = 0; i < chunks.length; i += BATCH_SIZE) {
-        const batch = chunks.slice(i, i + BATCH_SIZE);
-        const embeddings = await Promise.all(batch.map((chunk) => embedText(chunk)));
+      let globalChunkIndex = 0;
+      const allChunkRows: {
+        notebook_id: string;
+        user_id: string;
+        content: string;
+        embedding: string;
+        chunk_index: number;
+        metadata: { file_id: string; file_name: string };
+      }[] = [];
 
-        const rows = batch.map((text, idx) => ({
-          notebook_id: notebook.id,
-          user_id: user.id,
-          content: text,
-          embedding: JSON.stringify(embeddings[idx]),
-          chunk_index: i + idx,
-          metadata: { file_id: notebookFile.id, file_name: `${title}.pdf` },
-        }));
+      // Process each file: split into chunks and embed
+      for (const file of fileEntries) {
+        const docs = await splitter.createDocuments([file.content]);
+        const chunks = docs.map((d) => d.pageContent);
 
-        const { error: chunkError } = await serviceClient.from("chunks").insert(rows);
-        if (chunkError) {
-          console.error("[clone-featured] Failed to insert chunks:", chunkError.message);
-          break;
+        const BATCH_SIZE = 5;
+        for (let i = 0; i < chunks.length; i += BATCH_SIZE) {
+          const batch = chunks.slice(i, i + BATCH_SIZE);
+          const embeddings = await Promise.all(batch.map((chunk) => embedText(chunk)));
+
+          for (let idx = 0; idx < batch.length; idx++) {
+            allChunkRows.push({
+              notebook_id: notebook.id,
+              user_id: user.id,
+              content: batch[idx],
+              embedding: JSON.stringify(embeddings[idx]),
+              chunk_index: globalChunkIndex++,
+              metadata: { file_id: file.id, file_name: file.fileName },
+            });
+          }
+
+          // Rate limit delay between batches
+          if (i + BATCH_SIZE < chunks.length) {
+            await new Promise((r) => setTimeout(r, 6500));
+          }
         }
 
-        // Rate limit delay between batches
-        if (i + BATCH_SIZE < chunks.length) {
-          await new Promise((r) => setTimeout(r, 6500));
+        // Delay between files to respect rate limits
+        await new Promise((r) => setTimeout(r, 6500));
+      }
+
+      // Insert all chunks in one batch
+      if (allChunkRows.length > 0) {
+        const { error: chunkError } = await serviceClient.from("chunks").insert(allChunkRows);
+        if (chunkError) {
+          console.error("[clone-featured] Failed to insert chunks:", chunkError.message);
         }
       }
 
       // Update page count on the notebook record
       await supabase
         .from("notebooks")
-        .update({ page_count: estimatedPages })
+        .update({ page_count: totalPages })
         .eq("id", notebook.id);
     } catch (e) {
       console.error("[clone-featured] Embedding failed (non-fatal):", e);

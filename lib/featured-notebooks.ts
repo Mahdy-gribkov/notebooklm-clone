@@ -20,7 +20,7 @@ export const featuredNotebooks: FeaturedNotebook[] = [
     icon: "rocket",
     author: "DocChat Team",
     date: "Feb 2026",
-    sourceCount: 1,
+    sourceCount: 3,
     pattern: "circles",
   },
   {
@@ -31,7 +31,7 @@ export const featuredNotebooks: FeaturedNotebook[] = [
     icon: "research",
     author: "DocChat Team",
     date: "Feb 2026",
-    sourceCount: 1,
+    sourceCount: 3,
     pattern: "hexagons",
   },
   {
@@ -42,7 +42,7 @@ export const featuredNotebooks: FeaturedNotebook[] = [
     icon: "meeting",
     author: "DocChat Team",
     date: "Feb 2026",
-    sourceCount: 1,
+    sourceCount: 3,
     pattern: "grid",
   },
   {
@@ -53,7 +53,7 @@ export const featuredNotebooks: FeaturedNotebook[] = [
     icon: "study",
     author: "DocChat Team",
     date: "Feb 2026",
-    sourceCount: 1,
+    sourceCount: 3,
     pattern: "waves",
   },
   {
@@ -64,7 +64,7 @@ export const featuredNotebooks: FeaturedNotebook[] = [
     icon: "data",
     author: "DocChat Team",
     date: "Feb 2026",
-    sourceCount: 1,
+    sourceCount: 3,
     pattern: "dots",
   },
   {
@@ -75,7 +75,7 @@ export const featuredNotebooks: FeaturedNotebook[] = [
     icon: "legal",
     author: "DocChat Team",
     date: "Feb 2026",
-    sourceCount: 1,
+    sourceCount: 3,
     pattern: "triangles",
   },
   {
@@ -86,7 +86,7 @@ export const featuredNotebooks: FeaturedNotebook[] = [
     icon: "product",
     author: "DocChat Team",
     date: "Feb 2026",
-    sourceCount: 1,
+    sourceCount: 3,
     pattern: "lines",
   },
   {
@@ -97,7 +97,7 @@ export const featuredNotebooks: FeaturedNotebook[] = [
     icon: "literature",
     author: "DocChat Team",
     date: "Feb 2026",
-    sourceCount: 1,
+    sourceCount: 3,
     pattern: "diamond",
   },
 ];

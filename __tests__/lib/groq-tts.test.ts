@@ -99,4 +99,25 @@ describe("generateSpeech", () => {
     const { generateSpeech } = await import("@/lib/groq-tts");
     await expect(generateSpeech("test")).rejects.toThrow("Groq TTS failed (500)");
   });
+
+  it("throws on fetch abort (timeout)", async () => {
+    globalThis.fetch = vi.fn().mockRejectedValue(new DOMException("The operation was aborted", "AbortError"));
+
+    const { generateSpeech } = await import("@/lib/groq-tts");
+    await expect(generateSpeech("test")).rejects.toThrow("aborted");
+  });
+
+  it("passes AbortSignal to fetch", async () => {
+    const mockFetch = vi.fn().mockResolvedValue({
+      ok: true,
+      arrayBuffer: () => Promise.resolve(new ArrayBuffer(10)),
+    });
+    globalThis.fetch = mockFetch;
+
+    const { generateSpeech } = await import("@/lib/groq-tts");
+    await generateSpeech("test");
+
+    const fetchOptions = mockFetch.mock.calls[0][1];
+    expect(fetchOptions.signal).toBeInstanceOf(AbortSignal);
+  });
 });

@@ -64,14 +64,16 @@ export async function GET(
     .from("notes")
     .select("id, title, content, created_at")
     .eq("notebook_id", notebookId)
-    .order("created_at", { ascending: false });
+    .order("created_at", { ascending: false })
+    .limit(50);
 
   // Fetch studio generations
   const { data: generations } = await supabase
     .from("studio_generations")
     .select("id, action, result, created_at")
     .eq("notebook_id", notebookId)
-    .order("created_at", { ascending: false });
+    .order("created_at", { ascending: false })
+    .limit(50);
 
   return NextResponse.json({
     notebook,

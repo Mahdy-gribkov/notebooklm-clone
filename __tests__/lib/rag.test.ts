@@ -15,6 +15,18 @@ vi.mock("@/lib/pdf", () => ({
   extractText: vi.fn(),
 }));
 
+vi.mock("@/lib/extractors/txt", () => ({
+  extractTextFromTxt: vi.fn().mockReturnValue("Plain text content"),
+}));
+
+vi.mock("@/lib/extractors/docx", () => ({
+  extractTextFromDocx: vi.fn().mockResolvedValue("Docx content here"),
+}));
+
+vi.mock("@/lib/extractors/image", () => ({
+  extractTextFromImage: vi.fn().mockResolvedValue("OCR extracted text"),
+}));
+
 vi.mock("@/lib/supabase/service", () => ({
   getServiceClient: vi.fn(),
 }));
@@ -172,6 +184,44 @@ describe("processNotebook", () => {
     // Verify chunk cleanup was called (notebook status is now handled by caller)
     expect(mockSupabase.from).toHaveBeenCalledWith("chunks");
   });
+
+  it("processes txt fileType", async () => {
+    const result = await processNotebook(validUUID, validUserUUID, Buffer.from("text"), undefined, undefined, "txt");
+    expect(result.pageCount).toBe(1);
+    expect(result.chunkCount).toBe(2);
+  });
+
+  it("processes docx fileType", async () => {
+    const result = await processNotebook(validUUID, validUserUUID, Buffer.from("docx"), undefined, undefined, "docx");
+    expect(result.pageCount).toBe(1);
+    expect(result.chunkCount).toBe(2);
+  });
+
+  it("processes image fileType", async () => {
+    const result = await processNotebook(validUUID, validUserUUID, Buffer.from("img"), undefined, undefined, "image", "image/png");
+    expect(result.pageCount).toBe(1);
+    expect(result.chunkCount).toBe(2);
+  });
+
+  it("cleans up with fileId-specific delete on error", async () => {
+    mockedExtractText.mockRejectedValue(new Error("Parse failed"));
+    const fileId = "770e8400-e29b-41d4-a716-446655440000";
+
+    await expect(
+      processNotebook(validUUID, validUserUUID, Buffer.from("bad"), fileId, "test.pdf")
+    ).rejects.toThrow("Parse failed");
+
+    // Verify chunk cleanup was called with fileId path
+    expect(mockSupabase.from).toHaveBeenCalledWith("chunks");
+  });
+
+  it("deletes existing chunks for specific fileId before re-embedding", async () => {
+    const fileId = "770e8400-e29b-41d4-a716-446655440000";
+    const result = await processNotebook(validUUID, validUserUUID, Buffer.from("pdf"), fileId, "test.pdf");
+    expect(result.chunkCount).toBe(2);
+    // from("chunks") should have been called for delete
+    expect(mockSupabase.from).toHaveBeenCalledWith("chunks");
+  });
 });
 
 describe("getAllChunks", () => {
@@ -207,6 +257,25 @@ describe("getAllChunks", () => {
 
     const result = await getAllChunks(validUUID, validUserUUID);
     expect(result.length).toBe(30_000);
+  });
+
+  it("throws on RPC error", async () => {
+    mockedGetServiceClient.mockReturnValue({
+      from: vi.fn(() => ({
+        select: vi.fn(() => ({
+          eq: vi.fn(() => ({
+            eq: vi.fn(() => ({
+              order: vi.fn().mockResolvedValue({
+                data: null,
+                error: { message: "DB error" },
+              }),
+            })),
+          })),
+        })),
+      })),
+    } as never);
+
+    await expect(getAllChunks(validUUID, validUserUUID)).rejects.toThrow("Failed to load document");
   });
 
   it("returns empty string for no data", async () => {

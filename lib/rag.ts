@@ -156,10 +156,21 @@ export async function processNotebook(
       }
     }
 
-    // Generate title and description (fire-and-forget)
-    generateNotebookMeta(notebookId, chunks.slice(0, 3).join("\n\n")).catch((e) =>
-      console.error("[processNotebook] Meta generation failed:", e)
-    );
+    // Generate title and description (fire-and-forget with retry)
+    const sampleForMeta = chunks.slice(0, 3).join("\n\n");
+    (async () => {
+      try {
+        await generateNotebookMeta(notebookId, sampleForMeta);
+      } catch (e1) {
+        console.error("[processNotebook] Meta generation failed, retrying in 5s:", e1);
+        await sleep(5000);
+        try {
+          await generateNotebookMeta(notebookId, sampleForMeta);
+        } catch (e2) {
+          console.error("[processNotebook] Meta generation retry failed:", e2);
+        }
+      }
+    })();
 
     return {
       pageCount,

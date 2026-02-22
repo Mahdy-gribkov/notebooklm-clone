@@ -39,6 +39,7 @@ export async function embedQuery(text: string): Promise<number[]> {
       content: { parts: [{ text }] },
       outputDimensionality: EMBEDDING_DIMS,
     }),
+    signal: AbortSignal.timeout(15_000),
   });
 
   if (!res.ok) {

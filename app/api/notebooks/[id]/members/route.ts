@@ -29,6 +29,13 @@ export async function GET(
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
+  if (!checkRateLimit(`members-list:${user.id}`, 30, 60_000)) {
+    return NextResponse.json(
+      { error: "Rate limit exceeded" },
+      { status: 429, headers: { "Retry-After": "60" } }
+    );
+  }
+
   // Check ownership or membership
   const serviceClient = getServiceClient();
   const { data: notebook } = await serviceClient
@@ -60,16 +67,17 @@ export async function GET(
     .eq("notebook_id", notebookId)
     .order("created_at", { ascending: true });
 
-  // Fetch user emails for display
-  const memberList = [];
-  for (const member of members ?? []) {
-    const { data: userData } = await serviceClient.auth.admin.getUserById(member.user_id);
-    memberList.push({
-      ...member,
-      email: userData?.user?.email ?? "Unknown",
-      display_name: userData?.user?.user_metadata?.display_name ?? userData?.user?.email ?? "Unknown",
-    });
-  }
+  // Fetch user emails for display (parallel lookups)
+  const memberList = await Promise.all(
+    (members ?? []).map(async (member) => {
+      const { data: userData } = await serviceClient.auth.admin.getUserById(member.user_id);
+      return {
+        ...member,
+        email: userData?.user?.email ?? "Unknown",
+        display_name: userData?.user?.user_metadata?.display_name ?? userData?.user?.email ?? "Unknown",
+      };
+    })
+  );
 
   return NextResponse.json({
     members: memberList,
@@ -131,13 +139,18 @@ export async function POST(
     return NextResponse.json({ error: "Email is required" }, { status: 400 });
   }
 
+  const email = body.email.trim().slice(0, 254);
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    return NextResponse.json({ error: "Invalid email format" }, { status: 400 });
+  }
+
   const role = body.role === "editor" ? "editor" : "viewer";
 
   // Look up user by email
   const serviceClient = getServiceClient();
   const { data: userList } = await serviceClient.auth.admin.listUsers();
   const invitedUser = userList?.users?.find(
-    (u: { email?: string }) => u.email?.toLowerCase() === body.email?.toLowerCase()
+    (u: { email?: string }) => u.email?.toLowerCase() === email.toLowerCase()
   );
 
   if (!invitedUser) {

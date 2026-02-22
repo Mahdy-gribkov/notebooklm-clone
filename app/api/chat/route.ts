@@ -10,7 +10,7 @@ import { streamText } from "ai";
 import { NextResponse } from "next/server";
 import type { Source } from "@/types";
 
-export const maxDuration = 60;
+export const maxDuration = 120;
 
 const SYSTEM_PROMPT = `You are DocChat, a knowledge assistant that helps users understand their uploaded sources.
 Your job is to answer questions based on the user's sources. Adapt your tone to match the content type. Be concise.

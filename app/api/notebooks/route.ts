@@ -73,7 +73,8 @@ export async function GET(request: Request) {
       .select(FILE_COLUMNS)
       .in("notebook_id", notebookIds)
       .eq("user_id", user.id)
-      .order("created_at", { ascending: false });
+      .order("created_at", { ascending: false })
+      .limit(200);
 
     const filesByNotebook: Record<string, NotebookFile[]> = {};
     for (const file of (allFiles ?? []) as NotebookFile[]) {

@@ -75,6 +75,20 @@ describe("generateSpeech", () => {
     await expect(generateSpeech("test")).rejects.toThrow("Groq TTS failed (429)");
   });
 
+  it("uses Fritz-PlayAI as default voice", async () => {
+    const mockFetch = vi.fn().mockResolvedValue({
+      ok: true,
+      arrayBuffer: () => Promise.resolve(new ArrayBuffer(10)),
+    });
+    globalThis.fetch = mockFetch;
+
+    const { generateSpeech } = await import("@/lib/groq-tts");
+    await generateSpeech("hello world");
+
+    const body = JSON.parse(mockFetch.mock.calls[0][1].body);
+    expect(body.voice).toBe("Fritz-PlayAI");
+  });
+
   it("handles text() failure in error path", async () => {
     globalThis.fetch = vi.fn().mockResolvedValue({
       ok: false,

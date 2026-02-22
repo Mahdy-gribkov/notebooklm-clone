@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef } from "react";
 import Link from "next/link";
 import dynamic from "next/dynamic";
 import { ChatInterface } from "@/components/chat-interface";
@@ -41,10 +41,29 @@ export function NotebookLayout({ notebookId, notebookTitle, notebookFiles, initi
   const [editValue, setEditValue] = useState(notebookTitle);
   const [shareOpen, setShareOpen] = useState(false);
   const [files, setFiles] = useState<NotebookFile[]>(notebookFiles);
+  const [currentStarterPrompts, setCurrentStarterPrompts] = useState<string[] | null | undefined>(starterPrompts);
+  const promptRefreshTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const handleFileUploaded = useCallback((file: NotebookFile) => {
     setFiles(prev => [file, ...prev]);
-  }, []);
+
+    // After upload, the backend generates new starter prompts async (~5-10s).
+    // Poll after a delay to pick them up.
+    if (promptRefreshTimer.current) clearTimeout(promptRefreshTimer.current);
+    promptRefreshTimer.current = setTimeout(async () => {
+      try {
+        const res = await fetch(`/api/notebooks/${notebookId}`);
+        if (res.ok) {
+          const data = await res.json();
+          if (data.starter_prompts && Array.isArray(data.starter_prompts) && data.starter_prompts.length > 0) {
+            setCurrentStarterPrompts(data.starter_prompts);
+          }
+        }
+      } catch {
+        // Silent fail, prompts stay as-is
+      }
+    }, 10_000);
+  }, [notebookId]);
   const t = useTranslations("notebook");
   const ts = useTranslations("share");
 
@@ -212,7 +231,7 @@ export function NotebookLayout({ notebookId, notebookTitle, notebookFiles, initi
             isProcessing={hasProcessingFiles && !hasReadyFiles}
             hasFiles={files.length > 0}
             description={notebookDescription}
-            starterPrompts={starterPrompts}
+            starterPrompts={currentStarterPrompts}
             onFileUploaded={handleFileUploaded}
           />
         </div>

@@ -4,7 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { isValidUUID, sanitizeText } from "@/lib/validate";
 import { NextResponse } from "next/server";
 
-const NOTEBOOK_COLUMNS = "id, user_id, title, file_url, status, page_count, description, created_at";
+const NOTEBOOK_COLUMNS = "id, user_id, title, file_url, status, page_count, description, starter_prompts, created_at";
 
 export async function GET(
   _request: Request,

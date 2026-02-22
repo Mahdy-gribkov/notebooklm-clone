@@ -60,6 +60,13 @@ export async function POST(
     );
   }
 
+  if (!process.env.GROQ_API_KEY) {
+    return NextResponse.json(
+      { error: "Audio generation is not configured. Set GROQ_API_KEY to enable TTS." },
+      { status: 501 }
+    );
+  }
+
   try {
     // Get document content
     const documentText = await getAllChunks(notebookId, user.id);
@@ -100,6 +107,21 @@ Keep it under 2000 characters. Do not use markdown, bullet points, or special fo
   } catch (error) {
     const msg = error instanceof Error ? error.message : String(error);
     console.error("[audio] Generation failed:", msg);
+
+    // Surface specific TTS errors to the user
+    if (msg.includes("401") || msg.includes("403")) {
+      return NextResponse.json(
+        { error: "TTS is not available on your Groq API plan. Upgrade at console.groq.com." },
+        { status: 403 }
+      );
+    }
+    if (msg.includes("429")) {
+      return NextResponse.json(
+        { error: "TTS rate limit reached. Try again in a few minutes." },
+        { status: 429, headers: { "Retry-After": "60" } }
+      );
+    }
+
     return NextResponse.json(
       { error: "Audio generation failed. Please try again." },
       { status: 500 }

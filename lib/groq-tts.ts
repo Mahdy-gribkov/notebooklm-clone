@@ -8,7 +8,7 @@ function getApiKey(): string {
 
 export async function generateSpeech(
   text: string,
-  voice = "Arista-PlayAI"
+  voice = "Fritz-PlayAI"
 ): Promise<ArrayBuffer> {
   if (text.length > 10_000) {
     text = text.slice(0, 10_000);

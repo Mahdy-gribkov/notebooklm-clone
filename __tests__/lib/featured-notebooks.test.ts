@@ -28,6 +28,12 @@ describe("featuredNotebooks", () => {
     }
   });
 
+  it("all entries have sourceCount of 1 (each featured notebook has exactly 1 synthetic file)", () => {
+    for (const nb of featuredNotebooks) {
+      expect(nb.sourceCount).toBe(1);
+    }
+  });
+
   it("all patterns are valid", () => {
     for (const nb of featuredNotebooks) {
       expect(VALID_PATTERNS).toContain(nb.pattern);

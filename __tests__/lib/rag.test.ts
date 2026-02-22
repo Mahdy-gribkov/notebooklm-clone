@@ -1,9 +1,14 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 
 // Mock dependencies
-vi.mock("@/lib/llm", () => ({
+vi.mock("@/lib/langchain/embeddings", () => ({
   embedQuery: vi.fn(),
-  getLLM: vi.fn(() => "mock-model"),
+  embedDocuments: vi.fn(),
+  getEmbeddings: vi.fn(),
+}));
+
+vi.mock("@/lib/langchain/chat-model", () => ({
+  getChatModel: vi.fn(),
 }));
 
 vi.mock("@/lib/pdf", () => ({
@@ -23,19 +28,25 @@ vi.mock("@langchain/textsplitters", () => {
   return { RecursiveCharacterTextSplitter: MockSplitter };
 });
 
-vi.mock("ai", () => ({
-  generateText: vi.fn().mockResolvedValue({
-    text: '{"title": "Test", "description": "Test doc"}',
-  }),
-}));
+vi.mock("@langchain/core/messages", () => {
+  class MockHumanMessage {
+    content: string;
+    constructor(content: string) { this.content = content; }
+  }
+  class MockSystemMessage {
+    content: string;
+    constructor(content: string) { this.content = content; }
+  }
+  return { HumanMessage: MockHumanMessage, SystemMessage: MockSystemMessage };
+});
 
 import { embedText, processNotebook, getAllChunks, retrieveChunks, deduplicateSources, buildContextBlock } from "@/lib/rag";
-import { embedQuery } from "@/lib/llm";
+import { embedQuery } from "@/lib/langchain/embeddings";
+import { getChatModel } from "@/lib/langchain/chat-model";
 import { extractText } from "@/lib/pdf";
 import { getServiceClient } from "@/lib/supabase/service";
-import { generateText } from "ai";
 
-const mockedGenerateText = vi.mocked(generateText);
+const mockedGetChatModel = vi.mocked(getChatModel);
 
 const mockedEmbedQuery = vi.mocked(embedQuery);
 const mockedExtractText = vi.mocked(extractText);
@@ -322,6 +333,7 @@ describe("generateNotebookMeta (via processNotebook)", () => {
   const validUUID = "550e8400-e29b-41d4-a716-446655440000";
   const validUserUUID = "660e8400-e29b-41d4-a716-446655440000";
   let mockUpdate: ReturnType<typeof vi.fn>;
+  let mockInvoke: ReturnType<typeof vi.fn>;
 
   function createMetaMockSupabase() {
     mockUpdate = vi.fn().mockReturnValue({
@@ -347,24 +359,26 @@ describe("generateNotebookMeta (via processNotebook)", () => {
     vi.useFakeTimers();
     mockedExtractText.mockResolvedValue({ text: "Sample doc content", pageCount: 2 });
     mockedEmbedQuery.mockResolvedValue(Array.from({ length: 768 }, () => 0.1));
+    mockInvoke = vi.fn().mockResolvedValue({
+      content: '{"title": "Test", "description": "Test doc"}',
+    });
+    mockedGetChatModel.mockReturnValue({ invoke: mockInvoke } as never);
   });
 
   afterEach(() => {
     vi.useRealTimers();
   });
 
-  it("saves starterPrompts when generateText returns them", async () => {
+  it("saves starterPrompts when chat model returns them", async () => {
     const mock = createMetaMockSupabase();
     mockedGetServiceClient.mockReturnValue(mock as never);
-    mockedGenerateText.mockResolvedValue({
-      text: '{"title":"Doc Title","description":"A description","starterPrompts":["Q1","Q2","Q3","Q4","Q5","Q6"]}',
-    } as never);
+    mockInvoke.mockResolvedValue({
+      content: '{"title":"Doc Title","description":"A description","starterPrompts":["Q1","Q2","Q3","Q4","Q5","Q6"]}',
+    });
 
     await processNotebook(validUUID, validUserUUID, Buffer.from("pdf"));
-    // Wait for fire-and-forget
     await vi.advanceTimersByTimeAsync(100);
 
-    // generateNotebookMeta calls update with title, description, starter_prompts
     const updateCalls = mockUpdate.mock.calls;
     const metaCall = updateCalls.find(
       (call: unknown[]) => {
@@ -380,16 +394,13 @@ describe("generateNotebookMeta (via processNotebook)", () => {
   it("retries and sets fallback on double failure", async () => {
     const mock = createMetaMockSupabase();
     mockedGetServiceClient.mockReturnValue(mock as never);
-    mockedGenerateText.mockRejectedValue(new Error("API error"));
+    mockInvoke.mockRejectedValue(new Error("API error"));
 
     await processNotebook(validUUID, validUserUUID, Buffer.from("pdf"));
-    // Wait for retry delay (2s) + execution
     await vi.advanceTimersByTimeAsync(5000);
 
-    // Should have been called twice (first attempt + retry)
-    expect(mockedGenerateText).toHaveBeenCalledTimes(2);
+    expect(mockInvoke).toHaveBeenCalledTimes(2);
 
-    // Fallback description should be set
     const updateCalls = mockUpdate.mock.calls;
     const fallbackCall = updateCalls.find(
       (call: unknown[]) => {
@@ -403,9 +414,9 @@ describe("generateNotebookMeta (via processNotebook)", () => {
   it("strips markdown fences from LLM response", async () => {
     const mock = createMetaMockSupabase();
     mockedGetServiceClient.mockReturnValue(mock as never);
-    mockedGenerateText.mockResolvedValue({
-      text: '```json\n{"title":"Fenced Title","description":"Fenced desc"}\n```',
-    } as never);
+    mockInvoke.mockResolvedValue({
+      content: '```json\n{"title":"Fenced Title","description":"Fenced desc"}\n```',
+    });
 
     await processNotebook(validUUID, validUserUUID, Buffer.from("pdf"));
     await vi.advanceTimersByTimeAsync(100);
@@ -423,18 +434,15 @@ describe("generateNotebookMeta (via processNotebook)", () => {
   it("returns null when response has no title", async () => {
     const mock = createMetaMockSupabase();
     mockedGetServiceClient.mockReturnValue(mock as never);
-    // First call returns valid JSON but no title, second call also no title
-    mockedGenerateText
-      .mockResolvedValueOnce({ text: '{"description":"no title here"}' } as never)
-      .mockResolvedValueOnce({ text: '{"description":"still no title"}' } as never);
+    mockInvoke
+      .mockResolvedValueOnce({ content: '{"description":"no title here"}' })
+      .mockResolvedValueOnce({ content: '{"description":"still no title"}' });
 
     await processNotebook(validUUID, validUserUUID, Buffer.from("pdf"));
     await vi.advanceTimersByTimeAsync(5000);
 
-    // Should have tried twice
-    expect(mockedGenerateText).toHaveBeenCalledTimes(2);
+    expect(mockInvoke).toHaveBeenCalledTimes(2);
 
-    // Should have set fallback description (no title field)
     const updateCalls = mockUpdate.mock.calls;
     const fallbackCall = updateCalls.find(
       (call: unknown[]) => {
@@ -448,16 +456,16 @@ describe("generateNotebookMeta (via processNotebook)", () => {
   it("retries with shorter text on first parse failure", async () => {
     const mock = createMetaMockSupabase();
     mockedGetServiceClient.mockReturnValue(mock as never);
-    mockedGenerateText
-      .mockResolvedValueOnce({ text: "not json at all" } as never)
+    mockInvoke
+      .mockResolvedValueOnce({ content: "not json at all" })
       .mockResolvedValueOnce({
-        text: '{"title":"Retry Title","description":"Retry desc"}',
-      } as never);
+        content: '{"title":"Retry Title","description":"Retry desc"}',
+      });
 
     await processNotebook(validUUID, validUserUUID, Buffer.from("pdf"));
     await vi.advanceTimersByTimeAsync(5000);
 
-    expect(mockedGenerateText).toHaveBeenCalledTimes(2);
+    expect(mockInvoke).toHaveBeenCalledTimes(2);
 
     const updateCalls = mockUpdate.mock.calls;
     const metaCall = updateCalls.find(

@@ -1,6 +1,7 @@
 import { authenticateRequest } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
-import { retrieveChunks, retrieveChunksShared, deduplicateSources, buildContextBlock } from "@/lib/rag";
+import { createRAGChain } from "@/lib/langchain/rag-chain";
+import { trimMessages } from "@/lib/langchain/trim-messages";
 import { getLLM } from "@/lib/llm";
 import { getServiceClient } from "@/lib/supabase/service";
 import { checkRateLimit } from "@/lib/rate-limit";
@@ -122,24 +123,6 @@ export async function POST(request: Request) {
     );
   }
 
-  // Retrieve relevant chunks (use shared variant for non-owners)
-  let sources: Source[] = [];
-  try {
-    sources = isOwner
-      ? await retrieveChunks(userMessage, notebookId, user.id)
-      : await retrieveChunksShared(userMessage, notebookId, user.id);
-  } catch (e) {
-    console.error("[chat] RAG retrieval failed:", e);
-  }
-
-  sources = deduplicateSources(sources);
-
-  const context = buildContextBlock(sources);
-
-  const contextBlock = sources.length > 0
-    ? `\n\n===BEGIN DOCUMENT===\n${context}\n===END DOCUMENT===`
-    : "\n\nThe user has not uploaded any sources yet, or no relevant passages matched their query. Politely tell them to upload sources or try a different question. Do not mention internal systems, formatting markers, or how retrieval works.";
-
   // Append AI style instruction based on user preference
   const aiStyle = user.user_metadata?.ai_style as string | undefined;
   let styleInstruction = "";
@@ -149,7 +132,22 @@ export async function POST(request: Request) {
     styleInstruction = "\n\nProvide thorough, detailed responses with examples.";
   }
 
-  const systemWithContext = `${SYSTEM_PROMPT}${styleInstruction}${contextBlock}`;
+  // LCEL RAG chain: embed query -> retrieve -> deduplicate -> build context
+  let sources: Source[] = [];
+  let systemWithContext = `${SYSTEM_PROMPT}${styleInstruction}`;
+  try {
+    const ragChain = createRAGChain(`${SYSTEM_PROMPT}${styleInstruction}`);
+    const ragResult = await ragChain.invoke({
+      query: userMessage,
+      notebookId,
+      userId: user.id,
+      shared: !isOwner,
+    });
+    sources = ragResult.sources;
+    systemWithContext = ragResult.systemPrompt;
+  } catch (e) {
+    console.error("[chat] RAG chain failed:", e);
+  }
 
   // Save user message
   await serviceClient.from("messages").insert({
@@ -165,10 +163,12 @@ export async function POST(request: Request) {
     const result = streamText({
       model: getLLM(),
       system: systemWithContext,
-      messages: messages.map((m) => ({
-        role: m.role as "user" | "assistant",
-        content: m.content,
-      })),
+      messages: trimMessages(
+        messages.map((m) => ({
+          role: m.role as "user" | "assistant",
+          content: m.content,
+        })),
+      ),
       onError: ({ error }) => {
         console.error("[chat] Stream error from LLM:", error);
       },

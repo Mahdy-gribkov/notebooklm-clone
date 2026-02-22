@@ -3,9 +3,11 @@ import { checkRateLimit } from "@/lib/rate-limit";
 import { hashIP } from "@/lib/share";
 import { validateUserMessage, sanitizeText } from "@/lib/validate";
 import { getLLM } from "@/lib/llm";
-import { embedText, deduplicateSources, buildContextBlock } from "@/lib/rag";
+import { createRAGChain } from "@/lib/langchain/rag-chain";
+import { trimMessages } from "@/lib/langchain/trim-messages";
 import { streamText, StreamData } from "ai";
 import { NextRequest, NextResponse } from "next/server";
+import type { Source } from "@/types";
 
 export const maxDuration = 60;
 
@@ -98,34 +100,21 @@ export async function POST(
   const ownerId = shareInfo.owner_id;
 
   try {
-    // Retrieve RAG context using owner's chunks
-    const queryEmbedding = await embedText(userMessage);
-    const { data: chunks } = await supabase.rpc("match_chunks", {
-      query_embedding: JSON.stringify(queryEmbedding),
-      match_notebook_id: notebookId,
-      match_user_id: ownerId,
-      match_count: 8,
-      match_threshold: 0.3,
-    });
-
-    let sources: Array<{ chunkId: string; content: string; similarity: number; fileName?: string }> = [];
-
-    if (chunks && chunks.length > 0) {
-      sources = (chunks as Array<{ id: string; content: string; similarity: number; metadata?: { file_name?: string } }>).map((c) => ({
-        chunkId: c.id,
-        content: c.content,
-        similarity: c.similarity,
-        fileName: c.metadata?.file_name,
-      }));
+    // LCEL RAG chain: embed query -> retrieve -> deduplicate -> build context
+    let sources: Source[] = [];
+    let systemMessage = SYSTEM_PROMPT;
+    try {
+      const ragChain = createRAGChain(SYSTEM_PROMPT);
+      const ragResult = await ragChain.invoke({
+        query: userMessage,
+        notebookId,
+        userId: ownerId,
+      });
+      sources = ragResult.sources;
+      systemMessage = ragResult.systemPrompt;
+    } catch (e) {
+      console.error("[shared-chat] RAG chain failed:", e);
     }
-
-    sources = deduplicateSources(sources);
-    const context = buildContextBlock(sources);
-
-    const systemMessage =
-      sources.length > 0
-        ? `${SYSTEM_PROMPT}\n\n===BEGIN DOCUMENT===\n${context}\n===END DOCUMENT===`
-        : `${SYSTEM_PROMPT}\n\nNo relevant document context was found.`;
 
     const data = new StreamData();
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -134,10 +123,12 @@ export async function POST(
     const result = streamText({
       model: getLLM(),
       system: systemMessage,
-      messages: messages.map((m) => ({
-        role: m.role as "user" | "assistant",
-        content: m.content,
-      })),
+      messages: trimMessages(
+        messages.map((m) => ({
+          role: m.role as "user" | "assistant",
+          content: m.content,
+        })),
+      ),
       onFinish: async ({ text }) => {
         // Save anonymous message to DB
         const anonymousId = hashIP(ip);

@@ -4,13 +4,13 @@ import { getAllChunks } from "@/lib/rag";
 import { getLLM } from "@/lib/llm";
 import { checkRateLimit } from "@/lib/rate-limit";
 import { isValidUUID } from "@/lib/validate";
+import { studioParsers, type StudioAction } from "@/lib/langchain/output-parsers";
 import { streamText } from "ai";
 import { NextResponse } from "next/server";
 
 export const maxDuration = 120;
 
 const VALID_ACTIONS = ["flashcards", "quiz", "report", "mindmap", "datatable", "infographic", "slidedeck"] as const;
-type StudioAction = (typeof VALID_ACTIONS)[number];
 
 const PROMPTS: Record<StudioAction, string> = {
   flashcards: `You are a study aid generator. From the document below, create 10-15 flashcards covering the most important concepts, definitions, and facts. Return ONLY a valid JSON array with no additional text: [{"front":"question or term","back":"answer or definition"}]`,
@@ -101,7 +101,10 @@ export async function POST(request: Request) {
     );
   }
 
-  const systemPrompt = `${PROMPTS[validAction]}\n\n===BEGIN DOCUMENT===\n${documentText}\n===END DOCUMENT===`;
+  // Inject LangChain format instructions into the prompt for type-safe output
+  const parser = studioParsers[validAction];
+  const formatInstructions = parser.getFormatInstructions();
+  const systemPrompt = `${PROMPTS[validAction]}\n\n${formatInstructions}\n\n===BEGIN DOCUMENT===\n${documentText}\n===END DOCUMENT===`;
 
   try {
     const result = streamText({
@@ -115,6 +118,17 @@ export async function POST(request: Request) {
       ],
       onError: ({ error }) => {
         console.error("[studio] Stream error:", error);
+      },
+      onFinish: async ({ text }) => {
+        // Validate output against Zod schema
+        try {
+          await parser.parse(text);
+        } catch (parseError) {
+          console.warn("[studio] Output failed schema validation:", {
+            action: validAction,
+            error: parseError instanceof Error ? parseError.message : parseError,
+          });
+        }
       },
     });
 

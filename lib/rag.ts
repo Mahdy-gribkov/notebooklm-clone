@@ -1,4 +1,6 @@
-import { embedQuery, getLLM } from "@/lib/llm";
+import { embedQuery } from "@/lib/langchain/embeddings";
+import { DocChatRetriever, documentsToSources } from "@/lib/langchain/retriever";
+import { getChatModel } from "@/lib/langchain/chat-model";
 import { extractText, type PdfResult } from "@/lib/pdf";
 import { extractTextFromTxt } from "@/lib/extractors/txt";
 import { extractTextFromDocx } from "@/lib/extractors/docx";
@@ -6,7 +8,7 @@ import { extractTextFromImage } from "@/lib/extractors/image";
 import { isValidUUID, sanitizeText } from "@/lib/validate";
 import type { Source } from "@/types";
 import { RecursiveCharacterTextSplitter } from "@langchain/textsplitters";
-import { generateText } from "ai";
+import { HumanMessage, SystemMessage } from "@langchain/core/messages";
 import { getServiceClient } from "@/lib/supabase/service";
 
 async function sleep(ms: number) {
@@ -218,36 +220,11 @@ export async function getAllChunks(
 export async function retrieveChunks(
   query: string,
   notebookId: string,
-  userId: string
+  userId: string,
 ): Promise<Source[]> {
-  if (!isValidUUID(notebookId)) throw new Error("Invalid notebookId");
-  if (!isValidUUID(userId)) throw new Error("Invalid userId");
-
-  const supabase = getServiceClient();
-
-  const queryEmbedding = await embedText(query);
-
-  const { data, error } = await supabase.rpc("match_chunks", {
-    query_embedding: JSON.stringify(queryEmbedding),
-    match_notebook_id: notebookId,
-    match_user_id: userId,
-    match_count: 8,
-    match_threshold: 0.3,
-  });
-
-  if (error) {
-    console.error("[rag] Vector search failed:", error);
-    throw new Error("Failed to retrieve document context");
-  }
-
-  return (data ?? []).map(
-    (row: { id: string; content: string; similarity: number; metadata?: { file_name?: string } }) => ({
-      chunkId: row.id,
-      content: row.content,
-      similarity: row.similarity,
-      fileName: row.metadata?.file_name,
-    })
-  );
+  const retriever = new DocChatRetriever({ notebookId, userId });
+  const docs = await retriever.invoke(query);
+  return documentsToSources(docs);
 }
 
 /**
@@ -257,35 +234,15 @@ export async function retrieveChunks(
 export async function retrieveChunksShared(
   query: string,
   notebookId: string,
-  requestingUserId: string
+  requestingUserId: string,
 ): Promise<Source[]> {
-  if (!isValidUUID(notebookId)) throw new Error("Invalid notebookId");
-  if (!isValidUUID(requestingUserId)) throw new Error("Invalid userId");
-
-  const supabase = getServiceClient();
-  const queryEmbedding = await embedText(query);
-
-  const { data, error } = await supabase.rpc("match_chunks_shared", {
-    query_embedding: JSON.stringify(queryEmbedding),
-    match_notebook_id: notebookId,
-    requesting_user_id: requestingUserId,
-    match_count: 8,
-    match_threshold: 0.3,
+  const retriever = new DocChatRetriever({
+    notebookId,
+    userId: requestingUserId,
+    shared: true,
   });
-
-  if (error) {
-    console.error("[rag] Shared vector search failed:", error);
-    throw new Error("Failed to retrieve document context");
-  }
-
-  return (data ?? []).map(
-    (row: { id: string; content: string; similarity: number; metadata?: { file_name?: string } }) => ({
-      chunkId: row.id,
-      content: row.content,
-      similarity: row.similarity,
-      fileName: row.metadata?.file_name,
-    })
-  );
+  const docs = await retriever.invoke(query);
+  return documentsToSources(docs);
 }
 
 // ---------- Deduplication & Context Builder ----------
@@ -355,13 +312,13 @@ Example for a business report:
 
   async function attemptGenerate(excerpt: string): Promise<{ title?: string; description?: string; starterPrompts?: string[] } | null> {
     try {
-      const { text } = await generateText({
-        model: getLLM(),
-        system: systemPrompt,
-        messages: [{ role: "user", content: `Document excerpt:\n${excerpt}` }],
-      });
+      const chat = getChatModel();
+      const response = await chat.invoke([
+        new SystemMessage(systemPrompt),
+        new HumanMessage(`Document excerpt:\n${excerpt}`),
+      ]);
 
-      let cleaned = text.trim();
+      let cleaned = (typeof response.content === "string" ? response.content : "").trim();
       if (cleaned.startsWith("```")) {
         cleaned = cleaned.replace(/^```(?:json)?\n?/, "").replace(/\n?```$/, "");
       }

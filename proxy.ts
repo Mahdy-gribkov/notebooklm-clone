@@ -1,3 +1,4 @@
+import { getOrigin } from "@/lib/origin";
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
@@ -31,10 +32,7 @@ export async function proxy(request: NextRequest) {
 
   const { pathname } = request.nextUrl;
 
-  // Derive origin from host header (request.url uses 0.0.0.0 inside Docker)
-  const host = request.headers.get("host") ?? "localhost:3000";
-  const proto = request.headers.get("x-forwarded-proto") ?? "http";
-  const origin = `${proto}://${host}`;
+  const origin = getOrigin(request);
 
   // Redirect unauthenticated users away from protected routes
   if (!user && (pathname.startsWith("/notebook") || pathname.startsWith("/settings"))) {

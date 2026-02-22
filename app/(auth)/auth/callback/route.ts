@@ -1,3 +1,4 @@
+import { getOrigin } from "@/lib/origin";
 import { createClient } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
 
@@ -7,10 +8,7 @@ export async function GET(request: Request) {
   const rawNext = searchParams.get("next") ?? "/dashboard";
   const next = rawNext.startsWith("/") && !rawNext.startsWith("//") ? rawNext : "/dashboard";
 
-  // Derive origin from the host header (request.url uses 0.0.0.0 inside Docker)
-  const host = request.headers.get("host") ?? "localhost:3000";
-  const proto = request.headers.get("x-forwarded-proto") ?? "http";
-  const origin = `${proto}://${host}`;
+  const origin = getOrigin(request);
 
   if (code) {
     const supabase = await createClient();

@@ -155,9 +155,8 @@ describe("processNotebook", () => {
       processNotebook(validUUID, validUserUUID, Buffer.from("bad"))
     ).rejects.toThrow("Parse failed");
 
-    // Verify cleanup was called (chunks deleted, status set to error)
+    // Verify chunk cleanup was called (notebook status is now handled by caller)
     expect(mockSupabase.from).toHaveBeenCalledWith("chunks");
-    expect(mockSupabase.from).toHaveBeenCalledWith("notebooks");
   });
 });
 

@@ -28,36 +28,45 @@ describe("updateNotebookStatus", () => {
   it("sets 'ready' when no files exist", async () => {
     mockEq.mockResolvedValue({ data: [] });
     await updateNotebookStatus("notebook-1");
-    expect(mockUpdate).toHaveBeenCalledWith({ status: "ready" });
+    expect(mockUpdate).toHaveBeenCalledWith({ status: "ready", page_count: 0 });
   });
 
   it("sets 'ready' when all files are ready", async () => {
     mockEq.mockResolvedValue({
-      data: [{ status: "ready" }, { status: "ready" }],
+      data: [
+        { status: "ready", page_count: 5 },
+        { status: "ready", page_count: 10 },
+      ],
     });
     await updateNotebookStatus("notebook-1");
-    expect(mockUpdate).toHaveBeenCalledWith({ status: "ready" });
+    expect(mockUpdate).toHaveBeenCalledWith({ status: "ready", page_count: 15 });
   });
 
   it("sets 'processing' when any file is processing", async () => {
     mockEq.mockResolvedValue({
-      data: [{ status: "ready" }, { status: "processing" }],
+      data: [
+        { status: "ready", page_count: 5 },
+        { status: "processing", page_count: null },
+      ],
     });
     await updateNotebookStatus("notebook-1");
-    expect(mockUpdate).toHaveBeenCalledWith({ status: "processing" });
+    expect(mockUpdate).toHaveBeenCalledWith({ status: "processing", page_count: 5 });
   });
 
   it("sets 'error' when mix of ready and error (no processing)", async () => {
     mockEq.mockResolvedValue({
-      data: [{ status: "ready" }, { status: "error" }],
+      data: [
+        { status: "ready", page_count: 3 },
+        { status: "error", page_count: null },
+      ],
     });
     await updateNotebookStatus("notebook-1");
-    expect(mockUpdate).toHaveBeenCalledWith({ status: "error" });
+    expect(mockUpdate).toHaveBeenCalledWith({ status: "error", page_count: 3 });
   });
 
   it("sets 'ready' when data is null", async () => {
     mockEq.mockResolvedValue({ data: null });
     await updateNotebookStatus("notebook-1");
-    expect(mockUpdate).toHaveBeenCalledWith({ status: "ready" });
+    expect(mockUpdate).toHaveBeenCalledWith({ status: "ready", page_count: 0 });
   });
 });

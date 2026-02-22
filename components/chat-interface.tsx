@@ -33,14 +33,25 @@ export function ChatInterface({ notebookId, initialMessages, isProcessing = fals
   const t = useTranslations("chat");
 
   const iconTypes = ["list", "target", "book", "question"];
-  const starterPrompts = dynamicPrompts?.length
-    ? dynamicPrompts.map((text, i) => ({ text, icon: iconTypes[i % iconTypes.length] }))
-    : [
-        { text: t("starter1"), icon: "list" },
-        { text: t("starter2"), icon: "target" },
-        { text: t("starter3"), icon: "book" },
-        { text: t("starter4"), icon: "question" },
-      ];
+  const starterPrompts = useMemo(() => {
+    if (dynamicPrompts?.length) {
+      // Dynamic prompts from generateNotebookMeta, show up to 4
+      const shuffled = [...dynamicPrompts].sort(() => Math.random() - 0.5);
+      return shuffled.slice(0, 4).map((text, i) => ({ text, icon: iconTypes[i % iconTypes.length] }));
+    }
+    // 6 default prompts, randomly pick 4
+    const allDefaults = [
+      { text: t("starter1"), icon: "list" },
+      { text: t("starter2"), icon: "target" },
+      { text: t("starter3"), icon: "book" },
+      { text: t("starter4"), icon: "question" },
+      { text: t("starter5"), icon: "list" },
+      { text: t("starter6"), icon: "target" },
+    ];
+    const shuffled = [...allDefaults].sort(() => Math.random() - 0.5);
+    return shuffled.slice(0, 4);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dynamicPrompts, t]);
 
   // Auto-dismiss error after 8s
   useEffect(() => {

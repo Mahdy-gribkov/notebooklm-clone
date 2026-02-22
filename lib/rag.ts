@@ -231,8 +231,8 @@ export async function retrieveChunks(
     query_embedding: JSON.stringify(queryEmbedding),
     match_notebook_id: notebookId,
     match_user_id: userId,
-    match_count: 5,
-    match_threshold: 0.5,
+    match_count: 8,
+    match_threshold: 0.3,
   });
 
   if (error) {
@@ -269,8 +269,8 @@ export async function retrieveChunksShared(
     query_embedding: JSON.stringify(queryEmbedding),
     match_notebook_id: notebookId,
     requesting_user_id: requestingUserId,
-    match_count: 5,
-    match_threshold: 0.5,
+    match_count: 8,
+    match_threshold: 0.3,
   });
 
   if (error) {
@@ -291,32 +291,69 @@ export async function retrieveChunksShared(
 async function generateNotebookMeta(notebookId: string, sampleText: string): Promise<void> {
   const supabase = getServiceClient();
 
-  const { text } = await generateText({
-    model: getLLM(),
-    system: 'You generate metadata for a document. Return JSON only: {"title": "...", "description": "...", "starterPrompts": ["...", "...", "...", "..."]}. Title max 60 chars. Description max 150 chars. Each starterPrompt is a question a user might ask about this document, max 80 chars. No markdown.',
-    messages: [{ role: "user", content: `Document excerpt:\n${sampleText.slice(0, 3000)}` }],
-  });
+  const systemPrompt = `You generate metadata for a document. Return ONLY valid JSON, no markdown.
+Format: {"title": "...", "description": "...", "starterPrompts": ["...", "...", "...", "...", "...", "..."]}
 
-  try {
-    let cleaned = text.trim();
-    if (cleaned.startsWith("```")) {
-      cleaned = cleaned.replace(/^```(?:json)?\n?/, "").replace(/\n?```$/, "");
-    }
-    const meta = JSON.parse(cleaned) as { title?: string; description?: string; starterPrompts?: string[] };
-    if (meta.title && meta.description) {
-      const updateData: Record<string, unknown> = {
-        title: meta.title,
-        description: meta.description,
-      };
-      if (Array.isArray(meta.starterPrompts) && meta.starterPrompts.length > 0) {
-        updateData.starter_prompts = meta.starterPrompts.slice(0, 4);
+Rules:
+- title: A clear, descriptive title (max 60 chars). Not the filename.
+- description: Describe what the document is about and its key topics (max 150 chars).
+- starterPrompts: 6 diverse questions a user might ask about this document (max 80 chars each).
+  Include a mix: summary, key findings, comparisons, evidence, methodology, implications.
+
+Example:
+{"title": "Climate Change Impact Report 2024", "description": "Analysis of climate change effects on agriculture, water resources, and coastal ecosystems with policy recommendations.", "starterPrompts": ["Summarize the key findings of this report", "What are the main impacts on agriculture?", "How does climate change affect water resources?", "What policy recommendations are proposed?", "Compare the impacts across different regions", "What evidence supports the main conclusions?"]}`;
+
+  async function attemptGenerate(excerpt: string): Promise<{ title?: string; description?: string; starterPrompts?: string[] } | null> {
+    try {
+      const { text } = await generateText({
+        model: getLLM(),
+        system: systemPrompt,
+        messages: [{ role: "user", content: `Document excerpt:\n${excerpt}` }],
+      });
+
+      let cleaned = text.trim();
+      if (cleaned.startsWith("```")) {
+        cleaned = cleaned.replace(/^```(?:json)?\n?/, "").replace(/\n?```$/, "");
       }
-      await supabase
-        .from("notebooks")
-        .update(updateData)
-        .eq("id", notebookId);
+      const meta = JSON.parse(cleaned) as { title?: string; description?: string; starterPrompts?: string[] };
+      if (meta.title && meta.description) return meta;
+      return null;
+    } catch (e) {
+      console.error("[generateNotebookMeta] Attempt failed:", e instanceof Error ? e.message : e);
+      return null;
     }
-  } catch {
-    console.error("[generateNotebookMeta] Failed to parse LLM response:", text.slice(0, 200));
+  }
+
+  // First attempt with more text
+  let meta = await attemptGenerate(sampleText.slice(0, 5000));
+
+  // Retry with shorter text on failure
+  if (!meta) {
+    console.error("[generateNotebookMeta] Retrying with shorter excerpt...");
+    await sleep(2000);
+    meta = await attemptGenerate(sampleText.slice(0, 1500));
+  }
+
+  if (meta) {
+    const updateData: Record<string, unknown> = {
+      title: meta.title,
+      description: meta.description,
+    };
+    if (Array.isArray(meta.starterPrompts) && meta.starterPrompts.length > 0) {
+      updateData.starter_prompts = meta.starterPrompts.slice(0, 6);
+    }
+    await supabase
+      .from("notebooks")
+      .update(updateData)
+      .eq("id", notebookId);
+    console.error(`[generateNotebookMeta] Success: "${meta.title}" for notebook ${notebookId}`);
+  } else {
+    // Fallback: set a basic description from the sample text
+    const fallbackDesc = sampleText.slice(0, 140).replace(/\n/g, " ").trim() + "...";
+    await supabase
+      .from("notebooks")
+      .update({ description: fallbackDesc })
+      .eq("id", notebookId);
+    console.error(`[generateNotebookMeta] All attempts failed, set fallback description for ${notebookId}`);
   }
 }

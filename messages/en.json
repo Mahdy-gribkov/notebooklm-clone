@@ -136,6 +136,8 @@
     "starter2": "What are the main conclusions or findings?",
     "starter3": "What topics does this document cover?",
     "starter4": "What questions does this document answer?",
+    "starter5": "Compare and contrast the main arguments",
+    "starter6": "What evidence supports the key claims?",
     "notebookSummary": "About this notebook",
     "saveToNote": "Save to note",
     "processingState": "Your sources are being processed...",

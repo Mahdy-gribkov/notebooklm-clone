@@ -25,6 +25,8 @@ export function SourcesPanel({ notebookId, initialFiles }: SourcesPanelProps) {
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const dragCounterRef = useRef(0);
+  const filesRef = useRef(files);
+  filesRef.current = files;
 
   // Auto-dismiss error after 5s
   useEffect(() => {
@@ -39,12 +41,11 @@ export function SourcesPanel({ notebookId, initialFiles }: SourcesPanelProps) {
       setError(t(validation.error === "unsupportedType" ? "unsupportedType" : "fileTooLarge"));
       return;
     }
-    if (files.some(f => f.file_name === file.name && f.status !== "error")) {
+
+    // Use ref for current files to avoid stale closures in concurrent uploads
+    const currentFiles = filesRef.current;
+    if (currentFiles.some(f => f.file_name === file.name && f.status !== "error")) {
       setError(t("duplicateFile"));
-      return;
-    }
-    if (files.length >= MAX_FILES) {
-      setError(t("fileLimitReached"));
       return;
     }
 
@@ -102,7 +103,7 @@ export function SourcesPanel({ notebookId, initialFiles }: SourcesPanelProps) {
         });
       }, 500);
     }
-  }, [notebookId, t, files]);
+  }, [notebookId, t]);
 
   async function handleDelete(fileId: string) {
     setConfirmDeleteId(null);

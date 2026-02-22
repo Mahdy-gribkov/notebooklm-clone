@@ -1,9 +1,9 @@
 # Stage 1: Install dependencies
 FROM node:22-alpine AS deps
 WORKDIR /app
-COPY package.json package-lock.json ./
+COPY package.json package-lock.json .npmrc ./
 RUN --mount=type=cache,target=/root/.npm \
-    npm ci --ignore-scripts
+    npm ci --legacy-peer-deps --ignore-scripts
 
 # Stage 2: Build the application
 FROM node:22-alpine AS builder

@@ -25,6 +25,10 @@ const contentMap: Record<string, FeaturedStudioContent> = {
         fileName: "Feature Reference.pdf",
         content: `DocChat Feature Reference\n\nThe Chat Interface\nThe center panel is where you interact with the AI. Type questions in natural language and receive answers with source citations. Each AI response includes references to the specific document passages used, shown as numbered citations like [1], [2]. You can copy messages, save responses as notes, and see similarity scores for cited sources. The chat supports markdown formatting including headers, bullet points, and code blocks.\n\nThe Sources Panel\nThe left panel manages your uploaded files. Drag and drop files or click to browse. Each file shows its processing status: a green dot means ready, amber means processing, and red indicates an error. You can view PDFs directly in the browser and delete files you no longer need. Each notebook supports up to 5 files.\n\nThe Studio Panel\nThe right panel offers AI-powered study tools. Generate flashcards for active recall practice. Create quizzes to test your understanding. Build structured reports summarizing the document. Visualize topic hierarchies with mind maps. Extract data tables from structured content. Create slide decks with key points. Listen to audio overviews of your documents.\n\nNotebooks\nDocChat organizes your work into notebooks. Each notebook can contain multiple source files. All documents in a notebook are searchable together, allowing cross-referencing between files. You can edit notebook titles, share notebooks with others, and export your work.`,
       },
+      {
+        fileName: "Tips and Tricks.pdf",
+        content: `Mastering DocChat: Pro Tips\n\nTo get the most out of DocChat, follow these best practices for document research. Use clear, specific questions instead of vague keywords. For example, ask "What are the three main findings of the study?" instead of just "findings". DocChat works best when it has high-quality, text-searchable PDFs. Avoid scanned documents that haven't been OCR'd, as they may appear blank to the AI.\n\nTake advantage of the different Studio tools for different learning styles. Use Mind Maps for structural understanding and Flashcards for memorization. When chatting, pay attention to the citations. Clicking a citation often shows you the exact snippet from the document, allowing you to verify the AI's accuracy instantly. This feature is particularly useful for legal or medical research where precision is paramount. Finally, remember to organize your research by creating separate notebooks for different projects or subjects.`,
+      },
     ],
     quiz: [
       { question: "What technology does DocChat use to provide accurate answers?", options: ["Deep Learning Only", "Retrieval-Augmented Generation (RAG)", "Large Language Models without context", "Simple Keyword Search"], correctIndex: 1, explanation: "DocChat uses RAG to fetch relevant document chunks before generating an answer, ensuring grounding in your sources." },
@@ -93,6 +97,14 @@ const contentMap: Record<string, FeaturedStudioContent> = {
         fileName: "Research Methodology.pdf",
         content: `Quantitative vs. Qualitative Methods\n\nMethodology represents the core of academic research. Quantitative research focuses on numerical data, statistical analysis, and objective measurement. It often involves large sample sizes and aims for generalizability. Common techniques include RCTs (Randomized Controlled Trials), longitudinal surveys, and correlational studies.\n\nQualitative research, conversely, seeks to understand human behavior, motivation, and context through non-numerical data. Techniques include ethnography, grounded theory, and case studies. While sample sizes are smaller, the depth of insight into 'why' and 'how' is significantly greater.\n\nMixed Methods approach combines both, using triangulation to validate findings across different data types. This provides a more holistic view of the research problem.`,
       },
+      {
+        fileName: "Comparative Studies.pdf",
+        content: `Analyzing Study Outcomes\n\nComparative study involves evaluating different research papers to find commonalities and discrepancies in their findings. This process requires a structured approach to data extraction and thematic coding. By comparing methodologies side-by-side, researchers can identify if results are robust across different contexts or if local variables significantly alter outcomes.\n\nA common challenge in meta-analysis is the "file drawer problem," where studies with non-significant results are less likely to be published, potentially biasing the overall synthesis. DocChat helps by allowing you to upload your own raw datasets and unpublished drafts to include in your comparative analysis, ensuring a more balanced and comprehensive review of the evidence.`,
+      },
+      {
+        fileName: "Case Study Analysis.pdf",
+        content: `Deep Dive into Specific Cases\n\nCase studies provide rich, contextual information that quantitative surveys often miss. This document outlines the primary steps for conducting a robust case study analysis. First, define the unit of analysis—be it an individual, a group, or an organization. Second, collect data from multiple sources including interviews, observations, and archival records.\n\nThe analysis phase involves pattern matching and explanation building. Researchers should look for cross-case patterns to build more generalizable theories. DocChat's Mind Map tool is particularly effective here for visualizing the connections between different case variables and outcomes. By organizing your cases into separate files within a notebook, you can use the chat interface to query specific differences and similarities between them effortlessly.`,
+      },
     ],
     quiz: [
       { question: "What is 'triangulation' in research?", options: ["Measuring tree height", "Using multiple methods to validate findings", "A geometric survey", "A three-page summary"], correctIndex: 1, explanation: "Triangulation is the use of multiple data sources or methods to cross-verify the results of a study." },
@@ -116,6 +128,14 @@ const contentMap: Record<string, FeaturedStudioContent> = {
         fileName: "Q1 Strategy Meeting.pdf",
         content: `Q1 Strategy Meeting Minutes\n\nDate: Jan 5, 2026\nAttendees: Sarah, Mike, Jenny, Robert\n\nSummary:\nWe discussed the expansion into Asia-Pacific markets. Mike presented the market research showing 12% potential growth in the first year. Robert raised concerns about local regulations.\n\nAction Items:\n- Jenny: Finalize compliance report by next Friday.\n- Mike: Contact local hiring agencies.\n- Sarah: Draft the budget proposal by Monday.\n\nDecision:\nWe will proceed with the Singapore office launch first, followed by Tokyo in Q3.`,
       },
+      {
+        fileName: "Project Timeline.pdf",
+        content: `Operational Roadmap 2026\n\nThe expansion project is divided into four main phases. Phase 1 focuses on market entry and legal setup in Singapore, scheduled for Q1 completion. Phase 2 involves talent acquisition and team building, overlapping with Q2. Phase 3 marks the launch of the Tokyo branch in Q3, focusing on local partnerships. Finally, Phase 4 is the year-end performance review and 2027 planning.\n\nEach phase has dedicated milestones and KPIs. For example, Phase 1 requires the successful registration of the business entity and the leasing of office space. Progress will be tracked bi-weekly through synchronized team syncs. DocChat allows the project manager to upload these roadmap documents and quickly query deadlines and responsibilities across the entire project lifecycle.`,
+      },
+      {
+        fileName: "Budget Review.pdf",
+        content: `Financial Allocation for APAC Expansion\n\nThe total budget allocated for the APAC expansion is $2.5M. Singapore operations are estimated to cost $1.2M, which includes office lease, initial salaries, and legal fees. The Tokyo launch is budgeted at $1M, with a $300k contingency fund reserved for unexpected regulatory hurdles. Marketing and brand awareness across both regions are allocated $200k.\n\nExpenditure must be tracked against these allocations. Any variance over 10% requires immediate board approval. By uploading this budget document to the Meeting Organizer notebook, Sarah (the CFO) can ensure that during strategy meetings, all financial decisions are grounded in the actual approved budget. The Data Table tool in DocChat can automatically extract these figures into a structured format for easy comparison and tracking.`,
+      },
     ],
     quiz: [
       { question: "Who is responsible for the budget proposal?", options: ["Mike", "Jenny", "Sarah", "Robert"], correctIndex: 2, explanation: "The meeting minutes state that Sarah is tasked with drafting the budget proposal." },
@@ -136,6 +156,14 @@ const contentMap: Record<string, FeaturedStudioContent> = {
       {
         fileName: "Cognitive Psychology.pdf",
         content: `Human Memory Systems\n\nMemory is divided into sensory, short-term, and long-term stores. Working memory, a concept developed by Baddeley, includes the phonological loop and the visuospatial sketchpad. Long-term memory is split into explicit (declarative) and implicit (non-declarative). Declarative memory includes episodic (events) and semantic (facts). Implicit memory includes procedural skills and priming.`,
+      },
+      {
+        fileName: "Exam Prep.pdf",
+        content: `Psychology 101: Midterm Review\n\nThe upcoming midterm covers Chapters 1 through 5. Key focus areas include the history of behaviorism, cognitive development theories by Piaget and Vygotsky, and the neurobiology of memory. Students should be able to differentiate between classical and operant conditioning. Understanding the Atkinson-Shiffrin model of memory is essential for the short-answer section.\n\nTo prepare effectively, use the Studio tools to generate a 50-question practice quiz based on your textbook chunks. Active recall is the most efficient way to commit these complex theories to long-term memory. Don't just re-read the chapters; instead, test yourself on the difference between semantic and episodic memory stores until you can explain them in your own words without referring back to the text.`,
+      },
+      {
+        fileName: "Lecture Notes.pdf",
+        content: `Week 4 Lecture: The Cognitive Revolution\n\nThe cognitive revolution shifted psychology's focus from observable behavior to internal mental processes. This lecture covers the influence of computer science on early cognitive models—the "information processing" metaphor. We discussed how input, coding, storage, and retrieval in human memory mirror computer operations, though with significant biological nuance.\n\nMiller's "Magic Number Seven" was a key highlight, explaining the limited capacity of short-term memory (7±2 chunks). This explains why we break complex information into smaller, manageable pieces to remember it better. In DocChat, the "Chunking" process for document processing actually parallels this cognitive reality, making it easier for AI to retrieve relevant snippets for your queries. Ensure you understand the impact of sensory interference on encoding processes.`,
       },
     ],
     quiz: [
@@ -159,6 +187,14 @@ const contentMap: Record<string, FeaturedStudioContent> = {
         fileName: "Financial Trends 2025.pdf",
         content: `Annual Financial Review\n\nRevenue grew by 8% to $145M. COGS increased 3% due to supply chain inflation. Net profit margin improved to 22%. R&D spend was $12M, focusing on AI automation. Customer acquisition cost (CAC) dropped to $45 while Lifetime Value (LTV) rose to $310, giving an LTV/CAC ratio of 6.8.`,
       },
+      {
+        fileName: "Market Analysis.pdf",
+        content: `Global Fintech Landscape 2025\n\nThe fintech sector saw a horizontal expansion into embedded finance. Mobile payment adoption surged in emerging markets by 35% year-over-year. Institutional investment in blockchain-based settlements reached $4.2B. Key players are increasingly moving away from high-fee models towards subscription-based wealth management for the mass affluent segment.\n\nThis shift requires companies to optimize their unit economics. Organizations with an LTV/CAC ratio above 5 are considered exceptionally healthy. The move toward AI-driven risk assessment has reduced loan default rates by an average of 14% across the top ten digital banks. Use DocChat's Data Table tool to track these percentage shifts and currency values across different market reports to build a comparative investment thesis.`,
+      },
+      {
+        fileName: "Regional Statistics.pdf",
+        content: `North America vs. EM Regional Data\n\nIn North America, revenue per user (ARPU) stands at $85, with a mature market environment showing 5% growth. Emerging Markets (EM), however, show an ARPU of $12 but explosive growth at 45% CAGR. Operational costs in EM are 60% lower than in NA, resulting in comparable contribution margins despite the lower revenue per transaction.\n\nThe regulatory environment in NA is becoming more stringent regarding data privacy, increasing compliance costs by $2.5M annually for large firms. In contrast, several EM regions are introducing sandbox environments to foster innovation. This geographical divergence in policy and economics is crucial for global strategy. By uploading these regional stats, analysts can use the Slidedeck tool to create a "Geographic Opportunity Matrix" presentation for executive review.`,
+      },
     ],
     quiz: [
       { question: "What was the Net Profit Margin?", options: ["8%", "12%", "22%", "145%"], correctIndex: 2, explanation: "The report explicitly states a net profit margin improvement to 22%." },
@@ -179,6 +215,14 @@ const contentMap: Record<string, FeaturedStudioContent> = {
       {
         fileName: "Master Service Agreement.pdf",
         content: `Standard MSA Terms\n\n1. Obligations: Vendor shall provide services as defined in Exhibit A. 2. Liability: Limited to 12 months of fees. 3. Termination: 30 days written notice. 4. IP: Work product belongs to Client upon payment. 5. Governing Law: State of Delaware.`,
+      },
+      {
+        fileName: "Non-Disclosure Agreement.pdf",
+        content: `Confidentiality Obligations\n\nThis NDA establishes the protection of proprietary information exchanged during the project. "Confidential Information" includes all technical, financial, and business data marked as such. The "Receiving Party" agrees to use the information solely for the "Purpose" defined in Section 1. Term of protection is 5 years from the date of disclosure.\n\nExceptions include information that becomes public knowledge through no fault of the Receiving Party or was already in their possession. Remediation for breach includes injunctive relief. For a rapid legal review, use DocChat to identify these survival periods and exception clauses across multiple NDAs. The Report tool can generate a "Compliance Checklist" ensuring that third-party consultants are properly onboarded under identical confidentiality terms.`,
+      },
+      {
+        fileName: "Equity Terms.pdf",
+        content: `Employee Stock Option Summary\n\nEquity is granted subject to a 4-year vesting schedule with a 1-year cliff. Acceleration of vesting occurs upon a Change of Control (Double Trigger). Exercise price is set at the Fair Market Value (FMV) on the date of the grant. Options expire 10 years after grant or 90 days after departure from the company.\n\nUnderstanding the "Strike Price" and "Cliff" is vital for employee compensation planning. This document outlines the tax implications of Incentive Stock Options (ISOs) versus Non-Qualified Stock Options (NSOs). By uploading your equity agreements, you can use the Infographic tool to visualize your vesting schedule and potential payout scenarios based on different exit valuations, making complex legal terms easier to digest.`,
       },
     ],
     quiz: [
@@ -201,6 +245,14 @@ const contentMap: Record<string, FeaturedStudioContent> = {
         fileName: "V1.2 Dashboard Spec.pdf",
         content: `V1.2 Dashboard Redesign PRD\n\nUser Goal: See all relevant data in one view. Requirements: 1. Sidebar navigation. 2. Real-time notifications. 3. Dark mode support. 4. Mobile responsiveness. Stakeholders: Design, Eng, Product. Timeline: 4 weeks.`,
       },
+      {
+        fileName: "User Personas.pdf",
+        content: `Target User Personas 2026\n\nPrimary Persona: "Data-Driven Debbie," a Senior Product Manager who spends 40% of her day in reports. She needs rapid insights without digging through CSVs. Pain points include manual data compilation and lack of mobile access. Secondary Persona: "Junior Jake," an Associate Researcher focusing on academic summaries.\n\nThese personas drive our requirement prioritization. Debbie's need for mobile access directly leads to the "Mobile Responsiveness" requirement in the V1.2 spec. Jake's need for summaries validates the "Studio Report" tool. By uploading these persona documents alongside the technical specs, the engineering team can use the Mind Map tool to visualize how specific features map back to actual user needs, ensuring the product remains customer-centric during development.`,
+      },
+      {
+        fileName: "Metric Tracking.pdf",
+        content: `Succcess Metrics for V1.2 Release\n\nWe are tracking three primary KPIs for the dashboard redesign. 1. Engagement: Daily Active Users (DAU) engaging with more than 3 tools. 2. Speed: Average time-to-insight for a search query (Target: <2s). 3. Retention: 30-day retention for users who use the Studio tools at least once a week.\n\nTelemetry will be gathered via standard event tracking. Post-launch, a Cohort Analysis will be performed to see if the "Data-Driven Debbie" persona shows higher LTV as predicted. Analysts should use the Data Table tool to extract these target numbers and compare them against actual performance data periodically. This data-driven approach ensures that the "Product Specs" notebook isn't just a static record but a living tool for iterative development.`,
+      },
     ],
     quiz: [
       { question: "How many main requirements were listed?", options: ["2", "4", "6", "1"], correctIndex: 1, explanation: "The spec lists 4 requirements: sidebar, notifications, dark mode, and mobile responsiveness." },
@@ -221,6 +273,14 @@ const contentMap: Record<string, FeaturedStudioContent> = {
       {
         fileName: "Climate Change Education.pdf",
         content: `Literature Synthesis on CC Education\n\nRecent meta-analyses suggest that active learning methods significantly outperform traditional lectures in climate literacy (p < .01). However, Smith (2024) notes that curriculum integration remains fragmented. Gap identified: lack of longitudinal studies on behavioral change post-education.`,
+      },
+      {
+        fileName: "Research Gaps.pdf",
+        content: `Prioritizing Future Research Directions\n\nThe current literature heavily favors Western-centric samples, creating a massive gap in how climate education translates across culturally diverse contexts. Furthermore, while cognitive understanding of climate change is high, the "value-action gap" persists—where increased knowledge doesn't result in lifestyle changes.\n\nFuture research must prioritize interdisciplinary approaches that combine psychology, pedagogy, and environmental science. By using DocChat, researchers can upload hundreds of papers and use the "Literature Review Assistant" to find these contradictory findings. For instance, comparing Smith's focus on curriculum with Jones's focus on emotional resilience can highlight where one theory falls short. Use the Mind Map tool to visualize these theoretical disagreements and identify the "missing links" in current scholarly discourse.`,
+      },
+      {
+        fileName: "Future Directions.pdf",
+        content: `AI and the Future of Lit Reviews\n\nThe next decade will see a radical shift in how we perform literature reviews. AI-powered synthesis tools like DocChat are moving from simple keyword matching to deep semantic understanding. This allows for "dynamic literature reviews" that update as new research is published. The ability to ground AI responses in specific chunks ensures that citations remain accurate even in complex syntheses.\n\nWe anticipate that collaborative research environments will become the norm. Multiple researchers can share a single DocChat notebook, discussing findings in real-time with an AI that "knows" the entire corpus. This will dramatically reduce the time spent on manual coding and allow scholars to focus on higher-level theory building and practical application of their findings to solve global crises like climate change.`,
       },
     ],
     quiz: [

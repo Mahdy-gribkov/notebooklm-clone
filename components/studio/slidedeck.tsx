@@ -41,13 +41,6 @@ export const SlideDeckView = memo(function SlideDeckView({ data }: SlideDeckView
   const [currentSlide, setCurrentSlide] = useState(0);
   const [direction, setDirection] = useState<"left" | "right" | null>(null);
 
-  if (!Array.isArray(data) || data.length === 0) {
-    return <p className="text-sm text-muted-foreground text-center py-8">No slides generated.</p>;
-  }
-
-  const slide = data[currentSlide];
-  const accent = SLIDE_ACCENTS[currentSlide % SLIDE_ACCENTS.length];
-
   const goTo = useCallback((index: number) => {
     if (index === currentSlide) return;
     setDirection(index > currentSlide ? "right" : "left");
@@ -59,8 +52,8 @@ export const SlideDeckView = memo(function SlideDeckView({ data }: SlideDeckView
   }, [currentSlide, goTo]);
 
   const goNext = useCallback(() => {
-    if (currentSlide < data.length - 1) goTo(currentSlide + 1);
-  }, [currentSlide, data.length, goTo]);
+    if (currentSlide < (data?.length || 0) - 1) goTo(currentSlide + 1);
+  }, [currentSlide, data?.length, goTo]);
 
   // Keyboard navigation
   useEffect(() => {
@@ -71,6 +64,13 @@ export const SlideDeckView = memo(function SlideDeckView({ data }: SlideDeckView
     window.addEventListener("keydown", handleKey);
     return () => window.removeEventListener("keydown", handleKey);
   }, [goPrev, goNext]);
+
+  if (!Array.isArray(data) || data.length === 0) {
+    return <p className="text-sm text-muted-foreground text-center py-8">No slides generated.</p>;
+  }
+
+  const slide = data[currentSlide];
+  const accent = SLIDE_ACCENTS[currentSlide % SLIDE_ACCENTS.length];
 
   return (
     <div className="space-y-4">
@@ -117,11 +117,10 @@ export const SlideDeckView = memo(function SlideDeckView({ data }: SlideDeckView
             <button
               key={i}
               onClick={() => goTo(i)}
-              className={`h-2 rounded-full transition-all ${
-                i === currentSlide
+              className={`h-2 rounded-full transition-all ${i === currentSlide
                   ? "w-6 bg-primary"
                   : "w-2 bg-muted-foreground/20 hover:bg-muted-foreground/40"
-              }`}
+                }`}
               aria-label={`Go to slide ${i + 1}`}
             />
           ))}
@@ -145,20 +144,17 @@ export const SlideDeckView = memo(function SlideDeckView({ data }: SlideDeckView
           <button
             key={i}
             onClick={() => goTo(i)}
-            className={`shrink-0 rounded-lg border px-3 py-2 text-left transition-all min-w-[120px] max-w-[160px] ${
-              i === currentSlide
+            className={`shrink-0 rounded-lg border px-3 py-2 text-left transition-all min-w-[120px] max-w-[160px] ${i === currentSlide
                 ? "bg-primary/10 border-primary/30 shadow-sm"
                 : "hover:bg-accent"
-            }`}
+              }`}
           >
-            <span className={`block text-[10px] font-bold mb-0.5 ${
-              i === currentSlide ? "text-primary" : "text-muted-foreground/50"
-            }`}>
+            <span className={`block text-[10px] font-bold mb-0.5 ${i === currentSlide ? "text-primary" : "text-muted-foreground/50"
+              }`}>
               {String(i + 1).padStart(2, "0")}
             </span>
-            <span className={`block text-[11px] leading-tight truncate ${
-              i === currentSlide ? "text-primary font-medium" : "text-muted-foreground"
-            }`}>
+            <span className={`block text-[11px] leading-tight truncate ${i === currentSlide ? "text-primary font-medium" : "text-muted-foreground"
+              }`}>
               {s.heading}
             </span>
           </button>

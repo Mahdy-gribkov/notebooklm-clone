@@ -85,7 +85,6 @@ export async function POST(request: Request) {
       .single();
 
     if (fileError || !notebookFile) {
-      console.error("[clone-featured] Failed to insert file entry:", fileError);
       continue;
     }
 

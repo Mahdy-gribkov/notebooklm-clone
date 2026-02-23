@@ -6,7 +6,7 @@ import { checkRateLimit } from "@/lib/rate-limit";
 import { isValidUUID } from "@/lib/validate";
 import { studioParsers, type StudioAction } from "@/lib/langchain/output-parsers";
 import { streamText } from "ai";
-import { generateHash } from "@/lib/hash";
+import { getNotebookHash } from "@/lib/hash";
 import { NextResponse } from "next/server";
 
 export const maxDuration = 120;
@@ -103,16 +103,23 @@ export async function POST(request: Request) {
   }
 
   // Calculate content hash for caching
-  const sourceHash = generateHash(documentText);
+  const sourceHash = getNotebookHash(documentText);
 
   // Check for existing generation with the same hash
-  const { data: existingGen } = await supabase
-    .from("studio_generations")
-    .select("result")
-    .eq("notebook_id", notebookId)
-    .eq("action", validAction)
-    .eq("source_hash", sourceHash)
-    .single();
+  let existingGen = null;
+  try {
+    const { data } = await supabase
+      .from("studio_generations")
+      .select("result")
+      .eq("notebook_id", notebookId)
+      .eq("action", validAction)
+      .eq("source_hash", sourceHash)
+      .single();
+    existingGen = data;
+  } catch (dbError) {
+    // If column missing or other error, log it but continue without caching
+    console.warn("[studio] Caching lookup failed (migration might be pending):", dbError);
+  }
 
   if (existingGen) {
     return NextResponse.json(existingGen.result);
@@ -141,13 +148,17 @@ export async function POST(request: Request) {
         try {
           const parsed = await parser.parse(text);
           // Save new generation with source_hash
-          await supabase.from("studio_generations").insert({
-            notebook_id: notebookId,
-            user_id: user.id,
-            action: validAction,
-            result: parsed,
-            source_hash: sourceHash,
-          });
+          try {
+            await supabase.from("studio_generations").insert({
+              notebook_id: notebookId,
+              user_id: user.id,
+              action: validAction,
+              result: parsed,
+              source_hash: sourceHash,
+            });
+          } catch (saveError) {
+            console.warn("[studio] Failed to save generation (migration might be pending):", saveError);
+          }
         } catch (parseError) {
           console.warn("[studio] Output failed schema validation:", {
             action: validAction,

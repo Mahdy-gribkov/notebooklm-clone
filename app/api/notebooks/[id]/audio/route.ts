@@ -78,6 +78,36 @@ export async function POST(
       );
     }
 
+    // Calculate hash for caching
+    const { getNotebookHash } = await import("@/lib/hash");
+    const sourceHash = getNotebookHash(documentText);
+
+    // Check for existing cached audio
+    try {
+      const { data: cached } = await supabase
+        .from("studio_generations")
+        .select("result")
+        .eq("notebook_id", notebookId)
+        .eq("action", "audio")
+        .eq("source_hash", sourceHash)
+        .single();
+
+      if (cached) {
+        const { audioBase64 } = cached.result as { summary: string; audioBase64: string };
+        const audioBuffer = Buffer.from(audioBase64, "base64");
+        return new NextResponse(audioBuffer, {
+          status: 200,
+          headers: {
+            "Content-Type": "audio/mpeg",
+            "Content-Length": String(audioBuffer.byteLength),
+            "Cache-Control": "private, max-age=3600",
+          },
+        });
+      }
+    } catch (e) {
+      // Ignore cache lookup errors (migration pending)
+    }
+
     // Generate a summary for TTS
     const { text: summary } = await generateText({
       model: getLLM(),
@@ -95,6 +125,20 @@ Keep it under 2000 characters. Do not use markdown, bullet points, or special fo
 
     // Generate speech
     const audioBuffer = await generateSpeech(summary);
+
+    // Persist to database for future sessions
+    try {
+      const audioBase64 = Buffer.from(audioBuffer).toString("base64");
+      await supabase.from("studio_generations").insert({
+        notebook_id: notebookId,
+        user_id: user.id,
+        action: "audio",
+        result: { summary, audioBase64 },
+        source_hash: sourceHash,
+      });
+    } catch (saveError) {
+      console.warn("[audio] Failed to cache audio generation:", saveError);
+    }
 
     return new NextResponse(audioBuffer, {
       status: 200,

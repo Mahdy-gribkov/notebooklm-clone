@@ -15,8 +15,7 @@ const InfographicView = dynamic(() => import("@/components/studio/infographic").
 const SlideDeckView = dynamic(() => import("@/components/studio/slidedeck").then(m => ({ default: m.SlideDeckView })));
 const NoteEditor = dynamic(() => import("@/components/studio/note-editor").then(m => ({ default: m.NoteEditor })));
 
-type StudioAction = "flashcards" | "quiz" | "report" | "mindmap" | "datatable" | "infographic" | "slidedeck";
-// Audio is handled separately via Groq TTS, not through the studio generation endpoint
+type StudioAction = "flashcards" | "quiz" | "report" | "mindmap" | "datatable" | "infographic" | "slidedeck" | "audio";
 
 interface StudioPanelProps {
   notebookId: string;
@@ -28,7 +27,7 @@ interface ReportSection { heading: string; content: string }
 interface MindMapNode { label: string; children?: MindMapNode[] }
 interface DataTableData { columns: string[]; rows: string[][] }
 
-type StudioResult = Flashcard[] | QuizQuestion[] | ReportSection[] | MindMapNode | DataTableData;
+type StudioResult = Flashcard[] | QuizQuestion[] | ReportSection[] | MindMapNode | DataTableData | { summary: string; audioBase64: string };
 
 function parseStudioResult(_action: StudioAction, text: string): StudioResult {
   let cleaned = text.trim();
@@ -46,6 +45,7 @@ const ACTION_LABELS: Record<StudioAction, string> = {
   datatable: "Data Table",
   infographic: "Infographic",
   slidedeck: "Slide Deck",
+  audio: "Audio Overview",
 };
 
 export function StudioPanel({ notebookId }: StudioPanelProps) {
@@ -83,8 +83,19 @@ export function StudioPanel({ notebookId }: StudioPanelProps) {
   useEffect(() => {
     fetch(`/api/notebooks/${notebookId}/generations`)
       .then((r) => (r.ok ? r.json() : []))
-      .then((data) => setHistory(data))
-      .catch(() => {});
+      .then((data: StudioGeneration[]) => {
+        setHistory(data);
+        // Hydrate audio if it exists in history
+        const audioGen = data.find(g => g.action === "audio");
+        if (audioGen && typeof audioGen.result === "object" && audioGen.result !== null) {
+          const { audioBase64 } = audioGen.result as { audioBase64: string };
+          if (audioBase64) {
+            const blob = new Blob([Buffer.from(audioBase64, "base64")], { type: "audio/mpeg" });
+            setAudioUrl(URL.createObjectURL(blob));
+          }
+        }
+      })
+      .catch(() => { });
   }, [notebookId]);
 
   // Lazy-load notes on first interaction
@@ -93,7 +104,7 @@ export function StudioPanel({ notebookId }: StudioPanelProps) {
     fetch(`/api/notebooks/${notebookId}/notes`)
       .then((r) => (r.ok ? r.json() : []))
       .then((data) => setNotes(data))
-      .catch(() => {});
+      .catch(() => { });
   }, [notebookId, notesLoaded]);
 
   async function handleCreateNote() {
@@ -270,7 +281,7 @@ export function StudioPanel({ notebookId }: StudioPanelProps) {
             onClick={closeViewer}
             className="flex items-center gap-1 text-muted-foreground hover:text-foreground transition-colors text-xs"
           >
-            <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="h-4 w-4 rtl:-scale-x-100" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
             </svg>
             {tc("back")}
@@ -351,13 +362,12 @@ export function StudioPanel({ notebookId }: StudioPanelProps) {
                   }
                 }}
                 disabled={!!(generatingAction || generatingAudio) && !hasHistory}
-                className={`group relative flex flex-col items-start gap-2.5 rounded-xl border bg-card p-4 text-left transition-all shadow-sm shadow-black/[0.02] ${
-                  isGenerating
-                    ? "opacity-70 cursor-wait"
-                    : (generatingAction || generatingAudio) && !hasHistory
-                      ? "opacity-40 cursor-not-allowed"
-                      : "hover:shadow-lg hover:border-primary/30 hover:-translate-y-0.5"
-                }`}
+                className={`group relative flex flex-col items-start gap-2.5 rounded-xl border bg-card p-4 text-left transition-all shadow-sm shadow-black/[0.02] ${isGenerating
+                  ? "opacity-70 cursor-wait"
+                  : (generatingAction || generatingAudio) && !hasHistory
+                    ? "opacity-40 cursor-not-allowed"
+                    : "hover:shadow-lg hover:border-primary/30 hover:-translate-y-0.5"
+                  }`}
               >
                 {hasHistory && !isGenerating && (
                   <span className="absolute top-2 right-2 flex h-2 w-2">
@@ -391,13 +401,12 @@ export function StudioPanel({ notebookId }: StudioPanelProps) {
               }
             }}
             disabled={!!(generatingAction || generatingAudio) && !audioUrl}
-            className={`group relative flex flex-col items-start gap-2 rounded-xl border bg-card p-3 text-left transition-all ${
-              generatingAudio
-                ? "opacity-70 cursor-wait"
-                : (generatingAction || generatingAudio) && !audioUrl
-                  ? "opacity-40 cursor-not-allowed"
-                  : "hover:shadow-md hover:border-primary/30 hover:-translate-y-0.5"
-            }`}
+            className={`group relative flex flex-col items-start gap-2 rounded-xl border bg-card p-3 text-left transition-all ${generatingAudio
+              ? "opacity-70 cursor-wait"
+              : (generatingAction || generatingAudio) && !audioUrl
+                ? "opacity-40 cursor-not-allowed"
+                : "hover:shadow-md hover:border-primary/30 hover:-translate-y-0.5"
+              }`}
           >
             {audioUrl && !generatingAudio && (
               <span className="absolute top-2 right-2 flex h-2 w-2">

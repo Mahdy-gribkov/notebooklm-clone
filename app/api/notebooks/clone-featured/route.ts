@@ -96,9 +96,10 @@ export async function POST(request: Request) {
     });
   }
 
-  // Calculate source_hash for caching (matches getAllChunks logic)
-  const fullText = content.files.map((f) => f.content).join("\n\n").slice(0, 30_000);
-  const sourceHash = generateHash(fullText);
+  // Calculate source_hash for caching (matches studio API logic)
+  const fullText = content.files.map((f) => f.content).join("\n\n");
+  const { getNotebookHash } = await import("@/lib/hash");
+  const sourceHash = getNotebookHash(fullText);
 
   // Insert pre-generated studio content
   const actions: { action: string; result: unknown }[] = [

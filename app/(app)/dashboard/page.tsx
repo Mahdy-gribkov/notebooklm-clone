@@ -274,7 +274,7 @@ export default function DashboardPage() {
                   key={d}
                   onClick={() => handleDensityChange(d)}
                   className={`h-9 w-9 flex items-center justify-center transition-all duration-300 ease-out ${gridDensity === d ? "text-primary bg-primary/10" : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
-                    } ${d === "compact" ? "rounded-l-lg" : d === "spacious" ? "rounded-r-lg" : ""}`}
+                    } ${d === "compact" ? "rounded-s-lg" : d === "spacious" ? "rounded-e-lg" : ""}`}
                   title={d.charAt(0).toUpperCase() + d.slice(1)}
                   aria-label={`${d} grid layout`}
                 >
@@ -347,7 +347,7 @@ export default function DashboardPage() {
               <h2 className="text-title flex-1">{t("recentNotebooks")}</h2>
               {!loading && notebooks.length > 0 && (
                 <div className="relative w-48 lg:w-64">
-                  <svg className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground/50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="absolute left-3 rtl:left-auto rtl:right-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground/50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                   </svg>
                   <Input
@@ -477,18 +477,22 @@ function FeaturedCarousel({
     if (!el) return;
 
     // In modern browsers, scrollLeft is 0 at the right edge in RTL and becomes negative as we scroll left.
-    // We normalize this to a positive scroll position for logic consistency.
-    const scrollPos = isRTL ? Math.abs(el.scrollLeft) : el.scrollLeft;
+    // Some older/edge browsers might report positive values scrolling down to 0.
+    // We normalize this to a positive scroll position representing "distance from logical start".
+    const scrollPos = Math.abs(el.scrollLeft);
     const maxScroll = el.scrollWidth - el.clientWidth;
 
-    // Visually "Left" (Next in LTR, Prev in RTL)
-    // Visually "Right" (Prev in LTR, Next in RTL)
+    // canScrollLeft: Can we scroll visually left? (Back in LTR, Next in RTL)
+    // canScrollRight: Can we scroll visually right? (Next in LTR, Back in RTL)
     if (isRTL) {
-      setCanScrollLeft(scrollPos < maxScroll - 10); // Can we scroll "Next" (visually left)?
-      setCanScrollRight(scrollPos > 10); // Can we scroll "Prev" (visually right)?
+      // In RTL:
+      // Visual Left (Next) -> scrollLeft becomes MORE negative (abs increases)
+      // Visual Right (Back) -> scrollLeft becomes LESS negative (abs decreases toward 0)
+      setCanScrollLeft(scrollPos < maxScroll - 10);
+      setCanScrollRight(scrollPos > 10);
     } else {
-      setCanScrollLeft(scrollPos > 10); // Can we scroll "Prev" (visually left)?
-      setCanScrollRight(scrollPos < maxScroll - 10); // Can we scroll "Next" (visually right)?
+      setCanScrollLeft(scrollPos > 10);
+      setCanScrollRight(scrollPos < maxScroll - 10);
     }
 
     const idx = Math.round(scrollPos / (CARD_WIDTH + GAP));
@@ -588,7 +592,7 @@ function FeaturedCarousel({
               className="text-sm font-semibold text-muted-foreground hover:text-primary transition-colors flex items-center gap-1"
             >
               {t("seeAll")}
-              <svg className="h-4 w-4 rtl:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="h-4 w-4 rtl:-scale-x-100" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" />
               </svg>
             </button>
@@ -608,10 +612,10 @@ function FeaturedCarousel({
           {canScrollLeft && (
             <button
               onClick={() => scroll("left")}
-              className="absolute left-2 top-1/2 -translate-y-1/2 z-20 h-10 w-10 rounded-full bg-background/90 border shadow-lg hidden sm:flex items-center justify-center text-foreground hover:bg-background"
+              className="absolute left-2 rtl:left-auto rtl:right-2 top-1/2 -translate-y-1/2 z-20 h-10 w-10 rounded-full bg-background/90 border shadow-lg hidden sm:flex items-center justify-center text-foreground hover:bg-background"
               aria-label={isRTL ? "Scroll right" : "Scroll left"}
             >
-              <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="h-5 w-5 rtl:-scale-x-100" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
               </svg>
             </button>
@@ -621,10 +625,10 @@ function FeaturedCarousel({
           {canScrollRight && (
             <button
               onClick={() => scroll("right")}
-              className="absolute right-2 top-1/2 -translate-y-1/2 z-20 h-10 w-10 rounded-full bg-background/90 border shadow-lg hidden sm:flex items-center justify-center text-foreground hover:bg-background"
+              className="absolute right-2 rtl:right-auto rtl:left-2 top-1/2 -translate-y-1/2 z-20 h-10 w-10 rounded-full bg-background/90 border shadow-lg hidden sm:flex items-center justify-center text-foreground hover:bg-background"
               aria-label={isRTL ? "Scroll left" : "Scroll right"}
             >
-              <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="h-5 w-5 rtl:-scale-x-100" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
               </svg>
             </button>

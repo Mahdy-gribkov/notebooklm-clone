@@ -163,12 +163,13 @@ export async function POST(request: Request) {
     }
   }
 
-  // Save user message
+  // Save user message (private)
   await serviceClient.from("messages").insert({
     notebook_id: notebookId,
     user_id: user.id,
     role: "user",
     content: userMessage,
+    is_public: false,
   });
 
   let assistantText = "";
@@ -201,6 +202,7 @@ export async function POST(request: Request) {
             role: "assistant",
             content: text,
             sources: sources.length > 0 ? sources : null,
+            is_public: false,
           });
         } catch (e) {
           console.error("[chat] Failed to save assistant message:", e);
@@ -218,6 +220,7 @@ export async function POST(request: Request) {
         role: "assistant",
         content: assistantText,
         sources: sources.length > 0 ? sources : null,
+        is_public: false,
       }).then(null, (e: unknown) => console.error("[chat] Failed to save partial response:", e));
     }
     const msg = error instanceof Error ? error.message : String(error);

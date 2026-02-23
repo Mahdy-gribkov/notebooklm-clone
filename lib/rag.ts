@@ -10,6 +10,7 @@ import type { Source } from "@/types";
 import { RecursiveCharacterTextSplitter } from "@langchain/textsplitters";
 import { HumanMessage, SystemMessage } from "@langchain/core/messages";
 import { getServiceClient } from "@/lib/supabase/service";
+import { getNotebookHash } from "@/lib/hash";
 
 async function sleep(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -92,6 +93,15 @@ export async function processNotebook(
     }
 
     const text = sanitizeText(rawText);
+
+    // Calculate source_hash anchor
+    const sourceHash = getNotebookHash(text);
+
+    // Update notebook with status and source_hash
+    await supabase
+      .from("notebooks")
+      .update({ status: "processing", source_hash: sourceHash })
+      .eq("id", notebookId);
 
     const splitter = new RecursiveCharacterTextSplitter({
       chunkSize: 2000,

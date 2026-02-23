@@ -45,7 +45,7 @@ export async function POST(
   // Verify notebook ownership
   const { data: notebook } = await supabase
     .from("notebooks")
-    .select("id, status, title")
+    .select("id, status, title, source_hash")
     .eq("id", notebookId)
     .eq("user_id", user.id)
     .single();
@@ -79,8 +79,8 @@ export async function POST(
       );
     }
 
-    // Calculate hash for caching
-    const sourceHash = getNotebookHash(documentText);
+    // Calculate hash for caching (fallback to calculation if not in notebook metadata)
+    const sourceHash = notebook.source_hash || getNotebookHash(documentText);
 
     // Check for existing cached audio
     try {

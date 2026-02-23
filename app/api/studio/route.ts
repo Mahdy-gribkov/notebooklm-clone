@@ -68,7 +68,7 @@ export async function POST(request: Request) {
 
   const { data: notebook } = await supabase
     .from("notebooks")
-    .select("id, status")
+    .select("id, status, source_hash")
     .eq("id", notebookId)
     .eq("user_id", user.id)
     .single();
@@ -102,8 +102,8 @@ export async function POST(request: Request) {
     );
   }
 
-  // Calculate content hash for caching
-  const sourceHash = getNotebookHash(documentText);
+  // Calculate content hash for caching (fallback to calculation if not in notebook metadata)
+  const sourceHash = notebook.source_hash || getNotebookHash(documentText);
 
   // Check for existing generation with the same hash
   let existingGen = null;

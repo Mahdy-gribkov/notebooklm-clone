@@ -56,6 +56,7 @@ export async function GET(
     .from("messages")
     .select("id, role, content, sources, created_at")
     .eq("notebook_id", notebookId)
+    .eq("is_public", true)
     .order("created_at", { ascending: true })
     .limit(100);
 

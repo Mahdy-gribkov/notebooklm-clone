@@ -4,7 +4,24 @@ import { useEffect, useState, useRef } from "react";
 import { useParams } from "next/navigation";
 import { Logo } from "@/components/logo";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { useTranslations } from "next-intl";
 import type { Message, Note, StudioGeneration } from "@/types";
+
+interface Flashcard {
+  front: string;
+  back: string;
+}
+
+interface QuizQuestion {
+  question: string;
+  options: string[];
+  answer: string;
+}
+
+interface Quiz {
+  questions: QuizQuestion[];
+}
+
 
 interface SharedData {
   notebook: { id: string; title: string; description: string | null; created_at: string };
@@ -22,6 +39,8 @@ export default function SharedNotebookPage() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<Tab>("chat");
+  const t = useTranslations("featured");
+  const common = useTranslations("common"); // For generic UI labels if needed
   const [chatInput, setChatInput] = useState("");
   const [chatMessages, setChatMessages] = useState<Array<{ role: string; content: string }>>([]);
   const [chatLoading, setChatLoading] = useState(false);
@@ -185,7 +204,11 @@ export default function SharedNotebookPage() {
       <div className="mx-auto w-full max-w-5xl px-4 py-6">
         <h1 className="text-2xl font-semibold">{data.notebook.title}</h1>
         {data.notebook.description && (
-          <p className="text-muted-foreground mt-1">{data.notebook.description}</p>
+          <p className="text-muted-foreground mt-1">
+            {data.notebook.description.startsWith("featured.")
+              ? t(data.notebook.description.replace("featured.", ""))
+              : data.notebook.description}
+          </p>
         )}
         <div className="flex items-center gap-3 mt-3">
           <span className="text-xs text-muted-foreground">
@@ -206,11 +229,10 @@ export default function SharedNotebookPage() {
             <button
               key={tab.key}
               onClick={() => setActiveTab(tab.key)}
-              className={`px-4 py-2.5 text-sm font-medium border-b-2 transition-colors ${
-                activeTab === tab.key
-                  ? "border-primary text-foreground"
-                  : "border-transparent text-muted-foreground hover:text-foreground"
-              }`}
+              className={`px-4 py-2.5 text-sm font-medium border-b-2 transition-colors ${activeTab === tab.key
+                ? "border-primary text-foreground"
+                : "border-transparent text-muted-foreground hover:text-foreground"
+                }`}
             >
               {tab.label}
               {tab.count > 0 && (
@@ -236,11 +258,10 @@ export default function SharedNotebookPage() {
                 className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}
               >
                 <div
-                  className={`max-w-[80%] rounded-2xl px-4 py-2.5 text-sm ${
-                    msg.role === "user"
-                      ? "bg-primary text-primary-foreground"
-                      : "bg-muted"
-                  }`}
+                  className={`max-w-[80%] rounded-2xl px-4 py-2.5 text-sm ${msg.role === "user"
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-muted"
+                    }`}
                 >
                   {msg.content || (
                     <span className="inline-flex items-center gap-1.5 text-muted-foreground">
@@ -315,18 +336,50 @@ export default function SharedNotebookPage() {
               </p>
             )}
             {data.generations.map((gen) => (
-              <div key={gen.id} className="rounded-xl border bg-card p-5">
-                <div className="flex items-center gap-2 mb-3">
-                  <span className="text-xs font-medium bg-primary/10 text-primary px-2 py-0.5 rounded-full">
+              <div key={gen.id} className="rounded-xl border bg-card p-6 shadow-sm hover:shadow-md transition-shadow">
+                <div className="flex items-center justify-between mb-4">
+                  <span className="text-xs font-bold uppercase tracking-wider bg-primary/10 text-primary px-2.5 py-1 rounded-full">
                     {gen.action}
                   </span>
                   <span className="text-xs text-muted-foreground">
                     {new Date(gen.created_at).toLocaleDateString()}
                   </span>
                 </div>
-                <pre className="text-sm overflow-auto max-h-64 bg-muted rounded-lg p-3">
-                  {JSON.stringify(gen.result, null, 2)}
-                </pre>
+
+                {/* Premium Rendering based on action */}
+                <div className="text-sm prose dark:prose-invert max-w-none">
+                  {typeof gen.result === 'string' ? (
+                    <div className="whitespace-pre-wrap">{gen.result}</div>
+                  ) : gen.action === 'flashcards' && Array.isArray(gen.result) ? (
+                    <div className="grid gap-4 sm:grid-cols-2">
+                      {(gen.result as unknown as Flashcard[]).map((card, idx) => (
+                        <div key={idx} className="p-4 rounded-lg bg-muted/50 border border-border/50">
+                          <div className="font-semibold text-primary mb-2">Q: {card.front}</div>
+                          <div className="text-muted-foreground italic">A: {card.back}</div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : gen.action === 'quiz' && typeof gen.result === 'object' ? (
+                    <div className="space-y-6">
+                      {(gen.result as unknown as Quiz).questions?.map((q, idx) => (
+                        <div key={idx} className="space-y-2">
+                          <div className="font-semibold">{idx + 1}. {q.question}</div>
+                          <div className="grid gap-2 ps-4">
+                            {q.options?.map((opt: string, oi: number) => (
+                              <div key={oi} className="text-xs p-2 rounded border bg-background/50">
+                                {opt}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <pre className="text-xs overflow-auto max-h-64 bg-muted rounded-lg p-3 scrollbar-thin">
+                      {JSON.stringify(gen.result, null, 2)}
+                    </pre>
+                  )}
+                </div>
               </div>
             ))}
           </div>

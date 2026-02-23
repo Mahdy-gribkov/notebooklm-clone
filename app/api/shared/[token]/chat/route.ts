@@ -1,3 +1,4 @@
+import { authenticateRequest } from "@/lib/auth";
 import { getServiceClient } from "@/lib/supabase/service";
 import { checkRateLimit } from "@/lib/rate-limit";
 import { hashIP } from "@/lib/share";
@@ -35,16 +36,30 @@ export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ token: string }> }
 ) {
-  // x-real-ip is set by Vercel/reverse proxies; x-forwarded-for can be spoofed in some configs
-  const ip = request.headers.get("x-real-ip")
-    || request.headers.get("x-forwarded-for")?.split(",")[0]?.trim()
-    || "unknown";
+  const auth = await authenticateRequest(request);
+  if (auth === null) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
 
-  // Strict rate limit for anonymous: 3 messages per hour per IP
-  if (!checkRateLimit(`ip:${ip}:shared-chat`, 3, 3_600_000)) {
+  const supabase = getServiceClient();
+  let userId: string | undefined;
+
+  if (auth !== "skip") {
+    userId = auth.userId;
+  } else {
+    const ssrClient = await (await import("@/lib/supabase/server")).createClient();
+    const { data: { user } } = await ssrClient.auth.getUser();
+    userId = user?.id;
+  }
+
+  if (!userId) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  if (!checkRateLimit(`user:${userId}:shared-chat`, 10, 60_000)) {
     return NextResponse.json(
-      { error: "Chat limit reached. Try again in an hour, or sign up for full access." },
-      { status: 429, headers: { "Retry-After": "3600" } }
+      { error: "Too many requests. Please slow down." },
+      { status: 429, headers: { "Retry-After": "60" } }
     );
   }
 
@@ -52,8 +67,6 @@ export async function POST(
   if (!token || token.length < 32 || token.length > 64) {
     return NextResponse.json({ error: "Invalid token" }, { status: 400 });
   }
-
-  const supabase = getServiceClient();
 
   // Validate token
   const { data: tokenData } = await supabase
@@ -130,8 +143,7 @@ export async function POST(
         })),
       ),
       onFinish: async ({ text }) => {
-        // Save anonymous message to DB
-        const anonymousId = hashIP(ip);
+        // Save message to DB
         await supabase.from("messages").insert([
           {
             notebook_id: notebookId,
@@ -139,6 +151,7 @@ export async function POST(
             role: "user",
             content: userMessage,
             sources: null,
+            is_public: true, // Mark shared chat message
           },
           {
             notebook_id: notebookId,
@@ -146,10 +159,11 @@ export async function POST(
             role: "assistant",
             content: text,
             sources: sources.length > 0 ? sources : null,
+            is_public: true, // Mark shared chat assistant response
           },
         ]);
-        // Log anonymous access
-        console.error(`[shared-chat] anonymous=${anonymousId} notebook=${notebookId}`);
+        // Log shared access
+        console.error(`[shared-chat] user=${userId} notebook=${notebookId}`);
         data.close();
       },
     });

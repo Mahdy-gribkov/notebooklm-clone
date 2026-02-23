@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { getServiceClient } from "@/lib/supabase/service";
+import { checkRateLimit } from "@/lib/rate-limit";
 import { getFeaturedBySlug } from "@/lib/featured-notebooks";
 import { getFeaturedContent } from "@/lib/featured-content";
 import { embedText } from "@/lib/rag";
@@ -17,6 +18,14 @@ export async function POST(request: Request) {
 
   if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  // Rate limit: 5 clones per hour per user
+  if (!checkRateLimit(`user:${user.id}:clone-featured`, 5, 3_600_000)) {
+    return NextResponse.json(
+      { error: "Limit reached. You can clone up to 5 featured notebooks per hour." },
+      { status: 429, headers: { "Retry-After": "3600" } }
+    );
   }
 
   const body = await request.json();
@@ -47,7 +56,11 @@ export async function POST(request: Request) {
   const title = titleMap[featured.titleKey] ?? featured.titleKey;
   const serviceClient = getServiceClient();
 
-  // Create notebook in "processing" state — only set "ready" after embedding succeeds
+  // Calculate source_hash anchor early for caching (matches studio API logic)
+  const fullText = content.files.map((f) => f.content).join("\n\n");
+  const sourceHash = getNotebookHash(fullText);
+
+  // Create notebook in "processing" state
   const { data: notebook, error: nbError } = await supabase
     .from("notebooks")
     .insert({
@@ -55,6 +68,7 @@ export async function POST(request: Request) {
       user_id: user.id,
       status: "processing",
       description: `featured.${featured.descriptionKey}`,
+      source_hash: sourceHash,
     })
     .select("id")
     .single();
@@ -96,9 +110,8 @@ export async function POST(request: Request) {
     });
   }
 
-  // Calculate source_hash for caching (matches studio API logic)
-  const fullText = content.files.map((f) => f.content).join("\n\n");
-  const sourceHash = getNotebookHash(fullText);
+  // (sourceHash already calculated above)
+
 
   // Insert pre-generated studio content
   const actions: { action: string; result: unknown }[] = [

@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { isValidUUID } from "@/lib/validate";
 import { NotebookLayout } from "@/components/notebook-layout";
 import type { Notebook, NotebookFile, Message } from "@/types";
+import { getTranslations } from "next-intl/server";
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -11,6 +12,8 @@ interface PageProps {
 export default async function NotebookPage({ params }: PageProps) {
   const { id } = await params;
   if (!isValidUUID(id)) notFound();
+  const t = await getTranslations("featured");
+  const tf = await getTranslations("featured"); // Fallback for direct description if not a key
   const supabase = await createClient();
 
   const {
@@ -41,6 +44,7 @@ export default async function NotebookPage({ params }: PageProps) {
     .select("id, notebook_id, user_id, role, content, sources, created_at")
     .eq("notebook_id", id)
     .eq("user_id", user.id)
+    .eq("is_public", false)
     .order("created_at", { ascending: true });
 
   return (
@@ -49,7 +53,11 @@ export default async function NotebookPage({ params }: PageProps) {
       notebookTitle={notebook.title}
       notebookFiles={(files ?? []) as NotebookFile[]}
       initialMessages={(messages ?? []) as Message[]}
-      notebookDescription={notebook.description}
+      notebookDescription={
+        notebook.description?.startsWith("featured.")
+          ? t(notebook.description.replace("featured.", ""))
+          : notebook.description
+      }
       starterPrompts={notebook.starter_prompts}
     />
   );

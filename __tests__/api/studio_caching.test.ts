@@ -32,11 +32,9 @@ import { POST } from "@/app/api/studio/route";
 import { authenticateRequest } from "@/lib/auth";
 import { getAllChunks } from "@/lib/rag";
 import { streamText } from "ai";
-import { getLLM } from "@/lib/llm";
 
 const mockedAuth = vi.mocked(authenticateRequest);
 const mockedChunks = vi.mocked(getAllChunks);
-const mockedLLM = vi.mocked(getLLM);
 const mockedStreamText = vi.mocked(streamText);
 const validUUID = "550e8400-e29b-41d4-a716-446655440000";
 
@@ -109,7 +107,7 @@ describe("POST /api/studio (Caching)", () => {
 
         mockedStreamText.mockReturnValue({
             toDataStreamResponse: vi.fn().mockReturnValue(new Response("streaming...")),
-        } as any);
+        } as any); // eslint-disable-line @typescript-eslint/no-explicit-any
 
         const req = new Request("http://test/api/studio", {
             method: "POST",

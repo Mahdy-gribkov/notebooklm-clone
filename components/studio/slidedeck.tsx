@@ -39,11 +39,9 @@ function formatContent(content: string) {
 
 export const SlideDeckView = memo(function SlideDeckView({ data }: SlideDeckViewProps) {
   const [currentSlide, setCurrentSlide] = useState(0);
-  const [direction, setDirection] = useState<"left" | "right" | null>(null);
 
   const goTo = useCallback((index: number) => {
     if (index === currentSlide) return;
-    setDirection(index > currentSlide ? "right" : "left");
     setCurrentSlide(index);
   }, [currentSlide]);
 
@@ -118,8 +116,8 @@ export const SlideDeckView = memo(function SlideDeckView({ data }: SlideDeckView
               key={i}
               onClick={() => goTo(i)}
               className={`h-2 rounded-full transition-all ${i === currentSlide
-                  ? "w-6 bg-primary"
-                  : "w-2 bg-muted-foreground/20 hover:bg-muted-foreground/40"
+                ? "w-6 bg-primary"
+                : "w-2 bg-muted-foreground/20 hover:bg-muted-foreground/40"
                 }`}
               aria-label={`Go to slide ${i + 1}`}
             />
@@ -145,8 +143,8 @@ export const SlideDeckView = memo(function SlideDeckView({ data }: SlideDeckView
             key={i}
             onClick={() => goTo(i)}
             className={`shrink-0 rounded-lg border px-3 py-2 text-left transition-all min-w-[120px] max-w-[160px] ${i === currentSlide
-                ? "bg-primary/10 border-primary/30 shadow-sm"
-                : "hover:bg-accent"
+              ? "bg-primary/10 border-primary/30 shadow-sm"
+              : "hover:bg-accent"
               }`}
           >
             <span className={`block text-[10px] font-bold mb-0.5 ${i === currentSlide ? "text-primary" : "text-muted-foreground/50"

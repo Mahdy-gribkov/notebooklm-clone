@@ -65,9 +65,9 @@ describe("POST /api/notebooks/clone-featured", () => {
                 update: vi.fn().mockReturnValue({
                     eq: vi.fn().mockReturnValue({
                         eq: vi.fn().mockResolvedValue({ error: null }),
-                    }) as any,
-                }) as any,
-            } as any;
+                    }),
+                }),
+            };
         });
 
         const req = new Request("http://test/api/notebooks/clone-featured", {

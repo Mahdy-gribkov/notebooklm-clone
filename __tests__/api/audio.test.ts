@@ -36,12 +36,10 @@ import { POST } from "@/app/api/notebooks/[id]/audio/route";
 import { authenticateRequest } from "@/lib/auth";
 import { getAllChunks } from "@/lib/rag";
 import { generateSpeech } from "@/lib/groq-tts";
-import { getLLM } from "@/lib/llm";
 
 const mockedAuth = vi.mocked(authenticateRequest);
 const mockedChunks = vi.mocked(getAllChunks);
 const mockedSpeech = vi.mocked(generateSpeech);
-const mockedLLM = vi.mocked(getLLM);
 const validUUID = "550e8400-e29b-41d4-a716-446655440000";
 
 describe("POST /api/notebooks/[id]/audio", () => {

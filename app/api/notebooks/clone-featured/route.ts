@@ -111,28 +111,36 @@ export async function POST(request: Request) {
     const estimatedPages = Math.max(1, Math.ceil(file.content.length / 3000));
     totalPages += estimatedPages;
 
-    const { data: notebookFile, error: fileError } = await supabase
-      .from("notebook_files")
-      .insert({
-        notebook_id: notebook.id,
-        user_id: user.id,
-        file_name: file.fileName,
-        storage_path: `featured/${slug}/${file.fileName}`,
-        status: "processing",
-        page_count: estimatedPages,
-      })
-      .select("id")
-      .single();
+    try {
+      const { data: notebookFile, error: fileError } = await supabase
+        .from("notebook_files")
+        .insert({
+          notebook_id: notebook.id,
+          user_id: user.id,
+          file_name: file.fileName,
+          storage_path: `featured/${slug}/${file.fileName}`,
+          status: "processing",
+          page_count: estimatedPages,
+        })
+        .select("id")
+        .single();
 
-    if (fileError || !notebookFile) {
+      if (fileError) {
+        console.warn("[clone-featured] Failed to insert file entry:", file.fileName, fileError);
+        continue;
+      }
+
+      if (notebookFile) {
+        fileEntries.push({
+          id: notebookFile.id,
+          fileName: file.fileName,
+          content: file.content,
+        });
+      }
+    } catch (e) {
+      console.error("[clone-featured] Database error during file entry insertion:", e);
       continue;
     }
-
-    fileEntries.push({
-      id: notebookFile.id,
-      fileName: file.fileName,
-      content: file.content,
-    });
   }
 
   // (sourceHash already calculated above)

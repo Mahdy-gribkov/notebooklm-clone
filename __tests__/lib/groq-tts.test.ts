@@ -43,7 +43,7 @@ describe("generateSpeech", () => {
 
     const call = mockFetch.mock.calls[0];
     const body = JSON.parse(call[1].body);
-    expect(body.model).toBe("playai-tts");
+    expect(body.model).toBe("canopylabs/orpheus-v1-english");
     expect(body.input).toBe("test text");
     expect(body.voice).toBe("TestVoice");
     expect(body.response_format).toBe("mp3");
@@ -75,7 +75,7 @@ describe("generateSpeech", () => {
     await expect(generateSpeech("test")).rejects.toThrow("Groq TTS failed (429)");
   });
 
-  it("uses Fritz-PlayAI as default voice", async () => {
+  it("uses troy as default voice", async () => {
     const mockFetch = vi.fn().mockResolvedValue({
       ok: true,
       arrayBuffer: () => Promise.resolve(new ArrayBuffer(10)),
@@ -86,7 +86,7 @@ describe("generateSpeech", () => {
     await generateSpeech("hello world");
 
     const body = JSON.parse(mockFetch.mock.calls[0][1].body);
-    expect(body.voice).toBe("Fritz-PlayAI");
+    expect(body.voice).toBe("troy");
   });
 
   it("handles text() failure in error path", async () => {

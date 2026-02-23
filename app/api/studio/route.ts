@@ -6,6 +6,7 @@ import { checkRateLimit } from "@/lib/rate-limit";
 import { isValidUUID } from "@/lib/validate";
 import { studioParsers, type StudioAction } from "@/lib/langchain/output-parsers";
 import { streamText } from "ai";
+import { generateHash } from "@/lib/hash";
 import { NextResponse } from "next/server";
 
 export const maxDuration = 120;
@@ -101,6 +102,22 @@ export async function POST(request: Request) {
     );
   }
 
+  // Calculate content hash for caching
+  const sourceHash = generateHash(documentText);
+
+  // Check for existing generation with the same hash
+  const { data: existingGen } = await supabase
+    .from("studio_generations")
+    .select("result")
+    .eq("notebook_id", notebookId)
+    .eq("action", validAction)
+    .eq("source_hash", sourceHash)
+    .single();
+
+  if (existingGen) {
+    return NextResponse.json(existingGen.result);
+  }
+
   // Inject LangChain format instructions into the prompt for type-safe output
   const parser = studioParsers[validAction];
   const formatInstructions = parser.getFormatInstructions();
@@ -122,7 +139,15 @@ export async function POST(request: Request) {
       onFinish: async ({ text }) => {
         // Validate output against Zod schema
         try {
-          await parser.parse(text);
+          const parsed = await parser.parse(text);
+          // Save new generation with source_hash
+          await supabase.from("studio_generations").insert({
+            notebook_id: notebookId,
+            user_id: user.id,
+            action: validAction,
+            result: parsed,
+            source_hash: sourceHash,
+          });
         } catch (parseError) {
           console.warn("[studio] Output failed schema validation:", {
             action: validAction,

@@ -8,7 +8,7 @@ function getApiKey(): string {
 
 export async function generateSpeech(
   text: string,
-  voice = "Fritz-PlayAI"
+  voice = "troy"
 ): Promise<ArrayBuffer> {
   if (text.length > 10_000) {
     text = text.slice(0, 10_000);
@@ -24,7 +24,7 @@ export async function generateSpeech(
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      model: "playai-tts",
+      model: "canopylabs/orpheus-v1-english",
       input: text,
       voice,
       response_format: "mp3",

@@ -4,6 +4,7 @@ import { getFeaturedBySlug } from "@/lib/featured-notebooks";
 import { getFeaturedContent } from "@/lib/featured-content";
 import { embedText } from "@/lib/rag";
 import { RecursiveCharacterTextSplitter } from "@langchain/textsplitters";
+import { generateHash } from "@/lib/hash";
 import { NextResponse } from "next/server";
 
 export const maxDuration = 60;
@@ -95,6 +96,10 @@ export async function POST(request: Request) {
     });
   }
 
+  // Calculate source_hash for caching (matches getAllChunks logic)
+  const fullText = content.files.map((f) => f.content).join("\n\n").slice(0, 30_000);
+  const sourceHash = generateHash(fullText);
+
   // Insert pre-generated studio content
   const actions: { action: string; result: unknown }[] = [
     { action: "quiz", result: content.quiz },
@@ -114,6 +119,7 @@ export async function POST(request: Request) {
         user_id: user.id,
         action: a.action,
         result: a.result,
+        source_hash: sourceHash,
       })),
     );
 

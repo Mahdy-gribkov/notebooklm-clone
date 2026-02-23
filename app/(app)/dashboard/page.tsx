@@ -612,10 +612,10 @@ function FeaturedCarousel({
           {canScrollLeft && (
             <button
               onClick={() => scroll("left")}
-              className="absolute left-2 rtl:left-auto rtl:right-2 top-1/2 -translate-y-1/2 z-20 h-10 w-10 rounded-full bg-background/90 border shadow-lg hidden sm:flex items-center justify-center text-foreground hover:bg-background"
-              aria-label={isRTL ? "Scroll right" : "Scroll left"}
+              className="absolute left-2 top-1/2 -translate-y-1/2 z-20 h-10 w-10 rounded-full bg-background/90 border shadow-lg hidden sm:flex items-center justify-center text-foreground hover:bg-background"
+              aria-label={isRTL ? t("next") : t("back")}
             >
-              <svg className="h-5 w-5 rtl:-scale-x-100" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="h-5 w-5 rtl:scale-x-100" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
               </svg>
             </button>
@@ -625,10 +625,10 @@ function FeaturedCarousel({
           {canScrollRight && (
             <button
               onClick={() => scroll("right")}
-              className="absolute right-2 rtl:right-auto rtl:left-2 top-1/2 -translate-y-1/2 z-20 h-10 w-10 rounded-full bg-background/90 border shadow-lg hidden sm:flex items-center justify-center text-foreground hover:bg-background"
-              aria-label={isRTL ? "Scroll left" : "Scroll right"}
+              className="absolute right-2 top-1/2 -translate-y-1/2 z-20 h-10 w-10 rounded-full bg-background/90 border shadow-lg hidden sm:flex items-center justify-center text-foreground hover:bg-background"
+              aria-label={isRTL ? t("back") : t("next")}
             >
-              <svg className="h-5 w-5 rtl:-scale-x-100" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="h-5 w-5 rtl:scale-x-100" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
               </svg>
             </button>

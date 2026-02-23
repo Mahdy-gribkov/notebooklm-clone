@@ -484,7 +484,7 @@ export function StudioPanel({ notebookId }: StudioPanelProps) {
                     </div>
                     <div className="min-w-0 flex-1">
                       <p className="text-xs font-medium truncate">{ACTION_LABELS[gen.action as StudioAction] || gen.action}</p>
-                      <p className="text-[10px] text-muted-foreground">
+                      <p className="text-[10px] text-muted-foreground" suppressHydrationWarning>
                         {formatRelativeTime(gen.created_at)}
                       </p>
                     </div>
@@ -538,7 +538,7 @@ export function StudioPanel({ notebookId }: StudioPanelProps) {
                   </svg>
                   <div className="min-w-0 flex-1">
                     <p className="text-xs font-medium truncate">{note.title}</p>
-                    <p className="text-[10px] text-muted-foreground">
+                    <p className="text-[10px] text-muted-foreground" suppressHydrationWarning>
                       {formatRelativeTime(note.updated_at)}
                     </p>
                   </div>

@@ -211,7 +211,7 @@ export default function SharedNotebookPage() {
           </p>
         )}
         <div className="flex items-center gap-3 mt-3">
-          <span className="text-xs text-muted-foreground">
+          <span className="text-xs text-muted-foreground" suppressHydrationWarning>
             Shared {new Date(data.notebook.created_at).toLocaleDateString()}
           </span>
           {data.permissions === "chat" && (

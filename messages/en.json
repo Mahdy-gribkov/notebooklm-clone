@@ -116,7 +116,9 @@
     "productSpecs": "Product Specs Analyzer",
     "productSpecsDesc": "Break down PRDs and feature requirements",
     "literatureReview": "Literature Review Assistant",
-    "literatureReviewDesc": "Synthesize findings across academic papers"
+    "literatureReviewDesc": "Synthesize findings across academic papers",
+    "next": "Next",
+    "back": "Back"
   },
   "notebook": {
     "dashboard": "Dashboard",

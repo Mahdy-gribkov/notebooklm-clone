@@ -116,7 +116,9 @@
     "productSpecs": "מנתח מפרטי מוצר",
     "productSpecsDesc": "פרק מסמכי דרישות ותכונות מוצר",
     "literatureReview": "עוזר סקירת ספרות",
-    "literatureReviewDesc": "סנתז ממצאים ממאמרים אקדמיים"
+    "literatureReviewDesc": "סנתז ממצאים ממאמרים אקדמיים",
+    "next": "הבא",
+    "back": "הקודם"
   },
   "notebook": {
     "dashboard": "לוח בקרה",

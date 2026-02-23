@@ -127,7 +127,7 @@ export function NotebookCard({ notebook, files = [], timedOut = false, onDelete,
         <div className="mt-auto">
           {/* Meta row */}
           <div className="flex items-center gap-2">
-            <span className="text-[11px] text-muted-foreground/60">
+            <span className="text-[11px] text-muted-foreground/60" suppressHydrationWarning>
               {relativeTime(notebook.created_at, t)}
             </span>
             {files.length > 0 && (

@@ -124,20 +124,25 @@ export async function POST(request: Request) {
     { action: "slidedeck", result: content.slidedeck },
   ];
 
-  const { error: genError } = await supabase
-    .from("studio_generations")
-    .insert(
-      actions.map((a) => ({
-        notebook_id: notebook.id,
-        user_id: user.id,
-        action: a.action,
-        result: a.result,
-        source_hash: sourceHash,
-      })),
-    );
+  try {
+    const { error: genError } = await supabase
+      .from("studio_generations")
+      .insert(
+        actions.map((a) => ({
+          notebook_id: notebook.id,
+          user_id: user.id,
+          action: a.action,
+          result: a.result,
+          source_hash: sourceHash,
+        })),
+      );
 
-  if (genError) {
-    console.error("[clone-featured] Failed to insert generations:", genError);
+    if (genError) {
+      console.error("[clone-featured] Failed to insert generations:", genError);
+    }
+  } catch (e) {
+    console.error("[clone-featured] Database error during studio generation insertion:", e);
+    // Continue even if generations fail to save (can be regenerated later)
   }
 
   // Embed all file content synchronously — featured content is small (~6-9 chunks)

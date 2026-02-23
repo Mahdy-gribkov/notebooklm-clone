@@ -135,11 +135,10 @@ export function ShareDialog({ notebookId, open, onClose }: ShareDialogProps) {
             <div className="flex gap-2">
               <button
                 onClick={() => setPermission("view")}
-                className={`flex-1 rounded-lg px-3 py-2 text-xs font-medium border transition-all ${
-                  permission === "view"
+                className={`flex-1 rounded-lg px-3 py-2 text-xs font-medium border transition-all ${permission === "view"
                     ? "bg-primary/10 text-primary border-primary/20"
                     : "text-muted-foreground hover:text-foreground hover:bg-accent border-transparent"
-                }`}
+                  }`}
               >
                 <svg className="h-3.5 w-3.5 mx-auto mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -149,11 +148,10 @@ export function ShareDialog({ notebookId, open, onClose }: ShareDialogProps) {
               </button>
               <button
                 onClick={() => setPermission("chat")}
-                className={`flex-1 rounded-lg px-3 py-2 text-xs font-medium border transition-all ${
-                  permission === "chat"
+                className={`flex-1 rounded-lg px-3 py-2 text-xs font-medium border transition-all ${permission === "chat"
                     ? "bg-primary/10 text-primary border-primary/20"
                     : "text-muted-foreground hover:text-foreground hover:bg-accent border-transparent"
-                }`}
+                  }`}
               >
                 <svg className="h-3.5 w-3.5 mx-auto mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
@@ -172,11 +170,10 @@ export function ShareDialog({ notebookId, open, onClose }: ShareDialogProps) {
                 <button
                   key={String(opt.value)}
                   onClick={() => setExpiry(opt.value)}
-                  className={`rounded-md px-2.5 py-1 text-[11px] font-medium transition-all ${
-                    expiry === opt.value
+                  className={`rounded-md px-2.5 py-1 text-[11px] font-medium transition-all ${expiry === opt.value
                       ? "bg-muted text-foreground"
                       : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
-                  }`}
+                    }`}
                 >
                   {opt.label}
                 </button>
@@ -225,15 +222,14 @@ export function ShareDialog({ notebookId, open, onClose }: ShareDialogProps) {
                   >
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-1.5">
-                        <span className={`inline-block rounded px-1.5 py-0.5 text-[10px] font-medium ${
-                          link.permissions === "chat"
+                        <span className={`inline-block rounded px-1.5 py-0.5 text-[10px] font-medium ${link.permissions === "chat"
                             ? "bg-primary/10 text-primary"
                             : "bg-muted text-muted-foreground"
-                        }`}>
+                          }`}>
                           {link.permissions === "chat" ? t("viewAndChat") : t("viewOnly")}
                         </span>
                       </div>
-                      <p className="text-[10px] text-muted-foreground mt-1">
+                      <p className="text-[10px] text-muted-foreground mt-1" suppressHydrationWarning>
                         {link.expires_at
                           ? t("expires", { date: new Date(link.expires_at).toLocaleDateString() })
                           : t("noExpiry")}

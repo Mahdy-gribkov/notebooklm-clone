@@ -207,6 +207,7 @@
     "audioOverview": "סקירה קולית",
     "audioOverviewDesc": "האזן לסקירה מוקראת על ידי AI",
     "comingSoon": "בקרוב",
+    "audioComingSoon": "סקירה קולית תהיה זמינה בקרוב",
     "regenerate": "צור מחדש",
     "generating": "מייצר {type}...",
     "generatingNote": "זה עשוי לקחת 10-30 שניות למסמכים גדולים.",

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useRef } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
 import Link from "next/link";
 import dynamic from "next/dynamic";
 import { ChatInterface } from "@/components/chat-interface";
@@ -34,7 +34,8 @@ interface NotebookLayoutProps {
 
 export function NotebookLayout({ notebookId, notebookTitle, notebookFiles, initialMessages, notebookDescription, starterPrompts }: NotebookLayoutProps) {
   const [sourcesOpen, setSourcesOpen] = useState(true);
-  const [studioOpen, setStudioOpen] = useState(true);
+  const [studioOpen, setStudioOpen] = useState(false);
+  const [studioMounted, setStudioMounted] = useState(false);
   const [mobilePanel, setMobilePanel] = useState<"sources" | "studio" | null>(null);
   const [title, setTitle] = useState(notebookTitle);
   const [editingTitle, setEditingTitle] = useState(false);
@@ -73,7 +74,17 @@ export function NotebookLayout({ notebookId, notebookTitle, notebookFiles, initi
   }, []);
 
   const toggleStudio = useCallback(() => {
+    if (!studioMounted) setStudioMounted(true);
     setStudioOpen((prev) => !prev);
+  }, [studioMounted]);
+
+  // Auto-open studio after initial mount (deferred to avoid jump)
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setStudioMounted(true);
+      setStudioOpen(true);
+    }, 100);
+    return () => clearTimeout(timer);
   }, []);
 
   const closeMobilePanel = useCallback(() => {
@@ -241,11 +252,11 @@ export function NotebookLayout({ notebookId, notebookTitle, notebookFiles, initi
 
         {/* Right: Studio panel (desktop lg+) */}
         <div
-          className={`hidden lg:flex flex-col border-s bg-background shrink-0 transition-[width,opacity] duration-300 ease-in-out overflow-hidden ${studioOpen ? "w-[320px] opacity-100" : "w-0 opacity-0 border-s-0"
+          className={`hidden lg:flex flex-col border-s bg-background shrink-0 transition-[width,opacity] duration-300 ease-in-out overflow-hidden will-change-[width,opacity] ${studioOpen ? "w-[320px] opacity-100" : "w-0 opacity-0 border-s-0"
             }`}
         >
           <div className="w-[320px] h-full min-w-[320px]">
-            <StudioPanel notebookId={notebookId} />
+            {studioMounted && <StudioPanel notebookId={notebookId} />}
           </div>
         </div>
 

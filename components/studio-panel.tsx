@@ -389,35 +389,14 @@ export function StudioPanel({ notebookId }: StudioPanelProps) {
               </button>
             );
           })}
-          {/* Audio overview */}
-          <button
-            onClick={() => {
-              if (audioUrl && !generatingAudio) {
-                // Already have audio, scroll to player
-                return;
-              }
-              if (!generatingAction && !generatingAudio) {
-                handleGenerateAudio();
-              }
-            }}
-            disabled={!!(generatingAction || generatingAudio) && !audioUrl}
-            className={`group relative flex flex-col items-start gap-2 rounded-xl border bg-card p-3 text-left transition-all ${generatingAudio
-              ? "opacity-70 cursor-wait"
-              : (generatingAction || generatingAudio) && !audioUrl
-                ? "opacity-40 cursor-not-allowed"
-                : "hover:shadow-md hover:border-primary/30 hover:-translate-y-0.5"
-              }`}
+          {/* Audio overview (disabled, requires paid Groq TTS plan) */}
+          <div
+            className="group relative flex flex-col items-start gap-2 rounded-xl border bg-card p-3 text-left opacity-50 cursor-not-allowed"
+            title={t("audioComingSoon")}
           >
-            {audioUrl && !generatingAudio && (
-              <span className="absolute top-2 right-2 flex h-2 w-2">
-                <span className="relative inline-flex h-2 w-2 rounded-full bg-primary" />
-              </span>
-            )}
-            {generatingAudio && (
-              <span className="absolute top-2 right-2">
-                <span className="block h-3.5 w-3.5 rounded-full border-2 border-primary border-t-transparent animate-spin" />
-              </span>
-            )}
+            <span className="absolute top-2 right-2 text-[9px] font-medium text-muted-foreground/70 uppercase tracking-wider">
+              {t("comingSoon")}
+            </span>
             <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#61AAF2]/15 text-[#61AAF2] transition-colors">
               <FeatureIcon type="audio" />
             </div>
@@ -425,7 +404,7 @@ export function StudioPanel({ notebookId }: StudioPanelProps) {
               <p className="text-xs font-semibold mb-0.5">{t("audioOverview")}</p>
               <p className="text-[10px] text-muted-foreground leading-snug line-clamp-2">{t("audioOverviewDesc")}</p>
             </div>
-          </button>
+          </div>
         </div>
 
         {/* Audio player */}

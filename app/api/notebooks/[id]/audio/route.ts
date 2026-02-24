@@ -167,7 +167,7 @@ Keep it under 2000 characters. Do not use markdown, bullet points, or special fo
     }
 
     return NextResponse.json(
-      { error: "Audio generation failed. Please try again." },
+      { error: `Audio generation failed: ${msg.slice(0, 200)}` },
       { status: 500 }
     );
   }

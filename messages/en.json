@@ -207,6 +207,7 @@
     "audioOverview": "Audio Overview",
     "audioOverviewDesc": "Listen to an AI-narrated overview",
     "comingSoon": "Coming soon",
+    "audioComingSoon": "Audio overview is coming soon",
     "regenerate": "Regenerate",
     "generating": "Generating {type}...",
     "generatingNote": "This may take 10-30 seconds for large documents.",

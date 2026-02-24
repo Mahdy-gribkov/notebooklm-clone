@@ -135,6 +135,8 @@
     "sendHint": "Enter to send. Shift+Enter for new line. Sources shown below each reply.",
     "rateLimitError": "Rate limit reached. You can send up to 10 messages per minute.",
     "genericError": "Couldn't complete the request. Try again in a moment.",
+    "unsupportedType": "Unsupported file type. Upload PDF, DOCX, TXT, or images.",
+    "fileTooLarge": "File is too large. Maximum size is 5 MB.",
     "copyMessage": "Copy message",
     "starter1": "What are the key takeaways from these sources?",
     "starter2": "What are the main conclusions or findings?",

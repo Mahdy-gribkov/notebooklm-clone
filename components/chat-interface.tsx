@@ -153,7 +153,7 @@ export function ChatInterface({ notebookId, initialMessages, isProcessing = fals
     if (!file) return;
     const validation = validateUploadFile(file);
     if (!validation.valid) {
-      setErrorMessage(t(validation.error === "unsupportedType" ? "genericError" : "genericError"));
+      setErrorMessage(t(validation.error === "unsupportedType" ? "unsupportedType" : "fileTooLarge"));
       e.target.value = "";
       return;
     }

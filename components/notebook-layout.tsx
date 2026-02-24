@@ -216,7 +216,7 @@ export function NotebookLayout({ notebookId, notebookTitle, notebookFiles, initi
       <div className="flex flex-1 overflow-hidden min-h-0">
         {/* Left: Sources panel (desktop lg+) */}
         <div
-          className={`hidden lg:flex flex-col border-e bg-background shrink-0 transition-[width] duration-300 ease-in-out overflow-hidden ${sourcesOpen ? "w-[260px]" : "w-0 border-e-0"
+          className={`hidden lg:flex flex-col border-e bg-background shrink-0 transition-[width,opacity] duration-300 ease-in-out overflow-hidden ${sourcesOpen ? "w-[260px] opacity-100" : "w-0 opacity-0 border-e-0"
             }`}
         >
           <div className="w-[260px] h-full min-w-[260px]">
@@ -241,7 +241,7 @@ export function NotebookLayout({ notebookId, notebookTitle, notebookFiles, initi
 
         {/* Right: Studio panel (desktop lg+) */}
         <div
-          className={`hidden lg:flex flex-col border-s bg-background shrink-0 transition-[width] duration-300 ease-in-out overflow-hidden ${studioOpen ? "w-[320px]" : "w-0 border-s-0"
+          className={`hidden lg:flex flex-col border-s bg-background shrink-0 transition-[width,opacity] duration-300 ease-in-out overflow-hidden ${studioOpen ? "w-[320px] opacity-100" : "w-0 opacity-0 border-s-0"
             }`}
         >
           <div className="w-[320px] h-full min-w-[320px]">

@@ -333,10 +333,10 @@ export function ChatInterface({ notebookId, initialMessages, isProcessing = fals
 
                         {/* Action buttons (AI messages only) */}
                         {!isUser && message.content && (
-                          <div className="absolute top-2 end-2 flex items-center gap-0.5 opacity-60 sm:opacity-0 sm:group-hover/msg:opacity-100 transition-opacity">
+                          <div className="absolute top-2 end-2 flex items-center gap-0.5 opacity-100 sm:opacity-0 sm:group-hover/msg:opacity-100 transition-opacity">
                             <button
                               onClick={() => copyMessage(message.id, message.content)}
-                              className="p-2 rounded-md hover:bg-muted text-muted-foreground hover:text-foreground"
+                              className="p-2.5 rounded-md hover:bg-muted text-muted-foreground hover:text-foreground"
                               aria-label={t("copyMessage")}
                             >
                               {copiedId === message.id ? (
@@ -351,7 +351,7 @@ export function ChatInterface({ notebookId, initialMessages, isProcessing = fals
                             </button>
                             <button
                               onClick={() => saveToNote(message.id, message.content)}
-                              className="p-2 rounded-md hover:bg-muted text-muted-foreground hover:text-foreground"
+                              className="p-2.5 rounded-md hover:bg-muted text-muted-foreground hover:text-foreground"
                               aria-label={t("saveToNote")}
                             >
                               {savedNoteId === message.id ? (

@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { NotebookCard } from "@/components/notebook-card";
@@ -567,7 +567,7 @@ function FeaturedSection({
   );
 }
 
-function FeaturedCard({
+const FeaturedCard = React.memo(function FeaturedCard({
   notebook: fn,
   index,
   isCloning,
@@ -636,7 +636,7 @@ function FeaturedCard({
       </div>
     </button>
   );
-}
+});
 
 function FeaturedIcon({ type }: { type: string }) {
   const props = { size: 28, className: "text-white/80" };

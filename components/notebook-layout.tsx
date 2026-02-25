@@ -135,7 +135,7 @@ export function NotebookLayout({ notebookId, notebookTitle, notebookFiles, initi
   const hasReadyFiles = files.some((f) => f.status === "ready");
 
   return (
-    <div className="flex h-screen flex-col bg-background">
+    <div className="flex h-dvh flex-col bg-background">
       {/* Header */}
       <header className="border-b bg-background/80 backdrop-blur-md shrink-0">
         <div className="flex items-center gap-2 px-3 sm:px-5 py-2.5">
@@ -272,7 +272,7 @@ export function NotebookLayout({ notebookId, notebookTitle, notebookFiles, initi
                 <h2 className="text-sm font-semibold">{t("sources")}</h2>
                 <button
                   onClick={closeMobilePanel}
-                  className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+                  className="flex h-10 w-10 items-center justify-center rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
                 >
                   <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -298,7 +298,7 @@ export function NotebookLayout({ notebookId, notebookTitle, notebookFiles, initi
                 <h2 className="text-sm font-semibold">{t("studio")}</h2>
                 <button
                   onClick={closeMobilePanel}
-                  className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+                  className="flex h-10 w-10 items-center justify-center rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
                 >
                   <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -317,7 +317,7 @@ export function NotebookLayout({ notebookId, notebookTitle, notebookFiles, initi
           <div className="flex items-center justify-around gap-4 max-w-md mx-auto">
             <button
               onClick={openMobileSources}
-              className={`flex flex-col items-center gap-1 p-2 rounded-xl transition-all ${mobilePanel === "sources" ? "text-primary bg-primary/10" : "text-muted-foreground hover:text-foreground"
+              className={`flex flex-col items-center gap-1 p-3 rounded-xl transition-all min-h-[44px] ${mobilePanel === "sources" ? "text-primary bg-primary/10" : "text-muted-foreground hover:text-foreground"
                 }`}
             >
               <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -328,7 +328,7 @@ export function NotebookLayout({ notebookId, notebookTitle, notebookFiles, initi
 
             <button
               onClick={closeMobilePanel}
-              className={`flex flex-col items-center gap-1 p-2 rounded-xl transition-all ${mobilePanel === null ? "text-primary bg-primary/10" : "text-muted-foreground hover:text-foreground"
+              className={`flex flex-col items-center gap-1 p-3 rounded-xl transition-all min-h-[44px] ${mobilePanel === null ? "text-primary bg-primary/10" : "text-muted-foreground hover:text-foreground"
                 }`}
             >
               <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -339,7 +339,7 @@ export function NotebookLayout({ notebookId, notebookTitle, notebookFiles, initi
 
             <button
               onClick={openMobileStudio}
-              className={`flex flex-col items-center gap-1 p-2 rounded-xl transition-all ${mobilePanel === "studio" ? "text-primary bg-primary/10" : "text-muted-foreground hover:text-foreground"
+              className={`flex flex-col items-center gap-1 p-3 rounded-xl transition-all min-h-[44px] ${mobilePanel === "studio" ? "text-primary bg-primary/10" : "text-muted-foreground hover:text-foreground"
                 }`}
             >
               <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

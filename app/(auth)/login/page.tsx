@@ -158,7 +158,7 @@ function LoginContent() {
         </div>
 
         {/* Content */}
-        <div className="relative z-10 flex flex-col justify-between p-8 text-foreground dark:text-white w-full h-screen overflow-hidden">
+        <div className="relative z-10 flex flex-col justify-between p-8 text-foreground dark:text-white w-full h-dvh overflow-hidden">
           <Logo size="md" />
 
           <div className="space-y-5 max-w-lg">

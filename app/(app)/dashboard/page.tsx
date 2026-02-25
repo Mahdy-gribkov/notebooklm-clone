@@ -167,7 +167,7 @@ export default function DashboardPage() {
       pollAttemptRef.current++;
       Promise.all(
         processing.map((n) =>
-          fetch(`/api/notebooks/${n.id}`).then((r) => r.json())
+          fetch(`/api/notebooks/${n.id}`).then((r) => r.ok ? r.json() : n).catch(() => n)
         )
       ).then((updates) => {
         setNotebooks((prev) =>
@@ -176,7 +176,7 @@ export default function DashboardPage() {
             return updated ?? n;
           })
         );
-      });
+      }).catch(() => {});
     }, delay);
 
     return () => clearTimeout(timeout);

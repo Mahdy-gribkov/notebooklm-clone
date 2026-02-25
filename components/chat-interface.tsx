@@ -428,6 +428,7 @@ export function ChatInterface({ notebookId, initialMessages, isProcessing = fals
               disabled={isLoading || (!hasFiles && messages.length === 0)}
               rows={1}
               maxLength={2000}
+              autoComplete="off"
             />
             {input.length > 1500 && (
               <span className={`absolute bottom-1 right-1 text-[10px] tabular-nums ${input.length >= 2000 ? "text-destructive font-medium" : "text-muted-foreground/60"}`}>

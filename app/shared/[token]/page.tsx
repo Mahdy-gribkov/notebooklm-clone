@@ -306,6 +306,7 @@ export default function SharedNotebookPage() {
                   onChange={(e) => setChatInput(e.target.value)}
                   placeholder="Ask about this company..."
                   disabled={chatLoading}
+                  autoComplete="off"
                   className="flex-1 h-12 rounded-lg border bg-background px-4 text-base sm:text-sm focus:outline-none focus:ring-2 focus:ring-primary"
                 />
                 <button

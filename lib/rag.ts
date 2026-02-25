@@ -168,7 +168,7 @@ export async function processNotebook(
 
     // Generate title and description (fire-and-forget with retry)
     const sampleForMeta = chunks.slice(0, 3).join("\n\n");
-    (async () => {
+    void (async () => {
       try {
         await generateNotebookMeta(notebookId, sampleForMeta);
       } catch (e1) {

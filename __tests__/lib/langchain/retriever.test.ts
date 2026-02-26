@@ -68,7 +68,7 @@ describe("DocChatRetriever", () => {
         match_notebook_id: VALID_UUID,
         match_user_id: VALID_UUID_2,
         match_count: 8,
-        match_threshold: 0.3,
+        match_threshold: 0.45,
       }));
       expect(docs).toHaveLength(1);
       expect(docs[0]).toBeInstanceOf(Document);

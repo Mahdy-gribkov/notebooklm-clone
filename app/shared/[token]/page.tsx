@@ -2,6 +2,8 @@
 
 import { useEffect, useState, useRef, useCallback } from "react";
 import { useParams } from "next/navigation";
+import ReactMarkdown from "react-markdown";
+import rehypeSanitize from "rehype-sanitize";
 import { Logo } from "@/components/logo";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { SourcePanel } from "@/components/source-panel";
@@ -53,7 +55,9 @@ export default function SharedNotebookPage() {
   const [chatMessages, setChatMessages] = useState<Array<{ role: string; content: string; sources?: Source[] }>>([]);
   const [chatLoading, setChatLoading] = useState(false);
   const [chatError, setChatError] = useState<string | null>(null);
+  const [logoError, setLogoError] = useState(false);
   const chatEndRef = useRef<HTMLDivElement>(null);
+  const chatMessagesRef = useRef(chatMessages);
 
   useEffect(() => {
     async function fetchData() {
@@ -83,6 +87,10 @@ export default function SharedNotebookPage() {
   }, [token]);
 
   useEffect(() => {
+    chatMessagesRef.current = chatMessages;
+  }, [chatMessages]);
+
+  useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [chatMessages]);
 
@@ -99,7 +107,7 @@ export default function SharedNotebookPage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          messages: [...chatMessages, { role: "user", content: userMsg }],
+          messages: [...chatMessagesRef.current, { role: "user", content: userMsg }],
         }),
       });
 
@@ -164,7 +172,7 @@ export default function SharedNotebookPage() {
     } finally {
       setChatLoading(false);
     }
-  }, [chatLoading, chatMessages, token]);
+  }, [chatLoading, token]);
 
   function handleSendMessage(e: React.FormEvent) {
     e.preventDefault();
@@ -216,21 +224,22 @@ export default function SharedNotebookPage() {
       <header className="sticky top-0 z-20 border-b bg-card/80 backdrop-blur-sm">
         <div className="mx-auto flex h-14 max-w-5xl items-center justify-between px-4">
           <div className="flex items-center gap-3">
-            {data.company?.website ? (
+            {data.company?.website && !logoError ? (
               <>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={`https://logo.clearbit.com/${new URL(data.company.website.startsWith("http") ? data.company.website : `https://${data.company.website}`).hostname}`}
                   alt={data.company.name}
                   className="h-7 w-7 rounded"
-                  onError={(e) => {
-                    const img = e.target as HTMLImageElement;
-                    const fallback = document.createElement("div");
-                    fallback.className = "h-7 w-7 rounded bg-primary flex items-center justify-center text-primary-foreground text-xs font-bold";
-                    fallback.textContent = (data.company?.name ?? "?").charAt(0).toUpperCase();
-                    img.replaceWith(fallback);
-                  }}
+                  onError={() => setLogoError(true)}
                 />
+                <span className="text-sm font-semibold">{data.company.name}</span>
+              </>
+            ) : data.company?.name ? (
+              <>
+                <div className="h-7 w-7 rounded bg-primary flex items-center justify-center text-primary-foreground text-xs font-bold">
+                  {data.company.name.charAt(0).toUpperCase()}
+                </div>
                 <span className="text-sm font-semibold">{data.company.name}</span>
               </>
             ) : (
@@ -346,10 +355,18 @@ export default function SharedNotebookPage() {
                     <div
                       className={`max-w-[80%] rounded-2xl px-4 py-2.5 text-sm ${msg.role === "user"
                         ? "bg-primary text-primary-foreground"
-                        : "bg-muted prose dark:prose-invert prose-sm max-w-none"
+                        : "bg-muted prose dark:prose-invert prose-sm max-w-none prose-p:my-1.5 prose-headings:my-2 prose-ul:my-1.5 prose-ol:my-1.5 prose-li:my-0.5"
                         }`}
                     >
-                      {msg.content || (
+                      {msg.content ? (
+                        msg.role === "user" ? (
+                          <p className="whitespace-pre-wrap break-words">{msg.content}</p>
+                        ) : (
+                          <ReactMarkdown rehypePlugins={[rehypeSanitize]}>
+                            {msg.content}
+                          </ReactMarkdown>
+                        )
+                      ) : (
                         <span className="inline-flex items-center gap-1.5 text-muted-foreground">
                           <span className="h-1.5 w-1.5 rounded-full bg-current animate-pulse" />
                           Thinking...
@@ -406,7 +423,13 @@ export default function SharedNotebookPage() {
             {activeTab === "notes" && (
               <div className="space-y-4">
                 {data.notes.length === 0 && (
-                  <p className="text-muted-foreground text-center py-12">No notes.</p>
+                  <div className="flex flex-col items-center py-16 text-center">
+                    <svg className="h-10 w-10 text-muted-foreground/30 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                    </svg>
+                    <p className="text-sm font-medium text-muted-foreground">No notes yet</p>
+                    <p className="text-xs text-muted-foreground/60 mt-1">Notes added by the notebook owner will appear here.</p>
+                  </div>
                 )}
                 {data.notes.map((note) => (
                   <div key={note.id} className="rounded-xl border bg-card p-5">
@@ -422,9 +445,13 @@ export default function SharedNotebookPage() {
             {activeTab === "studio" && (
               <div className="space-y-4">
                 {data.generations.length === 0 && (
-                  <p className="text-muted-foreground text-center py-12">
-                    No studio outputs.
-                  </p>
+                  <div className="flex flex-col items-center py-16 text-center">
+                    <svg className="h-10 w-10 text-muted-foreground/30 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5.002 5.002 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                    </svg>
+                    <p className="text-sm font-medium text-muted-foreground">No studio outputs yet</p>
+                    <p className="text-xs text-muted-foreground/60 mt-1">AI-generated content like quizzes, flashcards, and reports will appear here.</p>
+                  </div>
                 )}
                 {data.generations.map((gen) => (
                   <div key={gen.id} className="rounded-xl border bg-card p-6 shadow-sm hover:shadow-md transition-shadow">
@@ -476,32 +503,31 @@ export default function SharedNotebookPage() {
             )}
           </div>
 
-          {/* Footer */}
-          <footer className="border-t bg-card/50 py-4">
-            <div className="mx-auto max-w-5xl px-4 flex items-center justify-between">
-              <p className="text-xs text-muted-foreground">
-                Built by{" "}
-                <a
-                  href="https://medygribkov.vercel.app"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-primary hover:underline underline-offset-2"
-                >
-                  Medy Gribkov
-                </a>
-                {" "}with DocChat
-              </p>
-              <a
-                href="/Medy-Gribkov-Resume.pdf"
-                download
-                className="text-xs text-primary hover:underline underline-offset-2"
-              >
-                Resume
-              </a>
-            </div>
-          </footer>
         </div>
       )}
+
+      {/* Footer - shown on all tabs */}
+      <footer className="border-t bg-card/50 py-4 shrink-0">
+        <div className="mx-auto max-w-5xl px-4 flex items-center justify-between">
+          <p className="text-xs text-muted-foreground">
+            Built by{" "}
+            <a
+              href="https://medygribkov.vercel.app"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-primary hover:underline underline-offset-2"
+            >
+              Medy Gribkov
+            </a>
+            {" "}with DocChat
+          </p>
+          <div className="flex items-center gap-3">
+            <a href="https://github.com/Medy-gribkov" target="_blank" rel="noopener noreferrer" className="text-xs text-muted-foreground hover:text-foreground transition-colors">GitHub</a>
+            <a href="https://linkedin.com/in/medygribkov" target="_blank" rel="noopener noreferrer" className="text-xs text-muted-foreground hover:text-foreground transition-colors">LinkedIn</a>
+            <a href="/Medy-Gribkov-Resume.pdf" download className="text-xs text-primary hover:underline underline-offset-2">Resume</a>
+          </div>
+        </div>
+      </footer>
     </div>
   );
 }

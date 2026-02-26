@@ -81,7 +81,7 @@ describe("createRAGChain", () => {
 
     expect(result.sources).toEqual([]);
     expect(result.systemPrompt).toContain(BASE_PROMPT);
-    expect(result.systemPrompt).toContain("No company data has been loaded yet");
+    expect(result.systemPrompt).toContain("No relevant source passages matched this query");
     expect(result.systemPrompt).not.toContain("===BEGIN DOCUMENT===");
   });
 

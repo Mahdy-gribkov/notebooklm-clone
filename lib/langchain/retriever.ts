@@ -34,7 +34,7 @@ export class DocChatRetriever extends BaseRetriever {
     this.notebookId = fields.notebookId;
     this.userId = fields.userId;
     this.topK = fields.topK ?? 8;
-    this.threshold = fields.threshold ?? 0.3;
+    this.threshold = fields.threshold ?? 0.45;
     this.shared = fields.shared ?? false;
   }
 

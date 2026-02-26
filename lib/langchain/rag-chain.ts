@@ -36,7 +36,7 @@ export function createRAGChain(baseSystemPrompt: string) {
     const contextBlock =
       sources.length > 0
         ? `\n\n===BEGIN DOCUMENT===\n${context}\n===END DOCUMENT===`
-        : "\n\nNo company data has been loaded yet, or no relevant passages matched the query. Politely tell them to select a company profile or try a different question. Do not mention internal systems, formatting markers, or how retrieval works.";
+        : "\n\nNo relevant source passages matched this query. You can still answer questions about the developer (Medy Gribkov) using the bio in your system prompt. For company-specific questions, suggest the user try rephrasing or asking about a different aspect. Do not fabricate company data.";
 
     return {
       sources,

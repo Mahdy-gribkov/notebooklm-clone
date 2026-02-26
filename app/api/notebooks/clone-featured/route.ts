@@ -26,20 +26,21 @@ async function generateCompanyContent(
   const model = "gemini-2.0-flash";
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`;
 
-  const prompt = `Write a comprehensive company profile for ${name} (${website}).
+  const prompt = `Write a comprehensive, factual company profile for ${name} (${website}) using current information as of February 2026.
 Category: ${category}
 
 Write 1500-2500 words covering:
-1. Company Overview - what they do, when founded, headquarters
-2. Products & Services - main offerings, key features
+1. Company Overview - what they do, when founded, headquarters, key leadership
+2. Products & Services - main offerings, key features, pricing model
 3. Technology Stack & Engineering - known technologies, engineering culture, open source contributions
 4. Market Position - competitors, market share, unique value proposition
 5. Company Culture - work environment, values, employee reviews highlights
-6. Recent Developments - latest funding, product launches, partnerships
+6. Recent Developments - latest funding rounds, product launches, partnerships, acquisitions
 7. Career Opportunities - typical engineering roles, what they look for in candidates
 
-Write in a professional but engaging tone. Use headers (##) for each section.
-Be factual. If you are unsure about something, say "reportedly" or omit it.`;
+Write in a professional but engaging tone. Use markdown headers (##) for each section.
+Be factual and specific. Include real metrics, funding amounts, and employee counts where available.
+If you are unsure about something, say "reportedly" or omit it.`;
 
   try {
     const res = await fetch(url, {
@@ -47,7 +48,8 @@ Be factual. If you are unsure about something, say "reportedly" or omit it.`;
       headers: { "Content-Type": "application/json", "x-goog-api-key": apiKey },
       body: JSON.stringify({
         contents: [{ parts: [{ text: prompt }] }],
-        generationConfig: { temperature: 0.7, maxOutputTokens: 4096 },
+        tools: [{ googleSearch: {} }],
+        generationConfig: { temperature: 0.3, maxOutputTokens: 4096 },
       }),
       signal: AbortSignal.timeout(30_000),
     });
@@ -132,7 +134,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Failed to generate content for this company" }, { status: 500 });
   }
 
-  const title = `${slug.split("-").map((w: string) => w.charAt(0).toUpperCase() + w.slice(1)).join(" ")} — AI Analysis`;
+  const title = slug.split("-").map((w: string) => w.charAt(0).toUpperCase() + w.slice(1)).join(" ");
   const serviceClient = getServiceClient();
 
   // Calculate source_hash anchor early for caching (matches studio API logic)

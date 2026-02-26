@@ -74,6 +74,30 @@ export async function DELETE(request: Request) {
         .in("notebook_id", notebookIds);
     }
 
+    // 4b. Delete studio generations
+    if (notebookIds.length > 0) {
+      await serviceClient.from("studio_generations").delete().in("notebook_id", notebookIds);
+    }
+
+    // 4c. Delete notes
+    if (notebookIds.length > 0) {
+      await serviceClient.from("notes").delete().in("notebook_id", notebookIds);
+    }
+
+    // 4d. Delete shared links
+    if (notebookIds.length > 0) {
+      await serviceClient.from("shared_links").delete().in("notebook_id", notebookIds);
+    }
+
+    // 4e. Delete notebook memberships (owned + invited)
+    if (notebookIds.length > 0) {
+      await serviceClient.from("notebook_members").delete().in("notebook_id", notebookIds);
+    }
+    await serviceClient.from("notebook_members").delete().eq("user_id", userId);
+
+    // 4f. Delete companies
+    await serviceClient.from("companies").delete().eq("user_id", userId);
+
     // 5. Delete messages
     await serviceClient
       .from("messages")

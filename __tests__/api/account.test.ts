@@ -100,6 +100,35 @@ describe("DELETE /api/account", () => {
     expect(mockServiceClient.auth.admin.deleteUser).toHaveBeenCalledWith("user-123");
   });
 
+  it("deletes all related tables in cascade", async () => {
+    // Mock notebooks query to return data so notebookIds.length > 0 branches execute
+    const selectEq = vi.fn().mockResolvedValue({ data: [{ id: "nb-1" }] });
+    const selectFn = vi.fn().mockReturnValue({ eq: selectEq });
+    const deleteIn = vi.fn().mockResolvedValue({});
+    const deleteEq = vi.fn().mockResolvedValue({});
+    const deleteFn = vi.fn().mockReturnValue({ eq: deleteEq, in: deleteIn });
+
+    mockServiceClient.from.mockImplementation((table: string) => {
+      if (table === "notebooks" || table === "notebook_files") {
+        return { select: selectFn, delete: deleteFn };
+      }
+      return { delete: deleteFn };
+    });
+
+    const req = new Request("http://test/api/account", { method: "DELETE" });
+    await DELETE(req);
+    const fromCalls = mockServiceClient.from.mock.calls.map((c: string[]) => c[0]);
+    expect(fromCalls).toContain("notebooks");
+    expect(fromCalls).toContain("notebook_files");
+    expect(fromCalls).toContain("chunks");
+    expect(fromCalls).toContain("messages");
+    expect(fromCalls).toContain("studio_generations");
+    expect(fromCalls).toContain("notes");
+    expect(fromCalls).toContain("shared_links");
+    expect(fromCalls).toContain("notebook_members");
+    expect(fromCalls).toContain("companies");
+  });
+
   it("returns 500 when deleteUser fails", async () => {
     mockServiceClient.auth.admin.deleteUser.mockResolvedValueOnce({
       error: { message: "Failed" },

@@ -19,8 +19,8 @@ export async function GET(
   }
 
   const { token } = await params;
-  if (!token || token.length < 32 || token.length > 64) {
-    return NextResponse.json({ error: "Invalid token" }, { status: 400 });
+  if (!token || token.length < 32 || token.length > 64 || !/^[A-Za-z0-9_-]+$/.test(token)) {
+    return NextResponse.json({ error: "Invalid share link" }, { status: 404 });
   }
 
   const supabase = getServiceClient();
@@ -29,14 +29,11 @@ export async function GET(
   const { data: tokenData, error: tokenError } = await supabase
     .rpc("validate_share_token", { share_token: token });
 
-  if (tokenError || !tokenData || tokenData.length === 0) {
-    return NextResponse.json({ error: "Invalid share link" }, { status: 404 });
+  if (tokenError || !tokenData || tokenData.length === 0 || !tokenData[0].is_valid) {
+    return NextResponse.json({ error: "Invalid or expired share link" }, { status: 404 });
   }
 
   const shareInfo = tokenData[0];
-  if (!shareInfo.is_valid) {
-    return NextResponse.json({ error: "This share link has expired" }, { status: 410 });
-  }
 
   const notebookId = shareInfo.notebook_id;
 

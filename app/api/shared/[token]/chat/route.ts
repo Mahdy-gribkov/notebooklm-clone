@@ -113,8 +113,8 @@ export async function POST(
   const supabase = getServiceClient();
 
   const { token } = await params;
-  if (!token || token.length < 32 || token.length > 64) {
-    return NextResponse.json({ error: "Invalid token" }, { status: 400 });
+  if (!token || token.length < 32 || token.length > 64 || !/^[A-Za-z0-9_-]+$/.test(token)) {
+    return NextResponse.json({ error: "Invalid or expired share link" }, { status: 404 });
   }
 
   const { data: tokenData } = await supabase

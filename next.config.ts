@@ -25,6 +25,7 @@ const securityHeaders = [
       "img-src 'self' data: blob: https:",
       "font-src 'self' data:",
       "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://generativelanguage.googleapis.com",
+      "frame-ancestors 'none'",
     ].join("; "),
   },
 ];

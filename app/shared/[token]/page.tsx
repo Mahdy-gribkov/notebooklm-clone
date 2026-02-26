@@ -211,7 +211,7 @@ export default function SharedNotebookPage() {
   ];
 
   return (
-    <div className="flex min-h-screen flex-col bg-background">
+    <div className="flex h-dvh flex-col bg-background overflow-hidden">
       {/* Header */}
       <header className="sticky top-0 z-20 border-b bg-card/80 backdrop-blur-sm">
         <div className="mx-auto flex h-14 max-w-5xl items-center justify-between px-4">
@@ -288,88 +288,94 @@ export default function SharedNotebookPage() {
       </div>
 
       {/* Content */}
-      <div className="mx-auto w-full max-w-5xl flex-1 px-4 py-6">
-        {activeTab === "chat" && (
-          <div className="space-y-4">
-            {data.permissions === "view" && (
-              <div className="rounded-lg border border-border/50 bg-muted/30 px-4 py-3 text-sm text-muted-foreground">
-                This profile is shared as view-only.{" "}
-                <a href="/login" className="text-primary hover:underline underline-offset-2">
-                  Sign up
-                </a>{" "}
-                to create your own company research notebooks.
-              </div>
-            )}
-
-            {chatMessages.length === 0 && (
-              <div className="py-8 sm:py-12 text-center space-y-6">
-                <div>
-                  <p className="text-base font-semibold mb-1">
-                    Ask anything about {data.company?.name || "this company"}
-                  </p>
-                  <p className="text-sm text-muted-foreground">
-                    All answers are grounded in company data with cited sources.
-                  </p>
+      {activeTab === "chat" ? (
+        <>
+          {/* Scrollable chat area */}
+          <div className="flex-1 overflow-y-auto">
+            <div className="mx-auto w-full max-w-5xl px-4 py-6 space-y-4">
+              {data.permissions === "view" && (
+                <div className="rounded-lg border border-border/50 bg-muted/30 px-4 py-3 text-sm text-muted-foreground">
+                  This profile is shared as view-only.{" "}
+                  <a href="/login" className="text-primary hover:underline underline-offset-2">
+                    Sign up
+                  </a>{" "}
+                  to create your own company research notebooks.
                 </div>
-                {data.permissions === "chat" && (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-w-lg mx-auto">
-                    {[
-                      `What does ${data.company?.name || "this company"} do?`,
-                      `What's their technology stack?`,
-                      `What makes them stand out?`,
-                      `What engineering roles are they hiring for?`,
-                    ].map((prompt) => (
-                      <button
-                        key={prompt}
-                        onClick={() => sendMessage(prompt)}
-                        disabled={chatLoading}
-                        className="flex items-start gap-3 rounded-xl border border-border/60 bg-card p-3.5 text-left text-xs text-muted-foreground hover:bg-accent/60 hover:text-foreground hover:border-primary/30 transition-all disabled:opacity-50"
-                      >
-                        <svg className="h-4 w-4 shrink-0 mt-0.5 text-primary/50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M8.625 12a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H8.25m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H12m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0h-.375M21 12c0 4.556-4.03 8.25-9 8.25a9.764 9.764 0 01-2.555-.337A5.972 5.972 0 015.41 20.97a5.969 5.969 0 01-.474-.065 4.48 4.48 0 00.978-2.025c.09-.457-.133-.901-.467-1.226C3.93 16.178 3 14.189 3 12c0-4.556 4.03-8.25 9-8.25s9 3.694 9 8.25z" />
-                        </svg>
-                        <span className="leading-relaxed">{prompt}</span>
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
+              )}
 
-            {chatMessages.map((msg, i) => (
-              <div key={i} className="space-y-2">
-                <div
-                  className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}
-                >
+              {chatMessages.length === 0 && (
+                <div className="py-8 sm:py-12 text-center space-y-6">
+                  <div>
+                    <p className="text-base font-semibold mb-1">
+                      Ask anything about {data.company?.name || "this company"}
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                      All answers are grounded in company data with cited sources.
+                    </p>
+                  </div>
+                  {data.permissions === "chat" && (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-w-lg mx-auto">
+                      {[
+                        `What does ${data.company?.name || "this company"} do?`,
+                        `What's their technology stack?`,
+                        `What makes them stand out?`,
+                        `What engineering roles are they hiring for?`,
+                      ].map((prompt) => (
+                        <button
+                          key={prompt}
+                          onClick={() => sendMessage(prompt)}
+                          disabled={chatLoading}
+                          className="flex items-start gap-3 rounded-xl border border-border/60 bg-card p-3.5 text-left text-xs text-muted-foreground hover:bg-accent/60 hover:text-foreground hover:border-primary/30 transition-all disabled:opacity-50"
+                        >
+                          <svg className="h-4 w-4 shrink-0 mt-0.5 text-primary/50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M8.625 12a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H8.25m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H12m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0h-.375M21 12c0 4.556-4.03 8.25-9 8.25a9.764 9.764 0 01-2.555-.337A5.972 5.972 0 015.41 20.97a5.969 5.969 0 01-.474-.065 4.48 4.48 0 00.978-2.025c.09-.457-.133-.901-.467-1.226C3.93 16.178 3 14.189 3 12c0-4.556 4.03-8.25 9-8.25s9 3.694 9 8.25z" />
+                          </svg>
+                          <span className="leading-relaxed">{prompt}</span>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {chatMessages.map((msg, i) => (
+                <div key={i} className="space-y-2">
                   <div
-                    className={`max-w-[80%] rounded-2xl px-4 py-2.5 text-sm ${msg.role === "user"
-                      ? "bg-primary text-primary-foreground"
-                      : "bg-muted prose dark:prose-invert prose-sm max-w-none"
-                      }`}
+                    className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}
                   >
-                    {msg.content || (
-                      <span className="inline-flex items-center gap-1.5 text-muted-foreground">
-                        <span className="h-1.5 w-1.5 rounded-full bg-current animate-pulse" />
-                        Thinking...
-                      </span>
-                    )}
+                    <div
+                      className={`max-w-[80%] rounded-2xl px-4 py-2.5 text-sm ${msg.role === "user"
+                        ? "bg-primary text-primary-foreground"
+                        : "bg-muted prose dark:prose-invert prose-sm max-w-none"
+                        }`}
+                    >
+                      {msg.content || (
+                        <span className="inline-flex items-center gap-1.5 text-muted-foreground">
+                          <span className="h-1.5 w-1.5 rounded-full bg-current animate-pulse" />
+                          Thinking...
+                        </span>
+                      )}
+                    </div>
                   </div>
+                  {msg.role === "assistant" && msg.sources && msg.sources.length > 0 && (
+                    <div className="max-w-[80%]">
+                      <SourcePanel sources={msg.sources} />
+                    </div>
+                  )}
                 </div>
-                {msg.role === "assistant" && msg.sources && msg.sources.length > 0 && (
-                  <div className="max-w-[80%]">
-                    <SourcePanel sources={msg.sources} />
-                  </div>
-                )}
-              </div>
-            ))}
-            <div ref={chatEndRef} />
+              ))}
+              <div ref={chatEndRef} />
 
-            {chatError && (
-              <p className="text-sm text-destructive text-center">{chatError}</p>
-            )}
+              {chatError && (
+                <p className="text-sm text-destructive text-center">{chatError}</p>
+              )}
+            </div>
+          </div>
 
-            {data.permissions === "chat" && chatMessages.length > 0 && (
-              <form onSubmit={handleSendMessage} className="flex gap-2 pt-4 border-t">
+          {/* Sticky chat input at bottom */}
+          {data.permissions === "chat" && (
+            <div className="border-t bg-card/80 backdrop-blur-sm pb-[env(safe-area-inset-bottom)]">
+              <form onSubmit={handleSendMessage} className="mx-auto max-w-5xl flex gap-2 px-4 py-3">
                 <input
                   type="text"
                   value={chatInput}
@@ -391,109 +397,111 @@ export default function SharedNotebookPage() {
                   )}
                 </button>
               </form>
-            )}
-          </div>
-        )}
-
-        {activeTab === "notes" && (
-          <div className="space-y-4">
-            {data.notes.length === 0 && (
-              <p className="text-muted-foreground text-center py-12">No notes.</p>
-            )}
-            {data.notes.map((note) => (
-              <div key={note.id} className="rounded-xl border bg-card p-5">
-                <h3 className="font-semibold">{note.title}</h3>
-                <div className="mt-2 text-sm text-muted-foreground whitespace-pre-wrap">
-                  {note.content}
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-
-        {activeTab === "studio" && (
-          <div className="space-y-4">
-            {data.generations.length === 0 && (
-              <p className="text-muted-foreground text-center py-12">
-                No studio outputs.
-              </p>
-            )}
-            {data.generations.map((gen) => (
-              <div key={gen.id} className="rounded-xl border bg-card p-6 shadow-sm hover:shadow-md transition-shadow">
-                <div className="flex items-center justify-between mb-4">
-                  <span className="text-xs font-bold uppercase tracking-wider bg-primary/10 text-primary px-2.5 py-1 rounded-full">
-                    {gen.action}
-                  </span>
-                  <span className="text-xs text-muted-foreground">
-                    {new Date(gen.created_at).toLocaleDateString()}
-                  </span>
-                </div>
-
-                {/* Premium Rendering based on action */}
-                <div className="text-sm prose dark:prose-invert max-w-none">
-                  {typeof gen.result === 'string' ? (
-                    <div className="whitespace-pre-wrap">{gen.result}</div>
-                  ) : gen.action === 'flashcards' && Array.isArray(gen.result) ? (
-                    <div className="grid gap-4 sm:grid-cols-2">
-                      {(gen.result as unknown as Flashcard[]).map((card, idx) => (
-                        <div key={idx} className="p-4 rounded-lg bg-muted/50 border border-border/50">
-                          <div className="font-semibold text-primary mb-2">Q: {card.front}</div>
-                          <div className="text-muted-foreground italic">A: {card.back}</div>
-                        </div>
-                      ))}
+            </div>
+          )}
+        </>
+      ) : (
+        <div className="flex-1 overflow-y-auto">
+          <div className="mx-auto w-full max-w-5xl px-4 py-6">
+            {activeTab === "notes" && (
+              <div className="space-y-4">
+                {data.notes.length === 0 && (
+                  <p className="text-muted-foreground text-center py-12">No notes.</p>
+                )}
+                {data.notes.map((note) => (
+                  <div key={note.id} className="rounded-xl border bg-card p-5">
+                    <h3 className="font-semibold">{note.title}</h3>
+                    <div className="mt-2 text-sm text-muted-foreground whitespace-pre-wrap">
+                      {note.content}
                     </div>
-                  ) : gen.action === 'quiz' && typeof gen.result === 'object' ? (
-                    <div className="space-y-6">
-                      {(gen.result as unknown as Quiz).questions?.map((q, idx) => (
-                        <div key={idx} className="space-y-2">
-                          <div className="font-semibold">{idx + 1}. {q.question}</div>
-                          <div className="grid gap-2 ps-4">
-                            {q.options?.map((opt: string, oi: number) => (
-                              <div key={oi} className="text-xs p-2 rounded border bg-background/50">
-                                {opt}
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {activeTab === "studio" && (
+              <div className="space-y-4">
+                {data.generations.length === 0 && (
+                  <p className="text-muted-foreground text-center py-12">
+                    No studio outputs.
+                  </p>
+                )}
+                {data.generations.map((gen) => (
+                  <div key={gen.id} className="rounded-xl border bg-card p-6 shadow-sm hover:shadow-md transition-shadow">
+                    <div className="flex items-center justify-between mb-4">
+                      <span className="text-xs font-bold uppercase tracking-wider bg-primary/10 text-primary px-2.5 py-1 rounded-full">
+                        {gen.action}
+                      </span>
+                      <span className="text-xs text-muted-foreground">
+                        {new Date(gen.created_at).toLocaleDateString()}
+                      </span>
+                    </div>
+
+                    <div className="text-sm prose dark:prose-invert max-w-none">
+                      {typeof gen.result === 'string' ? (
+                        <div className="whitespace-pre-wrap">{gen.result}</div>
+                      ) : gen.action === 'flashcards' && Array.isArray(gen.result) ? (
+                        <div className="grid gap-4 sm:grid-cols-2">
+                          {(gen.result as unknown as Flashcard[]).map((card, idx) => (
+                            <div key={idx} className="p-4 rounded-lg bg-muted/50 border border-border/50">
+                              <div className="font-semibold text-primary mb-2">Q: {card.front}</div>
+                              <div className="text-muted-foreground italic">A: {card.back}</div>
+                            </div>
+                          ))}
+                        </div>
+                      ) : gen.action === 'quiz' && typeof gen.result === 'object' ? (
+                        <div className="space-y-6">
+                          {(gen.result as unknown as Quiz).questions?.map((q, idx) => (
+                            <div key={idx} className="space-y-2">
+                              <div className="font-semibold">{idx + 1}. {q.question}</div>
+                              <div className="grid gap-2 ps-4">
+                                {q.options?.map((opt: string, oi: number) => (
+                                  <div key={oi} className="text-xs p-2 rounded border bg-background/50">
+                                    {opt}
+                                  </div>
+                                ))}
                               </div>
-                            ))}
-                          </div>
+                            </div>
+                          ))}
                         </div>
-                      ))}
+                      ) : (
+                        <pre className="text-xs overflow-auto max-h-64 bg-muted rounded-lg p-3 scrollbar-thin">
+                          {JSON.stringify(gen.result, null, 2)}
+                        </pre>
+                      )}
                     </div>
-                  ) : (
-                    <pre className="text-xs overflow-auto max-h-64 bg-muted rounded-lg p-3 scrollbar-thin">
-                      {JSON.stringify(gen.result, null, 2)}
-                    </pre>
-                  )}
-                </div>
+                  </div>
+                ))}
               </div>
-            ))}
+            )}
           </div>
-        )}
-      </div>
 
-      {/* Footer */}
-      <footer className="border-t bg-card/50 py-4">
-        <div className="mx-auto max-w-5xl px-4 flex items-center justify-between">
-          <p className="text-xs text-muted-foreground">
-            Built by{" "}
-            <a
-              href="https://medygribkov.vercel.app"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-primary hover:underline underline-offset-2"
-            >
-              Medy Gribkov
-            </a>
-            {" "}with DocChat
-          </p>
-          <a
-            href="https://github.com/mahdy-gribkov"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-xs text-muted-foreground hover:text-foreground transition-colors"
-          >
-            GitHub
-          </a>
+          {/* Footer */}
+          <footer className="border-t bg-card/50 py-4">
+            <div className="mx-auto max-w-5xl px-4 flex items-center justify-between">
+              <p className="text-xs text-muted-foreground">
+                Built by{" "}
+                <a
+                  href="https://medygribkov.vercel.app"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-primary hover:underline underline-offset-2"
+                >
+                  Medy Gribkov
+                </a>
+                {" "}with DocChat
+              </p>
+              <a
+                href="/Medy-Gribkov-Resume.pdf"
+                download
+                className="text-xs text-primary hover:underline underline-offset-2"
+              >
+                Resume
+              </a>
+            </div>
+          </footer>
         </div>
-      </footer>
+      )}
     </div>
   );
 }

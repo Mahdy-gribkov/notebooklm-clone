@@ -9,8 +9,8 @@ interface SourcePanelProps {
 }
 
 function similarityColor(score: number): string {
-  if (score >= 0.8) return "from-primary to-primary/80";
-  if (score >= 0.6) return "from-chart-2 to-chart-2/80";
+  if (score >= 0.65) return "from-primary to-primary/80";
+  if (score >= 0.45) return "from-chart-2 to-chart-2/80";
   return "from-muted-foreground to-muted-foreground/60";
 }
 
@@ -76,7 +76,7 @@ export function SourcePanel({ sources }: SourcePanelProps) {
               </span>
               <div className="flex items-center gap-1.5">
                 <span className="text-[10px] text-muted-foreground">
-                  {source.similarity >= 0.8 ? t("highRelevance") : source.similarity >= 0.6 ? t("goodRelevance") : t("partialRelevance")}
+                  {source.similarity >= 0.65 ? t("highRelevance") : source.similarity >= 0.45 ? t("goodRelevance") : t("partialRelevance")}
                 </span>
                 {/* Copy button */}
                 <button

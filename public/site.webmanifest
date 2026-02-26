@@ -1,7 +1,7 @@
 {
   "name": "DocChat",
   "short_name": "DocChat",
-  "description": "Chat with your documents using AI",
+  "description": "Document intelligence platform with RAG chat, studio tools, and notebook sharing",
   "start_url": "/dashboard",
   "display": "standalone",
   "background_color": "#f5f0e8",

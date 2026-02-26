@@ -119,8 +119,8 @@ export function SourcesPanel({ notebookId, initialFiles, isUploading: externalUp
       if (res.ok) {
         setFiles((prev) => prev.filter((f) => f.id !== fileId));
       }
-    } catch {
-      // File remains in list on failure
+    } catch (err) {
+      console.error("[sources] Delete failed:", err);
     }
   }
 
@@ -187,7 +187,6 @@ export function SourcesPanel({ notebookId, initialFiles, isUploading: externalUp
       onDragOver={handleDragOver}
       onDrop={handleDrop}
     >
-      {/* Header */}
       <div className="flex items-center justify-between px-4 py-3 border-b shrink-0">
         <div className="flex items-center gap-2">
           <h2 className="text-sm font-semibold">{t("title")}</h2>
@@ -220,7 +219,6 @@ export function SourcesPanel({ notebookId, initialFiles, isUploading: externalUp
         </div>
       </div>
 
-      {/* Drop zone */}
       <div
         className={`mx-3 mt-3 rounded-xl border-2 border-dashed px-3 py-4 text-center cursor-pointer transition-all shrink-0 ${
           dragging
@@ -239,7 +237,6 @@ export function SourcesPanel({ notebookId, initialFiles, isUploading: externalUp
         </div>
       </div>
 
-      {/* Upload progress */}
       {localUploading && (
         <div className="mx-3 mt-2 shrink-0">
           <div className="h-1.5 w-full rounded-full bg-muted overflow-hidden">
@@ -256,14 +253,12 @@ export function SourcesPanel({ notebookId, initialFiles, isUploading: externalUp
         </div>
       )}
 
-      {/* External upload lock message */}
       {!localUploading && !!externalUploading && (
         <div className="mx-3 mt-2 shrink-0">
           <p className="text-[10px] text-muted-foreground">{t("uploadInProgress")}</p>
         </div>
       )}
 
-      {/* File list */}
       <div className="flex-1 overflow-y-auto scrollbar-thin mt-2 min-h-0">
         {files.length === 0 && !uploading ? (
           <div className="flex flex-col items-center justify-center h-full px-4 py-8 text-center">
@@ -286,7 +281,6 @@ export function SourcesPanel({ notebookId, initialFiles, isUploading: externalUp
                 key={file.id}
                 className="group flex items-center gap-2.5 rounded-lg px-2.5 py-2.5 hover:bg-accent/60 transition-all relative"
               >
-                {/* Status dot + icon */}
                 <div className="relative shrink-0">
                   <svg className="h-[1.125rem] w-[1.125rem] text-muted-foreground/40" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
@@ -298,7 +292,6 @@ export function SourcesPanel({ notebookId, initialFiles, isUploading: externalUp
                   }`} />
                 </div>
 
-                {/* File info */}
                 <div className="flex-1 min-w-0">
                   <p className="text-xs font-medium truncate" title={file.file_name}>
                     {file.file_name.replace(/\.(pdf|txt|docx|jpg|jpeg|png|webp)$/i, "")}
@@ -314,7 +307,6 @@ export function SourcesPanel({ notebookId, initialFiles, isUploading: externalUp
                   </p>
                 </div>
 
-                {/* Actions */}
                 {confirmDeleteId === file.id ? (
                   <div className="flex items-center gap-1 shrink-0">
                     <span className="text-[10px] text-destructive mr-1">{t("deleteConfirm")}</span>
@@ -373,7 +365,6 @@ export function SourcesPanel({ notebookId, initialFiles, isUploading: externalUp
         )}
       </div>
 
-      {/* Error bar */}
       {error && (
         <div className="px-3 py-2 border-t shrink-0 animate-fade-in">
           <p className="text-[11px] text-destructive">{error}</p>

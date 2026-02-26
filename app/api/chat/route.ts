@@ -159,21 +159,7 @@ export async function POST(request: Request) {
     console.error("[chat] RAG chain failed:", e);
   }
 
-  // Detect embedding mismatch: chunks exist but similarity search returned nothing
-  if (sources.length === 0) {
-    const { count } = await serviceClient
-      .from("chunks")
-      .select("id", { count: "exact", head: true })
-      .eq("notebook_id", notebookId);
-    if (count && count > 0) {
-      console.warn(
-        `[chat] Notebook ${notebookId} has ${count} chunks but RAG returned 0 sources. ` +
-        `Possible embedding mismatch or threshold too high.`,
-      );
-    }
-  }
 
-  // Save user message (private)
   await serviceClient.from("messages").insert({
     notebook_id: notebookId,
     user_id: user.id,
@@ -194,9 +180,6 @@ export async function POST(request: Request) {
           content: m.content,
         })),
       ),
-      onError: ({ error }) => {
-        console.error("[chat] Stream error from LLM:", error);
-      },
       onChunk: ({ chunk }) => {
         if (chunk.type === "text-delta") {
           assistantText += chunk.textDelta;
@@ -214,15 +197,14 @@ export async function POST(request: Request) {
             sources: sources.length > 0 ? sources : null,
             is_public: false,
           });
-        } catch (e) {
-          console.error("[chat] Failed to save assistant message:", e);
+        } catch {
+          // Message save failed, not critical for user experience
         }
       },
     });
 
     return result.toDataStreamResponse();
   } catch (error) {
-    // Save whatever text was generated before the error
     if (assistantText.trim()) {
       await serviceClient.from("messages").insert({
         notebook_id: notebookId,
@@ -231,10 +213,9 @@ export async function POST(request: Request) {
         content: assistantText,
         sources: sources.length > 0 ? sources : null,
         is_public: false,
-      }).then(null, (e: unknown) => console.error("[chat] Failed to save partial response:", e));
+      }).then(null, () => {});
     }
-    const msg = error instanceof Error ? error.message : String(error);
-    console.error("[chat] Stream failed:", { error: msg, fullError: error });
+    console.error("[chat] Stream failed:", error instanceof Error ? error.message : error);
     return NextResponse.json({ error: "Something went wrong. Please try again." }, { status: 500 });
   }
 }

@@ -136,8 +136,8 @@ Keep it under 2000 characters. Do not use markdown, bullet points, or special fo
         result: { summary, audioBase64 },
         source_hash: sourceHash,
       });
-    } catch (saveError) {
-      console.warn("[audio] Failed to cache audio generation:", saveError);
+    } catch {
+      // Cache save failed, audio still returned to user
     }
 
     return new NextResponse(audioBuffer, {

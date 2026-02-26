@@ -45,7 +45,6 @@ export default function SharedNotebookPage() {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<Tab>("chat");
   const t = useTranslations("featured");
-  const common = useTranslations("common"); // For generic UI labels if needed
   const [chatInput, setChatInput] = useState("");
   const [chatMessages, setChatMessages] = useState<Array<{ role: string; content: string; sources?: Source[] }>>([]);
   const [chatLoading, setChatLoading] = useState(false);
@@ -90,6 +89,12 @@ export default function SharedNotebookPage() {
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [chatMessages]);
+
+  useEffect(() => {
+    return () => {
+      if (copyTimeoutRef.current) clearTimeout(copyTimeoutRef.current);
+    };
+  }, []);
 
   const sendMessage = useCallback(async (userMsg: string) => {
     if (!userMsg.trim() || chatLoading) return;
@@ -176,7 +181,8 @@ export default function SharedNotebookPage() {
     try {
       await navigator.clipboard.writeText(content);
       setCopiedMsgIdx(idx);
-      setTimeout(() => setCopiedMsgIdx(null), 2000);
+      if (copyTimeoutRef.current) clearTimeout(copyTimeoutRef.current);
+      copyTimeoutRef.current = setTimeout(() => setCopiedMsgIdx(null), 2000);
     } catch { /* clipboard not available */ }
   }, []);
 
@@ -226,7 +232,6 @@ export default function SharedNotebookPage() {
 
   return (
     <div className="flex h-dvh flex-col bg-background overflow-hidden">
-      {/* Header */}
       <header className="sticky top-0 z-20 border-b bg-card/80 backdrop-blur-sm">
         <div className="mx-auto flex h-14 max-w-5xl items-center justify-between px-4">
           <div className="flex items-center gap-3">
@@ -259,7 +264,6 @@ export default function SharedNotebookPage() {
         </div>
       </header>
 
-      {/* Notebook info */}
       <div className="mx-auto w-full max-w-5xl px-4 py-6">
         <h1 className="text-2xl font-semibold">{data.notebook.title}</h1>
         {data.notebook.description && (
@@ -281,7 +285,6 @@ export default function SharedNotebookPage() {
         </div>
       </div>
 
-      {/* Tabs */}
       <div className="mx-auto w-full max-w-5xl px-4">
         <div className="flex gap-1 border-b">
           {tabs.map((tab) => (
@@ -302,10 +305,8 @@ export default function SharedNotebookPage() {
         </div>
       </div>
 
-      {/* Content */}
       {activeTab === "chat" ? (
         <>
-          {/* Scrollable chat area */}
           <div className="flex-1 overflow-y-auto">
             <div className="mx-auto w-full max-w-5xl px-4 py-6 space-y-4">
               {data.permissions === "view" && (
@@ -417,7 +418,6 @@ export default function SharedNotebookPage() {
             </div>
           </div>
 
-          {/* Sticky chat input at bottom */}
           {data.permissions === "chat" && (
             <div className="border-t bg-card/80 backdrop-blur-sm pb-[env(safe-area-inset-bottom)]">
               <form onSubmit={handleSendMessage} className="mx-auto max-w-5xl flex gap-2 px-4 py-3">
@@ -528,7 +528,6 @@ export default function SharedNotebookPage() {
         </div>
       )}
 
-      {/* Footer - shown on all tabs */}
       <footer className="border-t bg-card/50 py-4 shrink-0">
         <div className="mx-auto max-w-5xl px-4 flex flex-col sm:flex-row items-center justify-between gap-2 sm:gap-0 text-center sm:text-left">
           <p className="text-xs text-muted-foreground">

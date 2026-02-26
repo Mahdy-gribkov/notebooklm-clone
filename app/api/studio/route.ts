@@ -116,9 +116,8 @@ export async function POST(request: Request) {
       .eq("source_hash", sourceHash)
       .single();
     existingGen = data;
-  } catch (dbError) {
-    // If column missing or other error, log it but continue without caching
-    console.warn("[studio] Caching lookup failed (migration might be pending):", dbError);
+  } catch {
+    // Cache lookup may fail if migration is pending
   }
 
   if (existingGen) {
@@ -140,9 +139,6 @@ export async function POST(request: Request) {
           content: `Generate ${validAction} from the document above. Return only valid JSON.`,
         },
       ],
-      onError: ({ error }) => {
-        console.error("[studio] Stream error:", error);
-      },
       onFinish: async ({ text }) => {
         // Validate output against Zod schema
         try {
@@ -158,14 +154,11 @@ export async function POST(request: Request) {
               result: parsed,
               source_hash: sourceHash,
             });
-          } catch (saveError) {
-            console.warn("[studio] Failed to save generation (migration might be pending):", saveError);
+          } catch {
+            // Save may fail if migration is pending
           }
-        } catch (parseError) {
-          console.warn("[studio] Output failed schema validation:", {
-            action: validAction,
-            error: parseError instanceof Error ? parseError.message : parseError,
-          });
+        } catch {
+          // Schema validation failed, output won't be cached
         }
       },
     });

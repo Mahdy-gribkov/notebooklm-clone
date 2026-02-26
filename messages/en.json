@@ -264,11 +264,14 @@
     "uploadInProgress": "Upload in progress from another panel..."
   },
   "sourcePanel": {
-    "references": "References",
+    "sourcesCited": "Sources Cited",
+    "matches": "{count} {count, plural, one {match} other {matches}}",
     "source": "Source {number}",
-    "strongMatch": "Strong match",
-    "goodMatch": "Good match",
-    "partialMatch": "Partial match"
+    "from": "from {fileName}",
+    "highRelevance": "High relevance",
+    "goodRelevance": "Good relevance",
+    "partialRelevance": "Partial relevance",
+    "copySource": "Copy source text"
   },
   "studio": {
     "title": "Studio",

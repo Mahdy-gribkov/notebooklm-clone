@@ -11,17 +11,13 @@ import { NextResponse } from "next/server";
 
 export const maxDuration = 120;
 
-/** Generate a company profile on-demand via Gemini when no hardcoded content exists. */
 async function generateCompanyContent(
   name: string,
   website: string,
   category: string,
 ): Promise<FeaturedStudioContent | null> {
   const apiKey = process.env.GEMINI_API_KEY;
-  if (!apiKey) {
-    console.error("[clone-featured] GEMINI_API_KEY not set, cannot generate on-demand content");
-    return null;
-  }
+  if (!apiKey) return null;
 
   const model = "gemini-2.0-flash";
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`;
@@ -54,19 +50,12 @@ If you are unsure about something, say "reportedly" or omit it.`;
       signal: AbortSignal.timeout(30_000),
     });
 
-    if (!res.ok) {
-      const body = await res.text();
-      console.error(`[clone-featured] Gemini generation error ${res.status}: ${body}`);
-      return null;
-    }
+    if (!res.ok) return null;
 
     const data = await res.json();
     const profileText: string = data.candidates?.[0]?.content?.parts?.[0]?.text || "";
 
-    if (profileText.length < 200) {
-      console.error("[clone-featured] Generated profile too short");
-      return null;
-    }
+    if (profileText.length < 200) return null;
 
     const fileName = `${name} Company Profile.pdf`;
     return {
@@ -82,8 +71,7 @@ If you are unsure about something, say "reportedly" or omit it.`;
       infographic: [{ heading: "Overview", content: `${name} operates in ${category}.` }],
       slidedeck: [{ heading: name, content: `A ${category} company from Israel.` }],
     };
-  } catch (e) {
-    console.error("[clone-featured] On-demand generation failed:", e);
+  } catch {
     return null;
   }
 }
@@ -119,10 +107,8 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Featured notebook not found" }, { status: 404 });
   }
 
-  // Try hardcoded content first, fall back to on-demand Gemini generation
   let content = getFeaturedContent(slug);
   if (!content && featured.website) {
-    console.log(`[clone-featured] No hardcoded content for "${slug}", generating on-demand...`);
     content = await generateCompanyContent(
       featured.titleKey,
       featured.website,
@@ -137,11 +123,9 @@ export async function POST(request: Request) {
   const title = slug.split("-").map((w: string) => w.charAt(0).toUpperCase() + w.slice(1)).join(" ");
   const serviceClient = getServiceClient();
 
-  // Calculate source_hash anchor early for caching (matches studio API logic)
   const fullText = content.files.map((f) => f.content).join("\n\n");
   const sourceHash = getNotebookHash(fullText);
 
-  // Create notebook in "processing" state
   let notebook;
   try {
     const { data, error: nbError } = await supabase
@@ -157,8 +141,6 @@ export async function POST(request: Request) {
       .single();
 
     if (nbError) {
-      // Fallback for missing source_hash column
-      console.warn("[clone-featured] Retrying without source_hash...");
       const { data: retryData, error: retryError } = await supabase
         .from("notebooks")
         .insert({
@@ -176,7 +158,7 @@ export async function POST(request: Request) {
       notebook = data;
     }
   } catch (e) {
-    console.error("[clone-featured] Critical failure creating notebook:", e);
+    console.error("[clone-featured] Failed to create notebook:", e instanceof Error ? e.message : e);
     return NextResponse.json({ error: "Database error. Please try again later." }, { status: 500 });
   }
 
@@ -184,7 +166,6 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Failed to create notebook" }, { status: 500 });
   }
 
-  // Insert file entries in "processing" state
   const fileEntries: { id: string; fileName: string; content: string }[] = [];
   let totalPages = 0;
 
@@ -206,10 +187,7 @@ export async function POST(request: Request) {
         .select("id")
         .single();
 
-      if (fileError) {
-        console.warn("[clone-featured] Failed to insert file entry:", file.fileName, fileError);
-        continue;
-      }
+      if (fileError) continue;
 
       if (notebookFile) {
         fileEntries.push({
@@ -218,16 +196,11 @@ export async function POST(request: Request) {
           content: file.content,
         });
       }
-    } catch (e) {
-      console.error("[clone-featured] Database error during file entry insertion:", e);
+    } catch {
       continue;
     }
   }
 
-  // (sourceHash already calculated above)
-
-
-  // Insert pre-generated studio content
   const actions: { action: string; result: unknown }[] = [
     { action: "quiz", result: content.quiz },
     { action: "flashcards", result: content.flashcards },
@@ -252,7 +225,6 @@ export async function POST(request: Request) {
       );
 
     if (genError) {
-      console.warn("[clone-featured] Failed to insert generations with source_hash, retrying without...", genError);
       const { error: retryGenError } = await supabase
         .from("studio_generations")
         .insert(
@@ -263,14 +235,12 @@ export async function POST(request: Request) {
             result: a.result,
           })),
         );
-      if (retryGenError) console.error("[clone-featured] Final failure inserting generations:", retryGenError);
+      if (retryGenError) throw retryGenError;
     }
   } catch (e) {
-    console.error("[clone-featured] Database error during studio generation insertion:", e);
-    // Continue even if generations fail to save (can be regenerated later)
+    console.error("[clone-featured] Studio generation insertion failed:", e instanceof Error ? e.message : e);
   }
 
-  // Embed all file content synchronously — featured content is small (~6-9 chunks)
   if (fileEntries.length > 0) {
     try {
       const splitter = new RecursiveCharacterTextSplitter({
@@ -318,13 +288,9 @@ export async function POST(request: Request) {
 
       if (allChunkRows.length > 0) {
         const { error: chunkError } = await serviceClient.from("chunks").insert(allChunkRows);
-        if (chunkError) {
-          console.error("[clone-featured] Failed to insert chunks:", chunkError.message);
-          throw new Error("Failed to store document chunks");
-        }
+        if (chunkError) throw new Error("Failed to store document chunks");
       }
 
-      // Embedding succeeded — mark everything as ready
       await serviceClient
         .from("notebook_files")
         .update({ status: "ready" })
@@ -336,9 +302,9 @@ export async function POST(request: Request) {
         .update({ status: "ready", page_count: totalPages })
         .eq("id", notebook.id);
     } catch (e) {
-      console.error("[clone-featured] Embedding failed:", e);
+      console.error("[clone-featured] Embedding failed:", e instanceof Error ? e.message : e);
 
-      // Mark as error so the user sees the failure
+
       await serviceClient
         .from("notebooks")
         .update({ status: "error" })

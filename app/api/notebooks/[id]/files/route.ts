@@ -173,7 +173,6 @@ export async function POST(
     .upload(storagePath, buffer, { contentType: file.type });
 
   if (uploadError) {
-    console.error("[notebooks/files] Storage upload failed:", uploadError);
     return NextResponse.json(
       { error: "Storage upload failed" },
       { status: 500 }
@@ -193,7 +192,6 @@ export async function POST(
     .single();
 
   if (dbError || !notebookFile) {
-    console.error("[notebooks/files] Failed to create notebook_file:", dbError);
     await serviceClient.storage.from("pdf-uploads").remove([storagePath]);
     return NextResponse.json(
       { error: "Failed to create file record" },
@@ -223,11 +221,7 @@ export async function POST(
       .update({ status: "ready", page_count: result.pageCount })
       .eq("id", notebookFile.id);
   } catch (error) {
-    const errorMsg = error instanceof Error ? error.message : String(error);
-    console.error("[notebooks/files] Processing failed:", {
-      notebookFileId: notebookFile.id,
-      errorMessage: errorMsg,
-    });
+    console.error("[notebooks/files] Processing failed:", error instanceof Error ? error.message : error);
 
     await serviceClient
       .from("notebook_files")
@@ -237,9 +231,7 @@ export async function POST(
     await serviceClient.storage
       .from("pdf-uploads")
       .remove([storagePath])
-      .then(null, (e: unknown) =>
-        console.error("[notebooks/files] Failed to clean up storage:", e)
-      );
+      .then(null, () => {});
   }
 
   // Recompute notebook status from all files

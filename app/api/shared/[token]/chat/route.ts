@@ -95,7 +95,6 @@ For off-topic requests, redirect gracefully: "That's outside what I can help wit
 This is a shared session. The viewer may be a recruiter, hiring manager, or fellow developer evaluating both the company data and the platform. Your responses demonstrate the system's quality. Cite accurately, synthesize thoughtfully, write clearly.`;
 
 
-// POST /api/shared/[token]/chat - anonymous chat on shared notebook
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ token: string }> }
@@ -118,7 +117,6 @@ export async function POST(
     return NextResponse.json({ error: "Invalid token" }, { status: 400 });
   }
 
-  // Validate token
   const { data: tokenData } = await supabase
     .rpc("validate_share_token", { share_token: token });
 
@@ -128,7 +126,6 @@ export async function POST(
 
   const shareInfo = tokenData[0];
 
-  // Only allow chat if permissions include chat
   if (shareInfo.permissions !== "chat") {
     return NextResponse.json(
       { error: "This shared notebook is view-only" },
@@ -163,7 +160,6 @@ export async function POST(
   const ownerId = shareInfo.owner_id;
 
   try {
-    // LCEL RAG chain: embed query -> retrieve -> deduplicate -> build context
     let sources: Source[] = [];
     let systemMessage = SYSTEM_PROMPT;
     try {
@@ -193,7 +189,6 @@ export async function POST(
         })),
       ),
       onFinish: async ({ text }) => {
-        // Save message to DB
         try {
           const { error: insertError } = await supabase.from("messages").insert([
             {
@@ -214,12 +209,11 @@ export async function POST(
             },
           ]);
           if (insertError) {
-            console.error("[shared-chat] Failed to save messages:", insertError.message);
+            // Message save failed, not critical for user experience
           }
-        } catch (e) {
-          console.error("[shared-chat] Message persistence error:", e);
+        } catch {
+          // Message persistence error, non-critical
         }
-        console.info(`[shared-chat] ip=${hashIP(ip)} notebook=${notebookId}`);
         data.close();
       },
     });

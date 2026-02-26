@@ -143,8 +143,8 @@ export function ChatInterface({ notebookId, initialMessages, isProcessing = fals
         setSavedNoteId(messageId);
         setTimeout(() => setSavedNoteId(null), 2000);
       }
-    } catch {
-      // Silent fail
+    } catch (err) {
+      console.error("[chat] Save to note failed:", err);
     }
   }, [notebookId]);
 
@@ -188,7 +188,6 @@ export function ChatInterface({ notebookId, initialMessages, isProcessing = fals
 
   return (
     <div className="flex h-full flex-col min-h-0">
-      {/* Error toast - top right */}
       {errorMessage && (
         <div className="fixed top-4 end-4 z-50 flex items-center gap-2 bg-destructive/10 border border-destructive/20 px-3 py-2.5 rounded-lg text-xs text-destructive animate-slide-up max-w-sm shadow-lg">
           <svg className="h-4 w-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -206,7 +205,6 @@ export function ChatInterface({ notebookId, initialMessages, isProcessing = fals
         </div>
       )}
 
-      {/* Scrollable messages area */}
       <div ref={scrollRef} className="flex-1 overflow-y-auto min-h-0 scrollbar-thin">
         <div className="px-4 py-6">
           <div className="space-y-5 max-w-2xl lg:max-w-3xl mx-auto">
@@ -303,7 +301,6 @@ export function ChatInterface({ notebookId, initialMessages, isProcessing = fals
               return (
                 <div key={message.id} className={`flex ${isUser ? "justify-end" : "justify-start"} animate-slide-up`}>
                   <div className={`flex gap-2.5 max-w-[85%] lg:max-w-2xl xl:max-w-3xl`}>
-                    {/* Avatar */}
                     {!isUser && (
                       <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary/10 mt-1">
                         <svg className="h-3.5 w-3.5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -331,7 +328,6 @@ export function ChatInterface({ notebookId, initialMessages, isProcessing = fals
                           </div>
                         )}
 
-                        {/* Action buttons (AI messages only) */}
                         {!isUser && message.content && (
                           <div className="absolute top-2 end-2 flex items-center gap-0.5 opacity-100 sm:opacity-0 sm:group-hover/msg:opacity-100 transition-opacity">
                             <button
@@ -373,7 +369,6 @@ export function ChatInterface({ notebookId, initialMessages, isProcessing = fals
                         </div>
                       )}
                     </div>
-                    {/* User avatar */}
                     {isUser && (
                       <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary/10 mt-1">
                         <svg className="h-3.5 w-3.5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -386,7 +381,6 @@ export function ChatInterface({ notebookId, initialMessages, isProcessing = fals
               );
             })}
 
-            {/* Shimmer loading indicator */}
             {isLoading && messages[messages.length - 1]?.role === "user" && (
               <div className="flex justify-start animate-fade-in">
                 <div className="flex gap-2.5">
@@ -406,13 +400,11 @@ export function ChatInterface({ notebookId, initialMessages, isProcessing = fals
               </div>
             )}
 
-            {/* Bottom spacer for scroll */}
             <div className="h-1" />
           </div>
         </div>
       </div>
 
-      {/* Input area */}
       <div className="border-t bg-background/80 backdrop-blur-sm p-3 sm:p-4 shrink-0">
         <form
           onSubmit={handleFormSubmit}

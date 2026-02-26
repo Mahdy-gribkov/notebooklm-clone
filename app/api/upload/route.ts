@@ -62,21 +62,18 @@ export async function POST(request: Request) {
 
   const serviceClient = getServiceClient();
 
-  // Store path only. Bucket is private, signed URLs generated on demand
   const storagePath = `${user.id}/${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.-]/g, "_")}`;
   const { error: uploadError } = await serviceClient.storage
     .from("pdf-uploads")
     .upload(storagePath, buffer, { contentType: "application/pdf" });
 
   if (uploadError) {
-    console.error("[upload] Storage upload failed:", uploadError);
     return NextResponse.json(
       { error: "Storage upload failed" },
       { status: 500 }
     );
   }
 
-  // Create notebook row with storage path (not public URL)
   const title = file.name.replace(/\.pdf$/i, "");
   const { data: notebook, error: dbError } = await serviceClient
     .from("notebooks")
@@ -90,7 +87,6 @@ export async function POST(request: Request) {
     .single();
 
   if (dbError || !notebook) {
-    console.error("[upload] Failed to create notebook:", dbError);
     await serviceClient.storage.from("pdf-uploads").remove([storagePath]);
     const msg =
       dbError?.message?.includes("relation") || dbError?.message?.includes("does not exist")
@@ -99,7 +95,6 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: msg }, { status: 500 });
   }
 
-  // Create notebook_files row for multi-file tracking
   const { data: notebookFile, error: fileError } = await serviceClient
     .from("notebook_files")
     .insert({
@@ -113,38 +108,26 @@ export async function POST(request: Request) {
     .single();
 
   if (fileError || !notebookFile) {
-    console.error("[upload] Failed to create notebook_file:", fileError);
     await serviceClient.from("notebooks").delete().eq("id", notebook.id);
     await serviceClient.storage.from("pdf-uploads").remove([storagePath]);
     return NextResponse.json({ error: "Failed to create file record" }, { status: 500 });
   }
 
-  // Process synchronously (embed + store chunks) within 60s timeout
   try {
     const result = await processNotebook(notebook.id, user.id, buffer, notebookFile.id, file.name);
 
-    // Update notebook_file status
     await serviceClient
       .from("notebook_files")
       .update({ status: "ready", page_count: result.pageCount })
       .eq("id", notebookFile.id);
   } catch (error) {
-    // Mark file as error
     await serviceClient
       .from("notebook_files")
       .update({ status: "error" })
       .eq("id", notebookFile.id);
-    const errorMsg = error instanceof Error ? error.message : String(error);
-    console.error("[upload] Processing failed:", {
-      notebookId: notebook.id,
-      userId: user.id,
-      errorMessage: errorMsg,
-      errorType: error instanceof Error ? error.name : typeof error,
-      fullError: error,
-    });
-    // Clean up orphaned storage file
+    console.error("[upload] Processing failed:", error instanceof Error ? error.message : error);
     await serviceClient.storage.from("pdf-uploads").remove([storagePath])
-      .then(null, (e: unknown) => console.error("[upload] Failed to clean up storage:", e));
+      .then(null, () => {});
 
     // Recompute notebook status from all files
     await updateNotebookStatus(notebook.id);
@@ -166,10 +149,8 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: msg }, { status: 500 });
   }
 
-  // Recompute notebook status from all files
   await updateNotebookStatus(notebook.id);
 
-  // Return the updated notebook
   const { data: updated } = await serviceClient
     .from("notebooks")
     .select("id, user_id, title, file_url, status, page_count, description, created_at")

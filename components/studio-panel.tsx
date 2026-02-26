@@ -52,11 +52,9 @@ export function StudioPanel({ notebookId }: StudioPanelProps) {
   const t = useTranslations("studio");
   const tc = useTranslations("common");
 
-  // Generation state
   const [generatingAction, setGeneratingAction] = useState<StudioAction | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  // Audio state
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
   const [generatingAudio, setGeneratingAudio] = useState(false);
 
@@ -67,13 +65,10 @@ export function StudioPanel({ notebookId }: StudioPanelProps) {
     };
   }, [audioUrl]);
 
-  // View state: which result is being viewed (from generation or history)
   const [viewingResult, setViewingResult] = useState<{ action: StudioAction; result: StudioResult } | null>(null);
 
-  // Persisted history
   const [history, setHistory] = useState<StudioGeneration[]>([]);
 
-  // Notes (lazy-loaded on first expand)
   const [notes, setNotes] = useState<Note[]>([]);
   const [notesLoaded, setNotesLoaded] = useState(false);
   const [editingNote, setEditingNote] = useState<Note | null>(null);
@@ -98,7 +93,6 @@ export function StudioPanel({ notebookId }: StudioPanelProps) {
       .catch(() => { });
   }, [notebookId]);
 
-  // Lazy-load notes on first interaction
   useEffect(() => {
     if (!notesLoaded) return;
     fetch(`/api/notebooks/${notebookId}/notes`)
@@ -214,7 +208,6 @@ export function StudioPanel({ notebookId }: StudioPanelProps) {
 
         const parsed = parseStudioResult(action, combinedText);
 
-        // Save to database
         try {
           const saveRes = await fetch(`/api/notebooks/${notebookId}/generations`, {
             method: "POST",
@@ -226,7 +219,7 @@ export function StudioPanel({ notebookId }: StudioPanelProps) {
             setHistory((prev) => [saved, ...prev]);
           }
         } catch {
-          // Save failed silently, result still shown
+          // Result still shown to user even if DB save fails
         }
 
         setViewingResult({ action, result: parsed });
@@ -257,7 +250,6 @@ export function StudioPanel({ notebookId }: StudioPanelProps) {
     setError(null);
   }
 
-  // Note editor view
   if (editingNote) {
     return (
       <NoteEditor
@@ -270,7 +262,6 @@ export function StudioPanel({ notebookId }: StudioPanelProps) {
     );
   }
 
-  // Result viewer (overlay-style, with back to grid)
   if (viewingResult) {
     const { action, result } = viewingResult;
     const label = t(action);
@@ -315,7 +306,6 @@ export function StudioPanel({ notebookId }: StudioPanelProps) {
     );
   }
 
-  // Feature grid + history + notes
   return (
     <div className="h-full overflow-y-auto scrollbar-thin">
       <div className="px-4 py-8 max-w-2xl mx-auto">
@@ -326,14 +316,12 @@ export function StudioPanel({ notebookId }: StudioPanelProps) {
           </p>
         </div>
 
-        {/* Error banner */}
         {error && (
           <div className="rounded-xl border border-destructive/20 bg-destructive/5 p-3 text-center mb-4">
             <p className="text-sm text-destructive">{error}</p>
           </div>
         )}
 
-        {/* Concurrency message */}
         {(generatingAction || generatingAudio) && (
           <div className="rounded-xl border border-primary/20 bg-primary/5 p-3 text-center mb-4 animate-fade-in">
             <p className="text-xs text-primary font-medium">
@@ -345,7 +333,6 @@ export function StudioPanel({ notebookId }: StudioPanelProps) {
           </div>
         )}
 
-        {/* Tool grid */}
         <div className="grid grid-cols-2 gap-2.5">
           {features.map((feature) => {
             const isGenerating = generatingAction === feature.action;
@@ -407,7 +394,6 @@ export function StudioPanel({ notebookId }: StudioPanelProps) {
           </div>
         </div>
 
-        {/* Audio player */}
         {audioUrl && (
           <div className="mt-4 rounded-xl border bg-card p-4 animate-fade-in">
             <div className="flex items-center gap-2 mb-2">
@@ -420,7 +406,6 @@ export function StudioPanel({ notebookId }: StudioPanelProps) {
           </div>
         )}
 
-        {/* Audio generating indicator */}
         {generatingAudio && (
           <div className="mt-4 rounded-xl border bg-card p-4 flex items-center gap-3 animate-fade-in">
             <div className="h-5 w-5 rounded-full border-2 border-primary border-t-transparent animate-spin shrink-0" />
@@ -431,7 +416,6 @@ export function StudioPanel({ notebookId }: StudioPanelProps) {
           </div>
         )}
 
-        {/* Generation loading indicator */}
         {generatingAction && (
           <div className="mt-4 rounded-xl border bg-card p-4 flex items-center gap-3 animate-fade-in">
             <div className="h-5 w-5 rounded-full border-2 border-primary border-t-transparent animate-spin shrink-0" />
@@ -442,7 +426,6 @@ export function StudioPanel({ notebookId }: StudioPanelProps) {
           </div>
         )}
 
-        {/* History section */}
         {history.length > 0 && (
           <div className="mt-6 border-t pt-5">
             <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">
@@ -483,7 +466,6 @@ export function StudioPanel({ notebookId }: StudioPanelProps) {
           </div>
         )}
 
-        {/* Notes section */}
         <div className="mt-6 border-t pt-5" onClick={() => !notesLoaded && setNotesLoaded(true)}>
           <div className="flex items-center justify-between mb-3">
             <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">

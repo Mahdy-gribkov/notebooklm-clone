@@ -25,18 +25,8 @@ export async function embedText(text: string, attempt = 0): Promise<number[]> {
       error instanceof Error &&
       (error.message.includes("429") || error.message.includes("quota"));
 
-    const errorMsg = error instanceof Error ? error.message : String(error);
-    console.error("[embedText] Embedding failed:", {
-      attempt,
-      errorMessage: errorMsg,
-      textLength: text.length,
-      isRateLimit,
-      fullError: error,
-    });
-
     if (isRateLimit && attempt < 5) {
       const wait = Math.pow(2, attempt) * 6000; // 6s, 12s, 24s, 48s, 96s
-      console.error(`[embedText] Rate limited, retrying after ${wait}ms (attempt ${attempt + 1}/5)`);
       await sleep(wait);
       return embedText(text, attempt + 1);
     }
@@ -150,14 +140,7 @@ export async function processNotebook(
 
       const { error } = await supabase.from("chunks").insert(rows);
       if (error) {
-        console.error("[processNotebook] Failed to insert chunks:", {
-          batchIndex: Math.floor(i / BATCH_SIZE),
-          rowCount: rows.length,
-          notebookId,
-          userId,
-          errorMessage: error.message,
-          errorDetails: error,
-        });
+        console.error("[processNotebook] Failed to insert chunks:", error.message);
         throw new Error("Failed to store document chunks");
       }
 
@@ -171,13 +154,12 @@ export async function processNotebook(
     void (async () => {
       try {
         await generateNotebookMeta(notebookId, sampleForMeta);
-      } catch (e1) {
-        console.error("[processNotebook] Meta generation failed, retrying in 5s:", e1);
+      } catch {
         await sleep(5000);
         try {
           await generateNotebookMeta(notebookId, sampleForMeta);
-        } catch (e2) {
-          console.error("[processNotebook] Meta generation retry failed:", e2);
+        } catch {
+          // Meta generation failed after retry, notebook keeps default title
         }
       }
     })();
@@ -188,12 +170,7 @@ export async function processNotebook(
       sampleText: chunks.slice(0, 3).join("\n\n"),
     };
   } catch (error) {
-    console.error("[processNotebook] Error occurred, updating status to error:", {
-      notebookId,
-      userId,
-      errorMessage: error instanceof Error ? error.message : String(error),
-      error,
-    });
+    console.error("[processNotebook] Failed:", error instanceof Error ? error.message : error);
 
     // Clean up any partially inserted chunks for this file
     if (fileId) {
@@ -355,7 +332,6 @@ Example for a company profile:
 
   // Retry with shorter text on failure
   if (!meta) {
-    console.error("[generateNotebookMeta] Retrying with shorter excerpt...");
     await sleep(2000);
     meta = await attemptGenerate(sampleText.slice(0, 1500));
   }
@@ -372,7 +348,6 @@ Example for a company profile:
       .from("notebooks")
       .update(updateData)
       .eq("id", notebookId);
-    console.error(`[generateNotebookMeta] Success: "${meta.title}" for notebook ${notebookId}`);
   } else {
     // Fallback: set a basic description from the sample text
     const fallbackDesc = sampleText.slice(0, 140).replace(/\n/g, " ").trim() + "...";
@@ -380,6 +355,5 @@ Example for a company profile:
       .from("notebooks")
       .update({ description: fallbackDesc })
       .eq("id", notebookId);
-    console.error(`[generateNotebookMeta] All attempts failed, set fallback description for ${notebookId}`);
   }
 }

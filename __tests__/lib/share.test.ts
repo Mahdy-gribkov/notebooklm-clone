@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { generateShareToken, hashIP } from "@/lib/share";
 
 describe("generateShareToken", () => {
@@ -33,5 +33,39 @@ describe("hashIP", () => {
   it("handles empty string", () => {
     const hash = hashIP("");
     expect(hash).toHaveLength(16);
+  });
+});
+
+describe("IP_SALT fallback", () => {
+  beforeEach(() => {
+    vi.resetModules();
+  });
+
+  afterEach(() => {
+    vi.unstubAllEnvs();
+    vi.restoreAllMocks();
+  });
+
+  it("logs warning in production when SUPABASE_JWT_SECRET is missing", async () => {
+    // Must delete (not empty string) because ?? only triggers on null/undefined
+    delete process.env.SUPABASE_JWT_SECRET;
+    vi.stubEnv("NODE_ENV", "production");
+    const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+
+    await import("@/lib/share");
+
+    expect(warnSpy).toHaveBeenCalledWith(
+      "[share] SUPABASE_JWT_SECRET not set, using fallback IP salt"
+    );
+  });
+
+  it("does not log warning in non-production when SUPABASE_JWT_SECRET is missing", async () => {
+    delete process.env.SUPABASE_JWT_SECRET;
+    vi.stubEnv("NODE_ENV", "test");
+    const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+
+    await import("@/lib/share");
+
+    expect(warnSpy).not.toHaveBeenCalled();
   });
 });

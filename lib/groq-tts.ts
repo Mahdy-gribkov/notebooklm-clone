@@ -15,6 +15,7 @@ export async function generateSpeech(
   }
 
   const controller = new AbortController();
+  /* v8 ignore next -- @preserve */
   const timeout = setTimeout(() => controller.abort(), 30_000);
 
   const res = await fetch(TTS_URL, {

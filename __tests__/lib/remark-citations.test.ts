@@ -80,6 +80,17 @@ describe("remarkCitations", () => {
     expect(cites).toHaveLength(3);
   });
 
+  it("handles citation at end of string with no trailing text", () => {
+    const tree = parseWithCitations("Sources [1]");
+    const cites = findCiteNodes(tree);
+    expect(cites).toHaveLength(1);
+    expect(cites[0].data.hProperties["data-index"]).toBe("1");
+    // Last child should be the cite, no trailing text node
+    const paragraph = tree.children[0] as Parent;
+    const lastChild = paragraph.children[paragraph.children.length - 1];
+    expect((lastChild.type as string)).toBe("cite");
+  });
+
   it("preserves surrounding text nodes", () => {
     const tree = parseWithCitations("Before [1] after.");
     const paragraph = tree.children[0] as Parent;

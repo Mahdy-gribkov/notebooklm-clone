@@ -12,6 +12,7 @@ import type { Text, Parent } from "mdast";
 const remarkCitations: Plugin = () => {
   return (tree) => {
     visit(tree, "text", (node: Text, index: number | undefined, parent: Parent | undefined) => {
+      /* v8 ignore next -- @preserve */
       if (index === undefined || !parent) return;
       // Skip text nodes inside cite elements to prevent double-transformation
       if ((parent.type as string) === "cite") return;

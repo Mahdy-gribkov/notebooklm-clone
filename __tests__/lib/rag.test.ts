@@ -203,6 +203,26 @@ describe("processNotebook", () => {
     expect(result.chunkCount).toBe(2);
   });
 
+  it("processes image fileType with default mimeType", async () => {
+    const result = await processNotebook(validUUID, validUserUUID, Buffer.from("img"), undefined, undefined, "image");
+    expect(result.pageCount).toBe(1);
+    expect(result.chunkCount).toBe(2);
+  });
+
+  it("throws when no chunks are extracted", async () => {
+    // Override splitter to return empty array
+    const { RecursiveCharacterTextSplitter } = await import("@langchain/textsplitters");
+    const originalCreateDocs = RecursiveCharacterTextSplitter.prototype.createDocuments;
+    (RecursiveCharacterTextSplitter as unknown as { prototype: { createDocuments: ReturnType<typeof vi.fn> } }).prototype.createDocuments = vi.fn().mockResolvedValue([]);
+
+    await expect(
+      processNotebook(validUUID, validUserUUID, Buffer.from("pdf"))
+    ).rejects.toThrow("No content could be extracted");
+
+    // Restore
+    (RecursiveCharacterTextSplitter as unknown as { prototype: { createDocuments: typeof originalCreateDocs } }).prototype.createDocuments = originalCreateDocs;
+  });
+
   it("cleans up with fileId-specific delete on error", async () => {
     mockedExtractText.mockRejectedValue(new Error("Parse failed"));
     const fileId = "770e8400-e29b-41d4-a716-446655440000";
@@ -222,6 +242,51 @@ describe("processNotebook", () => {
     // from("chunks") should have been called for delete
     expect(mockSupabase.from).toHaveBeenCalledWith("chunks");
   });
+
+  it("applies inter-batch delay when chunks exceed batch size", async () => {
+    // Override splitter to return 6 chunks (BATCH_SIZE=5, so 2 batches)
+    const { RecursiveCharacterTextSplitter } = await import("@langchain/textsplitters");
+    const originalCreateDocs = RecursiveCharacterTextSplitter.prototype.createDocuments;
+    (RecursiveCharacterTextSplitter as unknown as { prototype: { createDocuments: ReturnType<typeof vi.fn> } }).prototype.createDocuments = vi.fn().mockResolvedValue([
+      { pageContent: "c1" },
+      { pageContent: "c2" },
+      { pageContent: "c3" },
+      { pageContent: "c4" },
+      { pageContent: "c5" },
+      { pageContent: "c6" },
+    ]);
+
+    // Don't await directly — sleep uses fake timers
+    const promise = processNotebook(validUUID, validUserUUID, Buffer.from("pdf"));
+    // Advance past the inter-batch delay (6500ms)
+    await vi.advanceTimersByTimeAsync(7000);
+    const result = await promise;
+
+    expect(result.chunkCount).toBe(6);
+    expect(mockedEmbedQuery).toHaveBeenCalledTimes(6);
+
+    // Restore for subsequent tests
+    (RecursiveCharacterTextSplitter as unknown as { prototype: { createDocuments: typeof originalCreateDocs } }).prototype.createDocuments = originalCreateDocs;
+  });
+
+  it("throws on chunk insert error", async () => {
+    const errorSupabase = {
+      from: vi.fn().mockReturnValue({
+        delete: vi.fn().mockReturnValue({
+          eq: vi.fn().mockReturnValue({
+            eq: vi.fn().mockResolvedValue({}),
+          }),
+        }),
+        insert: vi.fn().mockResolvedValue({ error: { message: "DB insert failed" } }),
+        update: vi.fn().mockReturnValue({ eq: vi.fn().mockResolvedValue({}) }),
+      }),
+    };
+    mockedGetServiceClient.mockReturnValue(errorSupabase as never);
+
+    await expect(
+      processNotebook(validUUID, validUserUUID, Buffer.from("pdf"))
+    ).rejects.toThrow("Failed to store document chunks");
+  });
 });
 
 describe("getAllChunks", () => {
@@ -232,9 +297,15 @@ describe("getAllChunks", () => {
     vi.clearAllMocks();
   });
 
-  it("throws for invalid UUID", async () => {
+  it("throws for invalid notebookId", async () => {
     await expect(getAllChunks("bad", validUserUUID)).rejects.toThrow(
       "Invalid notebookId"
+    );
+  });
+
+  it("throws for invalid userId", async () => {
+    await expect(getAllChunks(validUUID, "bad")).rejects.toThrow(
+      "Invalid userId"
     );
   });
 
@@ -520,6 +591,44 @@ describe("generateNotebookMeta (via processNotebook)", () => {
       }
     );
     expect(fallbackCall).toBeDefined();
+  });
+
+  it("silently catches when generateNotebookMeta throws on both attempts", async () => {
+    // First update().eq() call is the status update in processNotebook (must succeed).
+    // Subsequent calls are inside generateNotebookMeta (must reject to trigger outer catch).
+    let notebookUpdateCount = 0;
+    const metaMock = {
+      from: vi.fn((table: string) => {
+        if (table === "notebooks") {
+          return {
+            update: vi.fn().mockReturnValue({
+              eq: vi.fn().mockImplementation(() => {
+                notebookUpdateCount++;
+                if (notebookUpdateCount <= 1) return Promise.resolve({});
+                return Promise.reject(new Error("DB connection lost"));
+              }),
+            }),
+          };
+        }
+        return {
+          delete: vi.fn().mockReturnValue({
+            eq: vi.fn().mockReturnValue({ eq: vi.fn().mockResolvedValue({}) }),
+          }),
+          insert: vi.fn().mockResolvedValue({ error: null }),
+        };
+      }),
+    };
+    mockedGetServiceClient.mockReturnValue(metaMock as never);
+    // Return no title so generateNotebookMeta hits fallback update (which throws)
+    mockInvoke.mockResolvedValue({ content: "{}" });
+
+    const result = await processNotebook(validUUID, validUserUUID, Buffer.from("pdf"));
+    // Advance past: sleep(2000) internal retry + sleep(5000) outer retry + sleep(2000) internal retry
+    await vi.advanceTimersByTimeAsync(12000);
+
+    expect(result.chunkCount).toBe(2);
+    // invoke called 4 times: 2 attempts x 2 internal retries each
+    expect(mockInvoke).toHaveBeenCalledTimes(4);
   });
 
   it("retries with shorter text on first parse failure", async () => {

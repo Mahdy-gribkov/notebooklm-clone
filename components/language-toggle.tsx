@@ -27,7 +27,7 @@ export function LanguageToggle() {
     <button
       onClick={toggle}
       disabled={isPending}
-      className="flex items-center gap-1 rounded-lg px-2 py-1.5 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-accent transition-colors disabled:opacity-50"
+      className="flex items-center gap-1 rounded-lg px-2 py-1.5 min-h-[44px] text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-accent transition-colors disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-primary/30"
       aria-label="Switch language"
     >
       {isPending ? (

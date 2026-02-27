@@ -235,10 +235,16 @@ export default function SharedNotebookPage() {
     { key: "studio", label: "Studio", count: data.generations.length },
   ];
 
+  const descriptionText = data.notebook.description
+    ? data.notebook.description.startsWith("featured.")
+      ? t(data.notebook.description.replace("featured.", ""))
+      : data.notebook.description
+    : null;
+
   return (
     <div className="flex h-dvh flex-col bg-background overflow-hidden">
       <header className="sticky top-0 z-20 border-b border-primary/10 bg-card/80 backdrop-blur-sm">
-        <div className="mx-auto flex h-14 max-w-5xl items-center justify-between px-4">
+        <div className="mx-auto flex h-14 max-w-7xl items-center justify-between px-4 sm:px-6">
           <div className="flex items-center gap-3">
             {data.company?.name ? (
               <>
@@ -248,37 +254,50 @@ export default function SharedNotebookPage() {
             ) : (
               <Logo size="sm" />
             )}
-            <span className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded-full">
-              {data.company?.category || "Shared"}
-            </span>
             <span className="hidden sm:inline text-[10px] text-muted-foreground/40 font-medium tracking-wide">Powered by DocChat</span>
           </div>
           <ThemeToggle />
         </div>
       </header>
 
-      <div className="mx-auto w-full max-w-5xl px-4 py-6">
-        <h1 className="text-2xl font-semibold">{data.notebook.title}</h1>
-        {data.notebook.description && (
-          <p className="text-muted-foreground mt-1">
-            {data.notebook.description.startsWith("featured.")
-              ? t(data.notebook.description.replace("featured.", ""))
-              : data.notebook.description}
-          </p>
-        )}
-        <div className="flex items-center gap-3 mt-3">
-          <span className="text-xs text-muted-foreground" suppressHydrationWarning>
-            Shared {new Date(data.notebook.created_at).toLocaleDateString()}
-          </span>
-          {data.permissions === "chat" && (
-            <span className="text-xs text-primary bg-primary/10 px-2 py-0.5 rounded-full">
-              Chat enabled
-            </span>
-          )}
+      {/* Hero section */}
+      <div className="border-b border-border/40 bg-gradient-to-b from-primary/[0.03] to-transparent">
+        <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 py-6 sm:py-8">
+          <div className="flex items-start gap-5">
+            {data.company?.name && (
+              <div className="hidden sm:block shrink-0">
+                <CompanyLogo domain={data.company.website ?? undefined} name={data.company.name} size="lg" />
+              </div>
+            )}
+            <div className="min-w-0 flex-1">
+              <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">{data.notebook.title}</h1>
+              {descriptionText && (
+                <p className="text-muted-foreground mt-1.5 text-sm sm:text-base leading-relaxed max-w-2xl">
+                  {descriptionText}
+                </p>
+              )}
+              <div className="flex flex-wrap items-center gap-2 mt-3">
+                {data.company?.category && (
+                  <span className="text-xs font-medium text-primary bg-primary/10 px-2.5 py-1 rounded-full">
+                    {data.company.category}
+                  </span>
+                )}
+                {data.permissions === "chat" && (
+                  <span className="text-xs font-medium text-emerald-700 dark:text-emerald-400 bg-emerald-500/10 px-2.5 py-1 rounded-full">
+                    Chat enabled
+                  </span>
+                )}
+                <span className="text-xs text-muted-foreground" suppressHydrationWarning>
+                  Shared {new Date(data.notebook.created_at).toLocaleDateString()}
+                </span>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
-      <div className="mx-auto w-full max-w-5xl px-4">
+      {/* Tabs */}
+      <div className="mx-auto w-full max-w-7xl px-4 sm:px-6">
         <div className="flex gap-1 border-b">
           {tabs.map((tab) => (
             <button
@@ -301,7 +320,73 @@ export default function SharedNotebookPage() {
       {activeTab === "chat" ? (
         <>
           <div className="flex-1 overflow-y-auto" aria-live="polite" aria-busy={chatLoading}>
-            <div className="mx-auto w-full max-w-5xl px-4 py-6 space-y-4">
+            <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 py-6">
+              <div className="flex gap-6">
+                {/* Sidebar - desktop only */}
+                <aside className="hidden lg:block w-64 shrink-0">
+                  <div className="sticky top-6 space-y-4">
+                    <div className="rounded-xl border bg-card p-4 space-y-3">
+                      {data.company?.name && (
+                        <div className="flex items-center gap-3">
+                          <CompanyLogo domain={data.company.website ?? undefined} name={data.company.name} size="md" />
+                          <div className="min-w-0">
+                            <p className="text-sm font-semibold truncate">{data.company.name}</p>
+                            {data.company.category && (
+                              <p className="text-xs text-muted-foreground">{data.company.category}</p>
+                            )}
+                          </div>
+                        </div>
+                      )}
+                      {data.company?.website && (
+                        <a
+                          href={`https://${data.company.website}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex items-center gap-1.5 text-xs text-primary hover:underline underline-offset-2"
+                        >
+                          <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+                          </svg>
+                          {data.company.website}
+                        </a>
+                      )}
+                      <div className="border-t pt-3 space-y-2">
+                        <div className="flex items-center justify-between text-xs">
+                          <span className="text-muted-foreground">Sources</span>
+                          <span className="font-medium">{data.generations.length} outputs</span>
+                        </div>
+                        <div className="flex items-center justify-between text-xs">
+                          <span className="text-muted-foreground">Notes</span>
+                          <span className="font-medium">{data.notes.length}</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Footer links in sidebar on desktop */}
+                    <div className="rounded-xl border bg-card p-4 space-y-2">
+                      <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground/60 mb-2">About the author</p>
+                      <a href="https://medygribkov.vercel.app" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-xs text-muted-foreground hover:text-foreground transition-colors">
+                        <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0" /></svg>
+                        Portfolio
+                      </a>
+                      <a href="https://github.com/Medy-gribkov" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-xs text-muted-foreground hover:text-foreground transition-colors">
+                        <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z" /></svg>
+                        GitHub
+                      </a>
+                      <a href="https://linkedin.com/in/medygribkov" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-xs text-muted-foreground hover:text-foreground transition-colors">
+                        <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="currentColor"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 01-2.063-2.065 2.064 2.064 0 112.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z" /></svg>
+                        LinkedIn
+                      </a>
+                      <a href="/Medy-Gribkov-Resume.pdf" download className="flex items-center gap-2 text-xs text-primary font-medium hover:underline underline-offset-2">
+                        <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+                        Download Resume
+                      </a>
+                    </div>
+                  </div>
+                </aside>
+
+                {/* Main chat area */}
+                <div className="flex-1 min-w-0 space-y-4">
               {data.permissions === "view" && (
                 <div className="rounded-xl border border-primary/15 bg-primary/[0.04] px-4 py-3 text-sm text-muted-foreground">
                   This profile is shared as view-only.{" "}
@@ -408,12 +493,14 @@ export default function SharedNotebookPage() {
               {chatError && (
                 <p className="text-sm text-destructive text-center">{chatError}</p>
               )}
+                </div>
+              </div>
             </div>
           </div>
 
           {data.permissions === "chat" && (
             <div className="border-t bg-card/80 backdrop-blur-sm pb-[env(safe-area-inset-bottom)]">
-              <form onSubmit={handleSendMessage} className="mx-auto max-w-5xl flex gap-2 px-4 py-3">
+              <form onSubmit={handleSendMessage} className="mx-auto max-w-7xl flex gap-2 px-4 sm:px-6 py-3 lg:ps-[calc(16rem+1.5rem+1.5rem)]">
                 <input
                   type="text"
                   value={chatInput}
@@ -444,7 +531,7 @@ export default function SharedNotebookPage() {
         </>
       ) : (
         <div className="flex-1 overflow-y-auto">
-          <div className="mx-auto w-full max-w-5xl px-4 py-6">
+          <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 py-6">
             {activeTab === "notes" && (
               <div className="space-y-4">
                 {data.notes.length === 0 && (
@@ -525,7 +612,7 @@ export default function SharedNotebookPage() {
       )}
 
       <footer className="border-t border-primary/10 bg-card/80 backdrop-blur-sm py-5 shrink-0">
-        <div className="mx-auto max-w-5xl px-4 flex flex-col sm:flex-row items-center justify-between gap-2 sm:gap-0 text-center sm:text-left">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 flex flex-col sm:flex-row items-center justify-between gap-2 sm:gap-0 text-center sm:text-left">
           <p className="text-xs text-muted-foreground">
             Built by{" "}
             <a

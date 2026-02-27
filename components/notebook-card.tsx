@@ -10,6 +10,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { CompanyLogo } from "@/components/company-logo";
 
 interface NotebookCardProps {
   notebook: Notebook;
@@ -17,6 +18,7 @@ interface NotebookCardProps {
   timedOut?: boolean;
   onDelete: (id: string) => void;
   description?: string;
+  companyDomain?: string;
 }
 
 const ICON_COLORS = [
@@ -61,7 +63,7 @@ function relativeTime(dateStr: string, t: (key: string, values?: Record<string, 
   });
 }
 
-export function NotebookCard({ notebook, files = [], timedOut = false, onDelete, description }: NotebookCardProps) {
+export function NotebookCard({ notebook, files = [], timedOut = false, onDelete, description, companyDomain }: NotebookCardProps) {
   const [deleting, setDeleting] = useState(false);
   const t = useTranslations("notebookCard");
   const tc = useTranslations("common");
@@ -94,9 +96,15 @@ export function NotebookCard({ notebook, files = [], timedOut = false, onDelete,
         aria-disabled={!isClickable}
       >
         {/* Large icon */}
-        <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl ${colorClass} text-sm font-bold mb-3`}>
-          {notebook.title.charAt(0).toUpperCase()}
-        </div>
+        {companyDomain ? (
+          <div className="mb-3">
+            <CompanyLogo domain={companyDomain} name={notebook.title} size="md" />
+          </div>
+        ) : (
+          <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl ${colorClass} text-sm font-bold mb-3`}>
+            {notebook.title.charAt(0).toUpperCase()}
+          </div>
+        )}
 
         {/* Title */}
         <h3 className="text-base font-bold leading-snug line-clamp-2 pe-6 min-h-[2.5rem]">

@@ -31,7 +31,7 @@ export function UserDropdown({ email, avatarUrl }: UserDropdownProps) {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <button className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-xs font-medium text-primary hover:bg-primary/20 transition-colors focus:outline-none focus:ring-2 focus:ring-primary/30 overflow-hidden">
+        <button className="flex h-9 w-9 min-h-[44px] min-w-[44px] items-center justify-center rounded-full bg-primary/10 text-xs font-medium text-primary hover:bg-primary/20 transition-colors focus:outline-none focus:ring-2 focus:ring-primary/30 overflow-hidden" aria-label="User menu">
           {avatarUrl ? (
             <Image src={avatarUrl} alt="" width={32} height={32} className="h-full w-full object-cover" unoptimized />
           ) : (

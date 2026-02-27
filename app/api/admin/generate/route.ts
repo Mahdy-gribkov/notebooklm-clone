@@ -245,6 +245,24 @@ export async function POST(request: Request) {
     console.error("[admin-generate] Share link error:", e instanceof Error ? e.message : e);
   }
 
+  // 6. Insert into companies table (shared page queries this for logo/name)
+  try {
+    const { error } = await supabase
+      .from("companies")
+      .insert({
+        name: companyName,
+        website,
+        category,
+        notebook_id: notebook.id,
+        share_token: shareToken,
+      });
+    if (error) {
+      console.error("[admin-generate] Companies insert failed:", error.message);
+    }
+  } catch (e) {
+    console.error("[admin-generate] Companies insert error:", e instanceof Error ? e.message : e);
+  }
+
   return NextResponse.json(
     {
       notebookId: notebook.id,

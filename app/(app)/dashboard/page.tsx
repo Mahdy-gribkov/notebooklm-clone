@@ -16,12 +16,13 @@ import { SearchBar } from "@/components/dashboard/search-bar";
 import { TabBar, type TabKey } from "@/components/dashboard/tab-bar";
 import { Toolbar, type GridDensity, type SortKey } from "@/components/dashboard/toolbar";
 import { RecentNotebooks } from "@/components/dashboard/recent-notebooks";
+import { AdminQuickCreate } from "@/components/dashboard/admin-quick-create";
 import type { Notebook, NotebookFile } from "@/types";
-import { useTranslations, useLocale } from "next-intl";
+import { useTranslations } from "next-intl";
 
 const PROCESSING_TIMEOUT_MS = 5 * 60 * 1000;
 const POLL_DELAYS = [5000, 10000, 20000, 30000];
-const INITIAL_VISIBLE = 12;
+const INITIAL_VISIBLE = 8;
 
 function isTimedOut(notebook: Notebook): boolean {
   return (
@@ -36,6 +37,7 @@ export default function DashboardPage() {
   const [notebooks, setNotebooks] = useState<Notebook[]>([]);
   const [notebookFiles, setNotebookFiles] = useState<Record<string, NotebookFile[]>>({});
   const [loading, setLoading] = useState(true);
+  const [userId, setUserId] = useState<string | null>(null);
   const [userEmail, setUserEmail] = useState<string | null>(null);
   const [userAvatar, setUserAvatar] = useState<string | null>(null);
   const [creatingNotebook, setCreatingNotebook] = useState(false);
@@ -75,6 +77,7 @@ export default function DashboardPage() {
 
     const supabase = createClient();
     supabase.auth.getUser().then(({ data }) => {
+      setUserId(data.user?.id ?? null);
       setUserEmail(data.user?.email ?? null);
       const meta = data.user?.user_metadata;
       if (meta?.avatar_url) {
@@ -171,8 +174,12 @@ export default function DashboardPage() {
     localStorage.setItem("grid-density", d);
   }
 
+  const [searchInput, setSearchInput] = useState("");
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const handleSearchChange = useCallback((value: string) => {
-    setSearchQuery(value);
+    setSearchInput(value);
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => setSearchQuery(value), 300);
   }, []);
 
   // Memos
@@ -252,7 +259,9 @@ export default function DashboardPage() {
       </header>
 
       <main className="mx-auto max-w-[1400px] px-4 sm:px-6 lg:px-8 py-6 flex-1 w-full space-y-6">
-        <SearchBar value={searchQuery} onChange={handleSearchChange} placeholder={t("search")} />
+        {userId && <AdminQuickCreate userId={userId} />}
+
+        <SearchBar value={searchInput} onChange={handleSearchChange} placeholder={t("search")} />
 
         <div className="flex flex-col sm:flex-row sm:items-center gap-3 pb-0 animate-slide-up [animation-delay:50ms]">
           <TabBar tabs={tabs} activeTab={activeTab} onTabChange={setActiveTab} />
@@ -271,7 +280,6 @@ export default function DashboardPage() {
 
         {showFeatured && (
           <FeaturedSection
-            notebooks={filteredFeatured}
             visibleNotebooks={visibleFeatured}
             showAll={showAllFeatured}
             onToggleShowAll={() => setShowAllFeatured(!showAllFeatured)}
@@ -316,7 +324,6 @@ export default function DashboardPage() {
 // ── Featured Section (kept in same file since it uses CardPattern) ──────
 
 function FeaturedSection({
-  notebooks,
   visibleNotebooks,
   showAll,
   onToggleShowAll,
@@ -328,7 +335,6 @@ function FeaturedSection({
   t,
   tf,
 }: {
-  notebooks: FeaturedNotebook[];
   visibleNotebooks: FeaturedNotebook[];
   showAll: boolean;
   onToggleShowAll: () => void;
@@ -415,7 +421,7 @@ const FeaturedCard = React.memo(function FeaturedCard({
       onClick={onOpen}
       disabled={isCloning}
       className={`relative shrink-0 rounded-2xl overflow-hidden group hover:scale-[1.02] hover:-translate-y-1 hover:shadow-2xl transition-all duration-300 featured-shadow cursor-pointer border-0 text-start w-full disabled:opacity-70 ${fn.bgClass}`}
-      style={{ height: 200, animationDelay: `${index * 40}ms` }}
+      style={{ height: 200, animationDelay: `${index * 25}ms` }}
     >
       <div className="absolute inset-0 opacity-[0.07]">
         <CardPattern pattern={fn.pattern} />

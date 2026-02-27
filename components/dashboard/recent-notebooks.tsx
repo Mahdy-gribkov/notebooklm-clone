@@ -93,7 +93,7 @@ export function RecentNotebooks({
             <div
               key={notebook.id}
               className="animate-slide-up"
-              style={{ animationDelay: `${i * 50}ms` }}
+              style={{ animationDelay: `${i * 30}ms` }}
             >
               <NotebookCard
                 notebook={notebook}

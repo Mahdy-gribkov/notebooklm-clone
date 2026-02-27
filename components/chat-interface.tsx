@@ -4,11 +4,8 @@ import { useEffect, useRef, useState, useCallback, useMemo } from "react";
 import { useChat } from "ai/react";
 import type { Message as AIMessage } from "ai";
 import dynamic from "next/dynamic";
-import rehypeSanitize from "rehype-sanitize";
-import remarkCitations from "@/lib/remark-citations";
-import { CitationContext, CitationBadge } from "@/components/citation-badge";
 
-const ReactMarkdown = dynamic(() => import("react-markdown"), { ssr: false });
+const MarkdownRenderer = dynamic(() => import("@/components/markdown-renderer"), { ssr: false });
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { SourcePanel } from "@/components/source-panel";
@@ -40,10 +37,7 @@ export function ChatInterface({ notebookId, initialMessages, isProcessing = fals
 
   const iconTypes = ["list", "target", "book", "question"];
   const [starterPrompts, setStarterPrompts] = useState<Array<{ text: string, icon: string }>>([]);
-  const [mounted, setMounted] = useState(false);
-
   useEffect(() => {
-    setMounted(true);
     if (dynamicPrompts?.length) {
       const shuffled = [...dynamicPrompts].sort((a, b) => (a.length - b.length || a.localeCompare(b)));
       setStarterPrompts(shuffled.slice(0, 4).map((text, i) => ({ text, icon: iconTypes[i % iconTypes.length] })));
@@ -200,7 +194,8 @@ export function ChatInterface({ notebookId, initialMessages, isProcessing = fals
           <span>{errorMessage}</span>
           <button
             onClick={() => setErrorMessage(null)}
-            className="ms-1 text-destructive/60 hover:text-destructive"
+            className="ms-1 p-1.5 rounded-md text-destructive/60 hover:text-destructive focus:outline-none focus:ring-2 focus:ring-destructive/30"
+            aria-label="Dismiss error"
           >
             <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -306,7 +301,7 @@ export function ChatInterface({ notebookId, initialMessages, isProcessing = fals
                 <div key={message.id} className={`flex ${isUser ? "justify-end" : "justify-start"} animate-slide-up`}>
                   <div className={`flex gap-2.5 max-w-[85%] lg:max-w-2xl xl:max-w-3xl`}>
                     {!isUser && (
-                      <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary/10 mt-1">
+                      <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary/10 ring-1 ring-primary/10 mt-1">
                         <svg className="h-3.5 w-3.5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" />
                         </svg>
@@ -317,51 +312,45 @@ export function ChatInterface({ notebookId, initialMessages, isProcessing = fals
                         } flex flex-col min-w-0`}
                     >
                       <div
-                        className={`group/msg relative rounded-2xl px-5 py-3.5 text-sm leading-relaxed ${isUser
+                        className={`group/msg relative rounded-2xl px-4 py-2.5 text-sm leading-relaxed ${isUser
                           ? "bg-gradient-to-br from-primary to-primary/85 text-primary-foreground rounded-br-md shadow-sm shadow-primary/20"
-                          : "bg-[#FAF9F7] dark:bg-muted/20 border border-border/40 border-l-2 border-l-primary/50 rounded-bl-md shadow-sm shadow-black/[0.03]"
+                          : "bg-[#FAF9F7] dark:bg-muted/20 border border-border/40 border-l-2 border-l-primary/50 shadow-sm shadow-black/[0.03] prose dark:prose-invert prose-sm max-w-none prose-p:my-1.5 prose-headings:my-2 prose-ul:my-1.5 prose-ol:my-1.5 prose-li:my-0.5"
                           }`}
                       >
                         {isUser ? (
                           <p className="whitespace-pre-wrap break-words">{message.content}</p>
                         ) : (
-                          <CitationContext.Provider value={sources ?? []}>
-                            <div className="prose prose-sm dark:prose-invert max-w-none prose-p:my-1.5 prose-headings:my-2 prose-ul:my-1.5 prose-ol:my-1.5 prose-li:my-0.5 prose-pre:my-2 prose-code:text-xs">
-                              <ReactMarkdown remarkPlugins={[remarkCitations]} rehypePlugins={[rehypeSanitize]} components={{ cite: CitationBadge as never }}>
-                                {message.content}
-                              </ReactMarkdown>
-                            </div>
-                          </CitationContext.Provider>
+                          <MarkdownRenderer content={message.content} sources={sources} />
                         )}
 
                         {!isUser && message.content && (
-                          <div className="absolute top-2 end-2 flex items-center gap-0.5 opacity-100 sm:opacity-0 sm:group-hover/msg:opacity-100 transition-opacity">
+                          <div className="absolute top-2 end-2 flex items-center gap-0.5 opacity-100 sm:opacity-0 sm:group-hover/msg:opacity-100 transition-opacity z-10">
                             <button
                               onClick={() => copyMessage(message.id, message.content)}
-                              className="p-2.5 rounded-md hover:bg-muted text-muted-foreground hover:text-foreground"
+                              className="p-1.5 rounded-md hover:bg-background/80 text-muted-foreground/50 hover:text-foreground transition-colors focus:outline-none focus:ring-2 focus:ring-primary/30"
                               aria-label={t("copyMessage")}
                             >
                               {copiedId === message.id ? (
-                                <svg className="h-4 w-4 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <svg className="h-3.5 w-3.5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                                 </svg>
                               ) : (
-                                <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M15.666 3.888A2.25 2.25 0 0013.5 2.25h-3c-1.03 0-1.9.693-2.166 1.638m7.332 0c.055.194.084.4.084.612v0a.75.75 0 01-.75.75H9.75a.75.75 0 01-.75-.75v0c0-.212.03-.418.084-.612m7.332 0c.646.049 1.288.11 1.927.184 1.1.128 1.907 1.077 1.907 2.185V19.5a2.25 2.25 0 01-2.25 2.25H6.75A2.25 2.25 0 014.5 19.5V6.257c0-1.108.806-2.057 1.907-2.185a48.208 48.208 0 011.927-.184" />
                                 </svg>
                               )}
                             </button>
                             <button
                               onClick={() => saveToNote(message.id, message.content)}
-                              className="p-2.5 rounded-md hover:bg-muted text-muted-foreground hover:text-foreground"
+                              className="p-1.5 rounded-md hover:bg-background/80 text-muted-foreground/50 hover:text-foreground transition-colors focus:outline-none focus:ring-2 focus:ring-primary/30"
                               aria-label={t("saveToNote")}
                             >
                               {savedNoteId === message.id ? (
-                                <svg className="h-4 w-4 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <svg className="h-3.5 w-3.5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                                 </svg>
                               ) : (
-                                <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                                 </svg>
                               )}
@@ -388,20 +377,17 @@ export function ChatInterface({ notebookId, initialMessages, isProcessing = fals
             })}
 
             {isLoading && messages[messages.length - 1]?.role === "user" && (
-              <div className="flex justify-start animate-fade-in">
-                <div className="flex gap-2.5">
-                  <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary/10 mt-1">
-                    <svg className="h-3.5 w-3.5 text-primary animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" />
-                    </svg>
-                  </div>
-                  <div className="rounded-2xl rounded-bl-md bg-muted/40 border px-4 py-3 w-48">
-                    <div className="space-y-2">
-                      <div className="h-2.5 rounded-full bg-muted-foreground/10 animate-shimmer" />
-                      <div className="h-2.5 rounded-full bg-muted-foreground/10 animate-shimmer [animation-delay:200ms] w-3/4" />
-                      <div className="h-2.5 rounded-full bg-muted-foreground/10 animate-shimmer [animation-delay:400ms] w-1/2" />
-                    </div>
-                  </div>
+              <div className="flex justify-start items-start gap-2 animate-fade-in">
+                <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary/10 ring-1 ring-primary/10 mt-1">
+                  <svg className="h-3.5 w-3.5 text-primary animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" />
+                  </svg>
+                </div>
+                <div className="rounded-2xl rounded-bl-md bg-[#FAF9F7] dark:bg-muted/20 border border-border/40 border-l-2 border-l-primary/50 shadow-sm px-4 py-2.5">
+                  <span className="inline-flex items-center gap-1.5 text-sm text-muted-foreground">
+                    <span className="h-1.5 w-1.5 rounded-full bg-current animate-pulse" />
+                    {t("thinking")}
+                  </span>
                 </div>
               </div>
             )}

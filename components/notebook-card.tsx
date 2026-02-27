@@ -87,7 +87,7 @@ export function NotebookCard({ notebook, files = [], timedOut = false, onDelete,
   return (
     <div className="group relative flex flex-col h-full rounded-2xl border bg-card overflow-hidden transition-all duration-200 shadow-md shadow-black/[0.04] dark:shadow-black/[0.15] hover:shadow-xl hover:shadow-black/8 dark:hover:shadow-black/30 hover:-translate-y-1 min-h-[190px]">
       {/* Top accent bar */}
-      <div className={`h-1 w-full ${accentColor} opacity-60`} />
+      <div className={`h-1 w-full ${accentColor} opacity-80`} />
       <Link
         href={isClickable ? `/notebook/${notebook.id}` : "#"}
         className={`flex flex-col flex-1 p-6 ${!isClickable ? "pointer-events-none" : ""}`}
@@ -127,7 +127,7 @@ export function NotebookCard({ notebook, files = [], timedOut = false, onDelete,
         <div className="mt-auto">
           {/* Meta row */}
           <div className="flex items-center gap-2">
-            <span className="text-[11px] text-muted-foreground/60" suppressHydrationWarning>
+            <span className="text-xs text-muted-foreground/70" suppressHydrationWarning>
               {relativeTime(notebook.created_at, t)}
             </span>
             {files.length > 0 && (

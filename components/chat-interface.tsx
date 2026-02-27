@@ -5,6 +5,8 @@ import { useChat } from "ai/react";
 import type { Message as AIMessage } from "ai";
 import dynamic from "next/dynamic";
 import rehypeSanitize from "rehype-sanitize";
+import remarkCitations from "@/lib/remark-citations";
+import { CitationContext, CitationBadge } from "@/components/citation-badge";
 
 const ReactMarkdown = dynamic(() => import("react-markdown"), { ssr: false });
 import { Button } from "@/components/ui/button";
@@ -317,17 +319,19 @@ export function ChatInterface({ notebookId, initialMessages, isProcessing = fals
                       <div
                         className={`group/msg relative rounded-2xl px-5 py-3.5 text-sm leading-relaxed ${isUser
                           ? "bg-gradient-to-br from-primary to-primary/85 text-primary-foreground rounded-br-md shadow-sm shadow-primary/20"
-                          : "bg-[#FAF9F7] dark:bg-muted/20 border border-border/40 border-l-2 border-l-primary/30 rounded-bl-md shadow-sm shadow-black/[0.03]"
+                          : "bg-[#FAF9F7] dark:bg-muted/20 border border-border/40 border-l-2 border-l-primary/50 rounded-bl-md shadow-sm shadow-black/[0.03]"
                           }`}
                       >
                         {isUser ? (
                           <p className="whitespace-pre-wrap break-words">{message.content}</p>
                         ) : (
-                          <div className="prose prose-sm dark:prose-invert max-w-none prose-p:my-1.5 prose-headings:my-2 prose-ul:my-1.5 prose-ol:my-1.5 prose-li:my-0.5 prose-pre:my-2 prose-code:text-xs">
-                            <ReactMarkdown rehypePlugins={[rehypeSanitize]}>
-                              {message.content}
-                            </ReactMarkdown>
-                          </div>
+                          <CitationContext.Provider value={sources ?? []}>
+                            <div className="prose prose-sm dark:prose-invert max-w-none prose-p:my-1.5 prose-headings:my-2 prose-ul:my-1.5 prose-ol:my-1.5 prose-li:my-0.5 prose-pre:my-2 prose-code:text-xs">
+                              <ReactMarkdown remarkPlugins={[remarkCitations]} rehypePlugins={[rehypeSanitize]} components={{ cite: CitationBadge as never }}>
+                                {message.content}
+                              </ReactMarkdown>
+                            </div>
+                          </CitationContext.Provider>
                         )}
 
                         {!isUser && message.content && (

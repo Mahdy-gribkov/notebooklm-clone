@@ -78,15 +78,6 @@ export function NotebookLayout({ notebookId, notebookTitle, notebookFiles, initi
     setStudioOpen((prev) => !prev);
   }, [studioMounted]);
 
-  // Auto-open studio after initial mount (deferred to avoid jump)
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setStudioMounted(true);
-      setStudioOpen(true);
-    }, 100);
-    return () => clearTimeout(timer);
-  }, []);
-
   const closeMobilePanel = useCallback(() => {
     setMobilePanel(null);
   }, []);
@@ -252,10 +243,10 @@ export function NotebookLayout({ notebookId, notebookTitle, notebookFiles, initi
 
         {/* Right: Studio panel (desktop lg+) */}
         <div
-          className={`hidden lg:flex flex-col border-s bg-background shrink-0 transition-[width,opacity] duration-300 ease-in-out overflow-hidden will-change-[width,opacity] ${studioOpen ? "w-[320px] opacity-100" : "w-0 opacity-0 border-s-0"
+          className={`hidden lg:flex flex-col border-s bg-background shrink-0 transition-[width,opacity] duration-300 ease-in-out overflow-hidden will-change-[width,opacity] ${studioOpen ? "w-[300px] opacity-100" : "w-0 opacity-0 border-s-0"
             }`}
         >
-          <div className="w-[320px] h-full min-w-[320px]">
+          <div className="w-[300px] h-full min-w-[300px]">
             {studioMounted && <StudioPanel notebookId={notebookId} />}
           </div>
         </div>

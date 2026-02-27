@@ -3,9 +3,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import { NotebookCard } from "@/components/notebook-card";
-import { Mascot } from "@/components/mascot";
-import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { UserDropdown } from "@/components/user-dropdown";
@@ -14,17 +11,17 @@ import type { FeaturedNotebook } from "@/lib/featured-notebooks";
 import { useToast } from "@/components/toast";
 import { Logo } from "@/components/logo";
 import { LanguageToggle } from "@/components/language-toggle";
+import { CompanyLogo } from "@/components/company-logo";
+import { SearchBar } from "@/components/dashboard/search-bar";
+import { TabBar, type TabKey } from "@/components/dashboard/tab-bar";
+import { Toolbar, type GridDensity, type SortKey } from "@/components/dashboard/toolbar";
+import { RecentNotebooks } from "@/components/dashboard/recent-notebooks";
 import type { Notebook, NotebookFile } from "@/types";
 import { useTranslations, useLocale } from "next-intl";
-
 
 const PROCESSING_TIMEOUT_MS = 5 * 60 * 1000;
 const POLL_DELAYS = [5000, 10000, 20000, 30000];
 const INITIAL_VISIBLE = 12;
-
-type SortKey = "newest" | "oldest" | "az" | "za";
-type TabKey = "all" | "mine" | "featured";
-type GridDensity = "compact" | "default" | "spacious";
 
 function isTimedOut(notebook: Notebook): boolean {
   return (
@@ -48,15 +45,18 @@ export default function DashboardPage() {
   const [gridDensity, setGridDensity] = useState<GridDensity>("default");
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [showAllFeatured, setShowAllFeatured] = useState(false);
+  const [cloningSlug, setCloningSlug] = useState<string | null>(null);
 
   useEffect(() => {
     const saved = localStorage.getItem("grid-density") as GridDensity;
     if (saved) setGridDensity(saved);
   }, []);
+
   const pollAttemptRef = useRef(0);
   const t = useTranslations("dashboard");
   const tf = useTranslations("featured");
 
+  // Initial data fetch
   useEffect(() => {
     fetch("/api/notebooks?include=files")
       .then((res) => (res.ok ? res.json() : null))
@@ -88,6 +88,35 @@ export default function DashboardPage() {
     });
   }, []);
 
+  // Polling for processing notebooks
+  useEffect(() => {
+    const processing = notebooks.filter(
+      (n) => n.status === "processing" && !isTimedOut(n)
+    );
+    if (processing.length === 0) {
+      pollAttemptRef.current = 0;
+      return;
+    }
+    const delay = POLL_DELAYS[Math.min(pollAttemptRef.current, POLL_DELAYS.length - 1)];
+    const timeout = setTimeout(() => {
+      pollAttemptRef.current++;
+      Promise.all(
+        processing.map((n) =>
+          fetch(`/api/notebooks/${n.id}`).then((r) => r.ok ? r.json() : n).catch(() => n)
+        )
+      ).then((updates) => {
+        setNotebooks((prev) =>
+          prev.map((n) => {
+            const updated = updates.find((u: Notebook) => u.id === n.id);
+            return updated ?? n;
+          })
+        );
+      }).catch(() => {});
+    }, delay);
+    return () => clearTimeout(timeout);
+  }, [notebooks]);
+
+  // Handlers
   async function handleCreateNotebook() {
     setCreatingNotebook(true);
     try {
@@ -105,8 +134,6 @@ export default function DashboardPage() {
       setCreatingNotebook(false);
     }
   }
-
-  const [cloningSlug, setCloningSlug] = useState<string | null>(null);
 
   async function handleOpenFeatured(slug: string) {
     if (cloningSlug) return;
@@ -139,39 +166,16 @@ export default function DashboardPage() {
     addToast(t("notebookDeleted"));
   }
 
-  // Polling for processing notebooks
-  useEffect(() => {
-    const processing = notebooks.filter(
-      (n) => n.status === "processing" && !isTimedOut(n)
-    );
+  function handleDensityChange(d: GridDensity) {
+    setGridDensity(d);
+    localStorage.setItem("grid-density", d);
+  }
 
-    if (processing.length === 0) {
-      pollAttemptRef.current = 0;
-      return;
-    }
+  const handleSearchChange = useCallback((value: string) => {
+    setSearchQuery(value);
+  }, []);
 
-    const delay = POLL_DELAYS[Math.min(pollAttemptRef.current, POLL_DELAYS.length - 1)];
-
-    const timeout = setTimeout(() => {
-      pollAttemptRef.current++;
-      Promise.all(
-        processing.map((n) =>
-          fetch(`/api/notebooks/${n.id}`).then((r) => r.ok ? r.json() : n).catch(() => n)
-        )
-      ).then((updates) => {
-        setNotebooks((prev) =>
-          prev.map((n) => {
-            const updated = updates.find((u: Notebook) => u.id === n.id);
-            return updated ?? n;
-          })
-        );
-      }).catch(() => {});
-    }, delay);
-
-    return () => clearTimeout(timeout);
-  }, [notebooks]);
-
-  // Filtered + sorted notebooks
+  // Memos
   const filteredNotebooks = useMemo(() => {
     const query = searchQuery.toLowerCase();
     return notebooks
@@ -197,7 +201,6 @@ export default function DashboardPage() {
       });
   }, [notebooks, searchQuery, sortBy]);
 
-  // Filtered featured notebooks
   const filteredFeatured = useMemo(() => {
     const query = searchQuery.toLowerCase();
     return featuredNotebooks.filter((fn) => {
@@ -235,19 +238,8 @@ export default function DashboardPage() {
         ? "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4"
         : "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5";
 
-  function handleDensityChange(d: GridDensity) {
-    setGridDensity(d);
-    localStorage.setItem("grid-density", d);
-  }
-
-  // Search handler (direct, no debounce needed for in-memory filtering)
-  const handleSearchChange = useCallback((value: string) => {
-    setSearchQuery(value);
-  }, []);
-
   return (
     <div className="min-h-screen bg-background flex flex-col">
-      {/* Header */}
       <header className="bg-background/80 backdrop-blur-md sticky top-0 z-10 border-b border-border/40">
         <div className="mx-auto flex max-w-[1400px] items-center justify-between px-4 sm:px-6 lg:px-8 py-4">
           <Logo />
@@ -260,101 +252,23 @@ export default function DashboardPage() {
       </header>
 
       <main className="mx-auto max-w-[1400px] px-4 sm:px-6 lg:px-8 py-6 flex-1 w-full space-y-6">
-        {/* Search bar - prominent, full width */}
-        <div className="relative animate-slide-up">
-          <svg className="absolute left-4 rtl:left-auto rtl:right-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground/50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-          </svg>
-          <Input
-            value={searchQuery}
-            onChange={(e) => handleSearchChange(e.target.value)}
-            placeholder={t("search")}
-            className="h-12 ps-12 text-base sm:text-sm rounded-xl"
+        <SearchBar value={searchQuery} onChange={handleSearchChange} placeholder={t("search")} />
+
+        <div className="flex flex-col sm:flex-row sm:items-center gap-3 pb-0 animate-slide-up [animation-delay:50ms]">
+          <TabBar tabs={tabs} activeTab={activeTab} onTabChange={setActiveTab} />
+          <Toolbar
+            gridDensity={gridDensity}
+            onGridDensityChange={handleDensityChange}
+            sortBy={sortBy}
+            onSortChange={setSortBy}
+            sortOptions={sortOptions}
+            onCreateNotebook={handleCreateNotebook}
+            creatingNotebook={creatingNotebook}
+            createLabel={t("createNew")}
+            creatingLabel={t("creating")}
           />
         </div>
 
-        {/* Tab bar + Toolbar */}
-        <div className="flex flex-col sm:flex-row sm:items-center gap-3 pb-0 animate-slide-up [animation-delay:50ms]">
-          {/* Tabs */}
-          <div className="flex gap-0 flex-1 border-b border-border/40">
-            {tabs.map((tab) => (
-              <button
-                key={tab.key}
-                onClick={() => setActiveTab(tab.key)}
-                className={`px-4 py-3 min-h-[44px] text-sm font-medium transition-all duration-200 relative ${activeTab === tab.key
-                  ? "text-foreground after:absolute after:bottom-0 after:left-2 after:right-2 after:h-[2px] after:bg-primary after:rounded-full"
-                  : "text-muted-foreground hover:text-foreground"
-                  }`}
-              >
-                {tab.label}
-              </button>
-            ))}
-          </div>
-
-          {/* Toolbar */}
-          <div className="flex items-center gap-2">
-            {/* Grid density toggle - hidden on mobile */}
-            <div className="hidden sm:flex items-center rounded-lg border bg-background">
-              {(["compact", "default", "spacious"] as GridDensity[]).map((d) => (
-                <button
-                  key={d}
-                  onClick={() => handleDensityChange(d)}
-                  className={`h-10 w-10 flex items-center justify-center transition-all duration-300 ease-out ${gridDensity === d ? "text-primary bg-primary/10" : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
-                    } ${d === "compact" ? "rounded-s-lg" : d === "spacious" ? "rounded-e-lg" : ""}`}
-                  title={d.charAt(0).toUpperCase() + d.slice(1)}
-                  aria-label={`${d} grid layout`}
-                >
-                  <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
-                    {d === "compact" ? (
-                      <>
-                        <rect x="3" y="3" width="7" height="7" rx="1" />
-                        <rect x="14" y="3" width="7" height="7" rx="1" />
-                        <rect x="3" y="14" width="7" height="7" rx="1" />
-                        <rect x="14" y="14" width="7" height="7" rx="1" />
-                      </>
-                    ) : d === "default" ? (
-                      <>
-                        <rect x="3" y="3" width="8" height="8" rx="1" />
-                        <rect x="13" y="3" width="8" height="8" rx="1" />
-                        <rect x="3" y="13" width="8" height="8" rx="1" />
-                        <rect x="13" y="13" width="8" height="8" rx="1" />
-                      </>
-                    ) : (
-                      <>
-                        <rect x="3" y="3" width="18" height="8" rx="1" />
-                        <rect x="3" y="13" width="18" height="8" rx="1" />
-                      </>
-                    )}
-                  </svg>
-                </button>
-              ))}
-            </div>
-            <select
-              value={sortBy}
-              onChange={(e) => setSortBy(e.target.value as SortKey)}
-              className="h-10 rounded-lg border bg-background px-3 text-sm text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
-            >
-              {sortOptions.map((opt) => (
-                <option key={opt.key} value={opt.key}>{opt.label}</option>
-              ))}
-            </select>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleCreateNotebook}
-              disabled={creatingNotebook}
-              className="gap-1.5"
-            >
-              <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 4v16m8-8H4" />
-              </svg>
-              <span className="hidden sm:inline">{creatingNotebook ? t("creating") : t("createNew")}</span>
-              <span className="sm:hidden">+</span>
-            </Button>
-          </div>
-        </div>
-
-        {/* Featured notebooks section */}
         {showFeatured && (
           <FeaturedSection
             notebooks={filteredFeatured}
@@ -371,85 +285,19 @@ export default function DashboardPage() {
           />
         )}
 
-        {/* Recent notebooks section */}
         {showRecent && (
-          <section className="animate-slide-up [animation-delay:150ms]">
-            <div className="flex items-center gap-3 mb-4">
-              <h2 className="text-title flex-1">{t("recentNotebooks")}</h2>
-            </div>
-
-            {/* Grid */}
-            {loading ? (
-              <div className={`grid gap-4 ${gridColsClass}`}>
-                {[1, 2, 3, 4].map((i) => (
-                  <div
-                    key={i}
-                    className="h-[140px] rounded-2xl border bg-card animate-shimmer"
-                    style={{ animationDelay: `${(i - 1) * 150}ms` }}
-                  />
-                ))}
-              </div>
-            ) : notebooks.length === 0 ? (
-              <div className="flex flex-col items-center py-20 text-center animate-fade-in">
-                <div className="mb-8">
-                  <Mascot size="lg" mood="neutral" />
-                </div>
-                <h2 className="text-xl font-bold mb-2">{t("emptyTitle")}</h2>
-                <p className="text-sm text-muted-foreground mb-3 max-w-sm">
-                  {t("emptyDescription")}
-                </p>
-                <div className="flex items-center gap-2 mb-6 text-xs text-muted-foreground/50">
-                  <span className="bg-muted/50 rounded-full px-2.5 py-1">PDF</span>
-                  <span className="bg-muted/50 rounded-full px-2.5 py-1">DOCX</span>
-                  <span className="bg-muted/50 rounded-full px-2.5 py-1">TXT</span>
-                  <span className="bg-muted/50 rounded-full px-2.5 py-1">Images</span>
-                </div>
-                <Button onClick={handleCreateNotebook} disabled={creatingNotebook} size="lg" className="shadow-md shadow-primary/20">
-                  {creatingNotebook ? t("creating") : t("createNew")}
-                </Button>
-              </div>
-            ) : filteredNotebooks.length === 0 ? (
-              <div className="flex flex-col items-center py-12 text-center animate-fade-in">
-                <div className="mb-4 opacity-70">
-                  <Mascot size="md" mood="surprised" />
-                </div>
-                <p className="text-sm text-muted-foreground">{t("noResults")}</p>
-              </div>
-            ) : (
-              <div className={`grid gap-4 ${gridColsClass}`}>
-                {/* Create new notebook card */}
-                <button
-                  onClick={handleCreateNotebook}
-                  disabled={creatingNotebook}
-                  className="group flex flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed border-primary/25 bg-gradient-to-br from-primary/[0.03] to-primary/[0.08] p-6 text-primary hover:border-primary/50 hover:from-primary/[0.05] hover:to-primary/[0.12] transition-all duration-300 ease-out min-h-[190px] h-full cursor-pointer disabled:opacity-50 hover:shadow-xl hover:shadow-primary/10 hover:-translate-y-1 hover:scale-[1.01]"
-                >
-                  <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 transition-transform group-hover:scale-110">
-                    <svg className="h-7 w-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 4v16m8-8H4" />
-                    </svg>
-                  </div>
-                  <span className="text-sm font-semibold">
-                    {creatingNotebook ? t("creating") : t("createNewNotebook")}
-                  </span>
-                </button>
-
-                {filteredNotebooks.map((notebook, i) => (
-                  <div
-                    key={notebook.id}
-                    className="animate-slide-up"
-                    style={{ animationDelay: `${i * 50}ms` }}
-                  >
-                    <NotebookCard
-                      notebook={notebook}
-                      files={notebookFiles[notebook.id] ?? []}
-                      timedOut={isTimedOut(notebook)}
-                      onDelete={handleNotebookDeleted}
-                    />
-                  </div>
-                ))}
-              </div>
-            )}
-          </section>
+          <RecentNotebooks
+            notebooks={notebooks}
+            filteredNotebooks={filteredNotebooks}
+            notebookFiles={notebookFiles}
+            loading={loading}
+            gridColsClass={gridColsClass}
+            onCreateNotebook={handleCreateNotebook}
+            creatingNotebook={creatingNotebook}
+            onDelete={handleNotebookDeleted}
+            isTimedOut={isTimedOut}
+            t={t}
+          />
         )}
       </main>
 
@@ -464,6 +312,8 @@ export default function DashboardPage() {
     </div>
   );
 }
+
+// ── Featured Section (kept in same file since it uses CardPattern) ──────
 
 function FeaturedSection({
   notebooks,
@@ -499,7 +349,6 @@ function FeaturedSection({
         </span>
       </div>
 
-      {/* Category filter chips */}
       <div className="flex gap-2 overflow-x-auto scrollbar-none pb-4 -mx-4 px-4 sm:mx-0 sm:px-0">
         {CATEGORIES.map((cat) => (
           <button
@@ -508,7 +357,7 @@ function FeaturedSection({
             className={`shrink-0 min-h-[44px] px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 ${
               selectedCategory === cat
                 ? "bg-primary text-primary-foreground shadow-sm"
-                : "bg-muted/50 text-muted-foreground hover:bg-muted hover:text-foreground"
+                : "bg-muted/70 text-muted-foreground border border-border/40 hover:bg-muted hover:text-foreground"
             }`}
           >
             {cat}
@@ -516,7 +365,6 @@ function FeaturedSection({
         ))}
       </div>
 
-      {/* Grid of featured cards */}
       {visibleNotebooks.length === 0 ? (
         <div className="flex flex-col items-center py-12 text-center animate-fade-in">
           <p className="text-sm text-muted-foreground">{t("noResults")}</p>
@@ -536,17 +384,10 @@ function FeaturedSection({
             ))}
           </div>
 
-          {/* Show more / Show less */}
           {totalCount > INITIAL_VISIBLE && (
             <div className="flex justify-center mt-6">
-              <Button
-                variant="outline"
-                onClick={onToggleShowAll}
-                className="min-h-[44px]"
-              >
-                {showAll
-                  ? t("showLess")
-                  : `${t("showMore")} (${totalCount - INITIAL_VISIBLE})`}
+              <Button variant="outline" onClick={onToggleShowAll} className="min-h-[44px]">
+                {showAll ? t("showLess") : `${t("showMore")} (${totalCount - INITIAL_VISIBLE})`}
               </Button>
             </div>
           )}
@@ -569,58 +410,36 @@ const FeaturedCard = React.memo(function FeaturedCard({
   onOpen: () => void;
   tf: (key: string) => string;
 }) {
-  const [imgError, setImgError] = useState(false);
-
   return (
     <button
       onClick={onOpen}
       disabled={isCloning}
       className={`relative shrink-0 rounded-2xl overflow-hidden group hover:scale-[1.02] hover:-translate-y-1 hover:shadow-2xl transition-all duration-300 featured-shadow cursor-pointer border-0 text-start w-full disabled:opacity-70 ${fn.bgClass}`}
-      style={{
-        height: 200,
-        animationDelay: `${index * 40}ms`,
-      }}
+      style={{ height: 200, animationDelay: `${index * 40}ms` }}
     >
-      {/* Decorative pattern */}
-      <div className="absolute inset-0 opacity-[0.04]">
+      <div className="absolute inset-0 opacity-[0.07]">
         <CardPattern pattern={fn.pattern} />
       </div>
       <div className="absolute inset-0 featured-mesh opacity-50 mix-blend-overlay" />
 
-      {/* Company logo (Clearbit) with initial fallback - top right */}
       {fn.website && (
         <div className="absolute top-4 right-4 rtl:right-auto rtl:left-4 z-10">
-          {!imgError ? (
-            <img
-              src={`https://logo.clearbit.com/${fn.website}`}
-              alt={tf(fn.titleKey)}
-              className="h-8 w-8 rounded-lg bg-white/90 p-0.5 shadow-sm"
-              loading="lazy"
-              onError={() => setImgError(true)}
-            />
-          ) : (
-            <div className="h-8 w-8 rounded-lg bg-primary/90 shadow-sm flex items-center justify-center text-primary-foreground text-xs font-bold">
-              {tf(fn.titleKey).charAt(0).toUpperCase()}
-            </div>
-          )}
+          <CompanyLogo domain={fn.website} name={tf(fn.titleKey)} size="md" />
         </div>
       )}
 
-      {/* Category badge */}
       <div className="absolute top-4 left-4 rtl:left-auto rtl:right-4 z-10">
         <span className="text-[10px] font-bold tracking-wider uppercase px-2 py-1 rounded-md bg-black/10 dark:bg-white/10 backdrop-blur-sm">
           {fn.category}
         </span>
       </div>
 
-      {/* Loading indicator */}
       {isCloning && (
         <div className="absolute inset-0 z-20 flex items-center justify-center bg-black/30 backdrop-blur-sm rounded-2xl">
           <div className="h-6 w-6 border-2 border-white/30 border-t-white rounded-full animate-spin" />
         </div>
       )}
 
-      {/* Content (bottom) */}
       <div className="absolute bottom-0 left-0 right-0 p-5 z-10">
         <h3 className="font-bold text-lg sm:text-xl tracking-tight leading-tight mb-1.5 drop-shadow-sm">
           {tf(fn.titleKey)}

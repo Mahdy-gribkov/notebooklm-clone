@@ -159,6 +159,7 @@ export async function POST(
   const notebookId = shareInfo.notebook_id;
   const ownerId = shareInfo.owner_id;
 
+  let assistantText = "";
   try {
     let sources: Source[] = [];
     let systemMessage = SYSTEM_PROMPT;
@@ -175,6 +176,16 @@ export async function POST(
       console.error("[shared-chat] RAG chain failed:", e);
     }
 
+    // Pre-save user message before streaming (resilient to stream failures)
+    await supabase.from("messages").insert({
+      notebook_id: notebookId,
+      user_id: ownerId,
+      role: "user",
+      content: userMessage,
+      sources: null,
+      is_public: true,
+    });
+
     const data = new StreamData();
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     data.append({ sources } as any);
@@ -188,28 +199,26 @@ export async function POST(
           content: m.content,
         })),
       ),
+      onChunk: ({ chunk }) => {
+        if (chunk.type === "text-delta") {
+          assistantText += chunk.textDelta;
+        }
+      },
       onFinish: async ({ text }) => {
+        assistantText = text;
         try {
-          const { error: insertError } = await supabase.from("messages").insert([
-            {
-              notebook_id: notebookId,
-              user_id: ownerId,
-              role: "user",
-              content: userMessage,
-              sources: null,
-              is_public: true,
-            },
-            {
+          if (text.trim()) {
+            const { error: insertError } = await supabase.from("messages").insert({
               notebook_id: notebookId,
               user_id: ownerId,
               role: "assistant",
               content: text,
               sources: sources.length > 0 ? sources : null,
               is_public: true,
-            },
-          ]);
-          if (insertError) {
-            console.error("[shared-chat] Message save failed:", insertError);
+            });
+            if (insertError) {
+              console.error("[shared-chat] Message save failed:", insertError);
+            }
           }
         } catch (err) {
           console.error("[shared-chat] Message persistence error:", err);
@@ -220,6 +229,17 @@ export async function POST(
 
     return result.toDataStreamResponse({ data });
   } catch (error) {
+    // Fallback: save partial assistant text if stream failed mid-way
+    if (assistantText.trim()) {
+      await supabase.from("messages").insert({
+        notebook_id: notebookId,
+        user_id: ownerId,
+        role: "assistant",
+        content: assistantText,
+        sources: null,
+        is_public: true,
+      }).then(null, () => {});
+    }
     const msg = error instanceof Error ? error.message : String(error);
     console.error("[shared-chat] Error:", msg);
     return NextResponse.json(

@@ -7,6 +7,7 @@ import { ThemeToggle } from "@/components/theme-toggle";
 import { SourcePanel } from "@/components/source-panel";
 import { useTranslations } from "next-intl";
 import dynamic from "next/dynamic";
+import { CompanyLogo } from "@/components/company-logo";
 import type { Message, Note, StudioGeneration, Source } from "@/types";
 
 const MarkdownRenderer = dynamic(() => import("@/components/markdown-renderer"), {
@@ -49,7 +50,6 @@ export default function SharedNotebookPage() {
   const [chatMessages, setChatMessages] = useState<Array<{ role: string; content: string; sources?: Source[] }>>([]);
   const [chatLoading, setChatLoading] = useState(false);
   const [chatError, setChatError] = useState<string | null>(null);
-  const [logoError, setLogoError] = useState(false);
   const [copiedMsgIdx, setCopiedMsgIdx] = useState<number | null>(null);
   const copyTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const chatEndRef = useRef<HTMLDivElement>(null);
@@ -194,9 +194,14 @@ export default function SharedNotebookPage() {
   if (loading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background">
-        <div className="flex items-center gap-3">
-          <div className="h-5 w-5 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-          <span className="text-muted-foreground">Loading company profile...</span>
+        <div className="flex flex-col items-center gap-4 animate-fade-in">
+          <Logo size="lg" />
+          <p className="text-sm text-muted-foreground">Loading company profile...</p>
+          <div className="flex gap-3 w-full max-w-xs">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="flex-1 h-16 rounded-xl bg-card animate-shimmer" style={{ animationDelay: `${i * 200}ms` }} />
+            ))}
+          </div>
         </div>
       </div>
     );
@@ -232,25 +237,12 @@ export default function SharedNotebookPage() {
 
   return (
     <div className="flex h-dvh flex-col bg-background overflow-hidden">
-      <header className="sticky top-0 z-20 border-b bg-card/80 backdrop-blur-sm">
+      <header className="sticky top-0 z-20 border-b border-primary/10 bg-card/80 backdrop-blur-sm">
         <div className="mx-auto flex h-14 max-w-5xl items-center justify-between px-4">
           <div className="flex items-center gap-3">
-            {data.company?.website && !logoError ? (
+            {data.company?.name ? (
               <>
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={`https://logo.clearbit.com/${new URL(data.company.website.startsWith("http") ? data.company.website : `https://${data.company.website}`).hostname}`}
-                  alt={data.company.name}
-                  className="h-7 w-7 rounded"
-                  onError={() => setLogoError(true)}
-                />
-                <span className="text-sm font-semibold truncate max-w-[200px]">{data.company.name}</span>
-              </>
-            ) : data.company?.name ? (
-              <>
-                <div className="h-7 w-7 rounded bg-primary flex items-center justify-center text-primary-foreground text-xs font-bold">
-                  {data.company.name.charAt(0).toUpperCase()}
-                </div>
+                <CompanyLogo domain={data.company.website ?? undefined} name={data.company.name} size="sm" />
                 <span className="text-sm font-semibold truncate max-w-[200px]">{data.company.name}</span>
               </>
             ) : (
@@ -259,6 +251,7 @@ export default function SharedNotebookPage() {
             <span className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded-full">
               {data.company?.category || "Shared"}
             </span>
+            <span className="hidden sm:inline text-[10px] text-muted-foreground/40 font-medium tracking-wide">Powered by DocChat</span>
           </div>
           <ThemeToggle />
         </div>
@@ -291,7 +284,7 @@ export default function SharedNotebookPage() {
             <button
               key={tab.key}
               onClick={() => setActiveTab(tab.key)}
-              className={`px-4 py-3 min-h-[44px] text-sm font-medium border-b-2 transition-colors ${activeTab === tab.key
+              className={`px-4 py-3 min-h-[44px] text-sm font-medium border-b-[3px] transition-colors ${activeTab === tab.key
                 ? "border-primary text-foreground"
                 : "border-transparent text-muted-foreground hover:text-foreground"
                 }`}
@@ -310,7 +303,7 @@ export default function SharedNotebookPage() {
           <div className="flex-1 overflow-y-auto" aria-live="polite" aria-busy={chatLoading}>
             <div className="mx-auto w-full max-w-5xl px-4 py-6 space-y-4">
               {data.permissions === "view" && (
-                <div className="rounded-lg border border-border/50 bg-muted/30 px-4 py-3 text-sm text-muted-foreground">
+                <div className="rounded-xl border border-primary/15 bg-primary/[0.04] px-4 py-3 text-sm text-muted-foreground">
                   This profile is shared as view-only.{" "}
                   <a href="/login" className="text-primary hover:underline underline-offset-2">
                     Sign up
@@ -341,9 +334,9 @@ export default function SharedNotebookPage() {
                           key={prompt}
                           onClick={() => sendMessage(prompt)}
                           disabled={chatLoading}
-                          className="flex items-start gap-3 rounded-xl border border-border/60 bg-card p-3.5 text-left text-xs text-muted-foreground hover:bg-accent/60 hover:text-foreground hover:border-primary/30 transition-all disabled:opacity-50"
+                          className="flex items-start gap-3 rounded-xl border border-border/60 bg-card p-3.5 text-left text-xs text-muted-foreground hover:bg-accent/60 hover:text-foreground hover:border-primary/30 hover:shadow-md hover:-translate-y-0.5 transition-all disabled:opacity-50"
                         >
-                          <svg className="h-4 w-4 shrink-0 mt-0.5 text-primary/50" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                          <svg className="h-4 w-4 shrink-0 mt-0.5 text-primary/70" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M8.625 12a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H8.25m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H12m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0h-.375M21 12c0 4.556-4.03 8.25-9 8.25a9.764 9.764 0 01-2.555-.337A5.972 5.972 0 015.41 20.97a5.969 5.969 0 01-.474-.065 4.48 4.48 0 00.978-2.025c.09-.457-.133-.901-.467-1.226C3.93 16.178 3 14.189 3 12c0-4.556 4.03-8.25 9-8.25s9 3.694 9 8.25z" />
                           </svg>
                           <span className="leading-relaxed">{prompt}</span>
@@ -355,19 +348,19 @@ export default function SharedNotebookPage() {
               )}
 
               {chatMessages.map((msg, i) => (
-                <div key={i} className="space-y-2">
+                <div key={i} className="space-y-2 animate-slide-up" style={{ animationDelay: `${Math.min(i * 30, 300)}ms` }}>
                   <div
                     className={`flex ${msg.role === "user" ? "justify-end" : "justify-start items-start gap-2"}`}
                   >
                     {msg.role === "assistant" && (
-                      <div className="h-7 w-7 rounded-full bg-primary/10 flex items-center justify-center text-[10px] font-bold text-primary shrink-0 mt-1" aria-hidden="true">
+                      <div className="h-7 w-7 rounded-full bg-primary/10 ring-1 ring-primary/10 flex items-center justify-center text-[10px] font-bold text-primary shrink-0 mt-1" aria-hidden="true">
                         DC
                       </div>
                     )}
                     <div
                       className={`group/msg relative rounded-2xl px-4 py-2.5 text-sm ${msg.role === "user"
-                        ? "max-w-[85%] lg:max-w-2xl xl:max-w-3xl bg-primary text-primary-foreground"
-                        : "max-w-[85%] lg:max-w-2xl xl:max-w-3xl bg-[#FAF9F7] dark:bg-muted/20 border border-border/40 border-l-2 border-l-primary/30 prose dark:prose-invert prose-sm max-w-none prose-p:my-1.5 prose-headings:my-2 prose-ul:my-1.5 prose-ol:my-1.5 prose-li:my-0.5"
+                        ? "max-w-[85%] lg:max-w-2xl xl:max-w-3xl bg-gradient-to-br from-primary to-primary/85 text-primary-foreground rounded-br-md shadow-sm shadow-primary/20"
+                        : "max-w-[85%] lg:max-w-2xl xl:max-w-3xl bg-[#FAF9F7] dark:bg-muted/20 border border-border/40 border-l-2 border-l-primary/50 shadow-sm shadow-black/[0.03] prose dark:prose-invert prose-sm max-w-none prose-p:my-1.5 prose-headings:my-2 prose-ul:my-1.5 prose-ol:my-1.5 prose-li:my-0.5"
                         }`}
                     >
                       {msg.role === "assistant" && msg.content && (
@@ -393,7 +386,7 @@ export default function SharedNotebookPage() {
                         msg.role === "user" ? (
                           <p className="whitespace-pre-wrap break-words">{msg.content}</p>
                         ) : (
-                          <MarkdownRenderer content={msg.content} />
+                          <MarkdownRenderer content={msg.content} sources={msg.sources} />
                         )
                       ) : (
                         <span className="inline-flex items-center gap-1.5 text-muted-foreground">
@@ -429,18 +422,20 @@ export default function SharedNotebookPage() {
                   disabled={chatLoading}
                   autoComplete="off"
                   aria-label={`Ask about ${data.company?.name || "this company"}`}
-                  className="flex-1 h-12 rounded-lg border bg-background px-4 text-base sm:text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                  className="flex-1 h-12 rounded-xl border border-border/50 bg-muted/30 px-4 text-base sm:text-sm shadow-inner shadow-black/[0.03] focus:outline-none focus:ring-2 focus:ring-primary/40 focus:bg-background focus:shadow-none transition-all"
                 />
                 <button
                   type="submit"
                   disabled={chatLoading || !chatInput.trim()}
                   aria-label="Send message"
-                  className="h-12 px-5 rounded-lg bg-primary text-primary-foreground text-sm font-medium disabled:opacity-50 min-w-[60px]"
+                  className="h-12 w-12 shrink-0 rounded-xl bg-primary text-primary-foreground disabled:opacity-50 shadow-md shadow-primary/20 hover:shadow-lg hover:shadow-primary/30 transition-all flex items-center justify-center"
                 >
                   {chatLoading ? (
-                    <div className="h-4 w-4 rounded-full border-2 border-primary-foreground border-t-transparent animate-spin mx-auto" />
+                    <div className="h-4 w-4 rounded-full border-2 border-primary-foreground border-t-transparent animate-spin" />
                   ) : (
-                    "Send"
+                    <svg className="h-4.5 w-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5" />
+                    </svg>
                   )}
                 </button>
               </form>
@@ -529,7 +524,7 @@ export default function SharedNotebookPage() {
         </div>
       )}
 
-      <footer className="border-t bg-card/50 py-4 shrink-0">
+      <footer className="border-t border-primary/10 bg-card/80 backdrop-blur-sm py-5 shrink-0">
         <div className="mx-auto max-w-5xl px-4 flex flex-col sm:flex-row items-center justify-between gap-2 sm:gap-0 text-center sm:text-left">
           <p className="text-xs text-muted-foreground">
             Built by{" "}
@@ -544,9 +539,18 @@ export default function SharedNotebookPage() {
             {" "}with DocChat
           </p>
           <div className="flex items-center gap-3">
-            <a href="https://github.com/Medy-gribkov" target="_blank" rel="noopener noreferrer" className="text-xs text-muted-foreground hover:text-foreground transition-colors">GitHub</a>
-            <a href="https://linkedin.com/in/medygribkov" target="_blank" rel="noopener noreferrer" className="text-xs text-muted-foreground hover:text-foreground transition-colors">LinkedIn</a>
-            <a href="/Medy-Gribkov-Resume.pdf" download className="text-xs text-primary hover:underline underline-offset-2">Resume</a>
+            <a href="https://github.com/Medy-gribkov" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors">
+              <svg className="h-4 w-4" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z" /></svg>
+              GitHub
+            </a>
+            <a href="https://linkedin.com/in/medygribkov" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors">
+              <svg className="h-4 w-4" viewBox="0 0 24 24" fill="currentColor"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 01-2.063-2.065 2.064 2.064 0 112.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z" /></svg>
+              LinkedIn
+            </a>
+            <a href="/Medy-Gribkov-Resume.pdf" download className="inline-flex items-center gap-1.5 bg-primary text-primary-foreground px-3 py-1.5 rounded-lg text-xs font-medium shadow-sm shadow-primary/20 hover:bg-primary/90 transition-all">
+              <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+              Resume
+            </a>
           </div>
         </div>
       </footer>

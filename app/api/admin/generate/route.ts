@@ -1,15 +1,16 @@
 import { createClient } from "@/lib/supabase/server";
 import { getServiceClient } from "@/lib/supabase/service";
 import { checkRateLimit } from "@/lib/rate-limit";
-import { getFeaturedBySlug } from "@/lib/featured-notebooks";
-import { getFeaturedContent } from "@/lib/featured-content";
 import { generateCompanyContent } from "@/lib/generate-company";
+import { generateShareToken } from "@/lib/share";
 import { embedText } from "@/lib/rag";
-import { RecursiveCharacterTextSplitter } from "@langchain/textsplitters";
 import { getNotebookHash } from "@/lib/hash";
+import { RecursiveCharacterTextSplitter } from "@langchain/textsplitters";
 import { NextResponse } from "next/server";
 
 export const maxDuration = 120;
+
+const ADMIN_USER_ID = process.env.ADMIN_USER_ID;
 
 export async function POST(request: Request) {
   const supabase = await createClient();
@@ -21,86 +22,65 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  // Rate limit: 5 clones per hour per user
-  if (!checkRateLimit(`user:${user.id}:clone-featured`, 5, 3_600_000)) {
+  if (!ADMIN_USER_ID || user.id !== ADMIN_USER_ID) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+
+  if (!checkRateLimit("admin:generate", 10, 3_600_000)) {
     return NextResponse.json(
-      { error: "Limit reached. You can clone up to 5 featured notebooks per hour." },
+      { error: "Rate limit exceeded. Max 10 generations per hour." },
       { status: 429, headers: { "Retry-After": "3600" } }
     );
   }
 
   const body = await request.json().catch(() => ({}));
-  const slug = typeof body.slug === "string" ? body.slug.trim() : "";
+  const companyName = typeof body.companyName === "string" ? body.companyName.trim() : "";
+  const website = typeof body.website === "string" ? body.website.trim() : "";
+  const category = typeof body.category === "string" ? body.category.trim() : "Technology";
 
-  if (!slug) {
-    return NextResponse.json({ error: "Missing slug" }, { status: 400 });
-  }
-
-  const featured = getFeaturedBySlug(slug);
-
-  if (!featured) {
-    return NextResponse.json({ error: "Featured notebook not found" }, { status: 404 });
-  }
-
-  let content = getFeaturedContent(slug);
-  if (!content && featured.website) {
-    content = await generateCompanyContent(
-      featured.titleKey,
-      featured.website,
-      featured.category,
+  if (!companyName || !website) {
+    return NextResponse.json(
+      { error: "Missing companyName or website" },
+      { status: 400 }
     );
   }
 
+  // Generate company content via Gemini + Google Search grounding
+  const content = await generateCompanyContent(companyName, website, category);
   if (!content) {
-    return NextResponse.json({ error: "Failed to generate content for this company" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Failed to generate content. Check GEMINI_API_KEY and try again." },
+      { status: 500 }
+    );
   }
 
-  const title = slug.split("-").map((w: string) => w.charAt(0).toUpperCase() + w.slice(1)).join(" ");
   const serviceClient = getServiceClient();
-
   const fullText = content.files.map((f) => f.content).join("\n\n");
   const sourceHash = getNotebookHash(fullText);
 
+  // 1. Create notebook
   let notebook;
   try {
-    const { data, error: nbError } = await supabase
+    const { data, error } = await supabase
       .from("notebooks")
       .insert({
-        title,
+        title: companyName,
         user_id: user.id,
         status: "processing",
-        description: `featured.${featured.descriptionKey}`,
+        description: content.description,
         source_hash: sourceHash,
       })
       .select("id")
       .single();
 
-    if (nbError) {
-      const { data: retryData, error: retryError } = await supabase
-        .from("notebooks")
-        .insert({
-          title,
-          user_id: user.id,
-          status: "processing",
-          description: `featured.${featured.descriptionKey}`,
-        })
-        .select("id")
-        .single();
-
-      if (retryError) throw retryError;
-      notebook = retryData;
-    } else {
-      notebook = data;
-    }
+    if (error) throw error;
+    notebook = data;
   } catch (e) {
-    console.error("[clone-featured] Failed to create notebook:", e instanceof Error ? e.message : e);
-    return NextResponse.json({ error: "Database error. Please try again later." }, { status: 500 });
+    console.error("[admin-generate] Failed to create notebook:", e instanceof Error ? e.message : e);
+    return NextResponse.json({ error: "Database error creating notebook." }, { status: 500 });
   }
 
-  if (!notebook) {
-    return NextResponse.json({ error: "Failed to create notebook" }, { status: 500 });
-  }
-
+  // 2. Create notebook files
   const fileEntries: { id: string; fileName: string; content: string }[] = [];
   let totalPages = 0;
 
@@ -109,33 +89,29 @@ export async function POST(request: Request) {
     totalPages += estimatedPages;
 
     try {
-      const { data: notebookFile, error: fileError } = await supabase
+      const { data: notebookFile, error } = await supabase
         .from("notebook_files")
         .insert({
           notebook_id: notebook.id,
           user_id: user.id,
           file_name: file.fileName,
-          storage_path: `featured/${slug}/${file.fileName}`,
+          storage_path: `admin/${companyName.toLowerCase().replace(/\s+/g, "-")}/${file.fileName}`,
           status: "processing",
           page_count: estimatedPages,
         })
         .select("id")
         .single();
 
-      if (fileError) continue;
-
+      if (error) continue;
       if (notebookFile) {
-        fileEntries.push({
-          id: notebookFile.id,
-          fileName: file.fileName,
-          content: file.content,
-        });
+        fileEntries.push({ id: notebookFile.id, fileName: file.fileName, content: file.content });
       }
     } catch {
       continue;
     }
   }
 
+  // 3. Pre-populate studio generations
   const actions: { action: string; result: unknown }[] = [
     { action: "quiz", result: content.quiz },
     { action: "flashcards", result: content.flashcards },
@@ -147,7 +123,7 @@ export async function POST(request: Request) {
   ];
 
   try {
-    const { error: genError } = await supabase
+    const { error } = await supabase
       .from("studio_generations")
       .insert(
         actions.map((a) => ({
@@ -158,24 +134,12 @@ export async function POST(request: Request) {
           source_hash: sourceHash,
         })),
       );
-
-    if (genError) {
-      const { error: retryGenError } = await supabase
-        .from("studio_generations")
-        .insert(
-          actions.map((a) => ({
-            notebook_id: notebook.id,
-            user_id: user.id,
-            action: a.action,
-            result: a.result,
-          })),
-        );
-      if (retryGenError) throw retryGenError;
-    }
+    if (error) throw error;
   } catch (e) {
-    console.error("[clone-featured] Studio generation insertion failed:", e instanceof Error ? e.message : e);
+    console.error("[admin-generate] Studio generation insert failed:", e instanceof Error ? e.message : e);
   }
 
+  // 4. Embed chunks
   if (fileEntries.length > 0) {
     try {
       const splitter = new RecursiveCharacterTextSplitter({
@@ -213,8 +177,6 @@ export async function POST(request: Request) {
             });
           }
 
-          // Rate limit delay between batches within a file
-          // Optimized: Featured content is small, use 3s delay instead of 6.5s
           if (i + BATCH_SIZE < chunks.length) {
             await new Promise((r) => setTimeout(r, 3000));
           }
@@ -222,8 +184,8 @@ export async function POST(request: Request) {
       }
 
       if (allChunkRows.length > 0) {
-        const { error: chunkError } = await serviceClient.from("chunks").insert(allChunkRows);
-        if (chunkError) throw new Error("Failed to store document chunks");
+        const { error } = await serviceClient.from("chunks").insert(allChunkRows);
+        if (error) throw new Error("Failed to store document chunks");
       }
 
       await serviceClient
@@ -237,8 +199,7 @@ export async function POST(request: Request) {
         .update({ status: "ready", page_count: totalPages })
         .eq("id", notebook.id);
     } catch (e) {
-      console.error("[clone-featured] Embedding failed:", e instanceof Error ? e.message : e);
-
+      console.error("[admin-generate] Embedding failed:", e instanceof Error ? e.message : e);
 
       await serviceClient
         .from("notebooks")
@@ -251,9 +212,45 @@ export async function POST(request: Request) {
         .eq("notebook_id", notebook.id)
         .eq("user_id", user.id);
 
-      return NextResponse.json({ error: "Failed to process featured content" }, { status: 500 });
+      return NextResponse.json({ error: "Failed to embed content" }, { status: 500 });
     }
   }
 
-  return NextResponse.json({ notebookId: notebook.id }, { status: 201 });
+  // 5. Auto-create share link with chat permissions, 365-day expiry
+  let shareToken: string | null = null;
+  let shareUrl: string | null = null;
+
+  try {
+    shareToken = generateShareToken();
+    const expiresAt = new Date(Date.now() + 365 * 86_400_000).toISOString();
+
+    const { error } = await supabase
+      .from("shared_links")
+      .insert({
+        notebook_id: notebook.id,
+        user_id: user.id,
+        token: shareToken,
+        permissions: "chat",
+        expires_at: expiresAt,
+      });
+
+    if (error) {
+      console.error("[admin-generate] Share link creation failed:", error.message);
+      shareToken = null;
+    } else {
+      const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+      shareUrl = `${appUrl}/shared/${shareToken}`;
+    }
+  } catch (e) {
+    console.error("[admin-generate] Share link error:", e instanceof Error ? e.message : e);
+  }
+
+  return NextResponse.json(
+    {
+      notebookId: notebook.id,
+      shareToken,
+      shareUrl,
+    },
+    { status: 201 }
+  );
 }

@@ -32,7 +32,7 @@ export function SourcePanel({ sources }: SourcePanelProps) {
   if (sources.length === 0) return null;
 
   return (
-    <div className="rounded-xl border bg-card/60 p-3 overflow-hidden animate-fade-in">
+    <div className="rounded-xl border bg-card/80 p-3 shadow-sm shadow-black/[0.02] overflow-hidden animate-fade-in">
       {/* Header */}
       <div className="flex items-center justify-between mb-2.5">
         <p className="text-xs font-bold text-foreground uppercase tracking-wider flex items-center gap-1.5">
@@ -50,7 +50,8 @@ export function SourcePanel({ sources }: SourcePanelProps) {
         {sources.map((source, i) => (
           <div
             key={source.chunkId}
-            className="group/src rounded-lg border border-s-2 border-s-primary/40 bg-background p-2.5 cursor-pointer select-none transition-colors hover:bg-accent/30"
+            id={`source-${i + 1}`}
+            className="group/src rounded-lg border border-s-2 border-s-primary/60 bg-background p-2.5 cursor-pointer select-none transition-all hover:bg-accent/30"
             onClick={() => setExpanded(expanded === i ? null : i)}
             role="button"
             tabIndex={0}

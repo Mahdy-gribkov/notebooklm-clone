@@ -13,6 +13,8 @@ const remarkCitations: Plugin = () => {
   return (tree) => {
     visit(tree, "text", (node: Text, index: number | undefined, parent: Parent | undefined) => {
       if (index === undefined || !parent) return;
+      // Skip text nodes inside cite elements to prevent double-transformation
+      if ((parent.type as string) === "cite") return;
 
       const value = node.value;
       // Match [N] where N is 1-3 digits, but NOT followed by ( which would be a link

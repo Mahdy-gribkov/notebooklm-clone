@@ -143,8 +143,8 @@ describe("ChatInterface", () => {
       <ChatInterface
         notebookId="nb-1"
         initialMessages={[
-          { id: "m1", role: "user", content: "Hello" },
-          { id: "m2", role: "assistant", content: "Hi there!" },
+          { id: "m1", notebook_id: "nb-1", user_id: "u1", role: "user", content: "Hello", sources: null, created_at: "" },
+          { id: "m2", notebook_id: "nb-1", user_id: "u1", role: "assistant", content: "Hi there!", sources: null, created_at: "" },
         ]}
         hasFiles={true}
       />

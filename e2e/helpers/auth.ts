@@ -5,8 +5,6 @@ import type { Page } from "@playwright/test";
  * proxy.ts checks for a cookie matching /sb-.*-auth-token/.
  */
 export async function loginAsTestUser(page: Page) {
-  const baseURL = "http://localhost:3000";
-
   // Set a fake Supabase auth token cookie
   await page.context().addCookies([
     {

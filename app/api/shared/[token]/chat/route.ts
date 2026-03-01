@@ -198,6 +198,8 @@ export async function POST(
           role: m.role as "user" | "assistant",
           content: m.content,
         })),
+        undefined,
+        systemMessage.length,
       ),
       onChunk: ({ chunk }) => {
         if (chunk.type === "text-delta") {

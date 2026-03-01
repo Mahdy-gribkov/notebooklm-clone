@@ -21,7 +21,7 @@ import type { Notebook, NotebookFile } from "@/types";
 import { useTranslations } from "next-intl";
 
 const PROCESSING_TIMEOUT_MS = 5 * 60 * 1000;
-const POLL_DELAYS = [5000, 10000, 20000, 30000];
+const POLL_DELAYS = [1000, 2000, 4000, 8000, 15000, 30000];
 const INITIAL_VISIBLE = 8;
 
 function isTimedOut(notebook: Notebook): boolean {

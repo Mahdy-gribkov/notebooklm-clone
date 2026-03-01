@@ -117,33 +117,54 @@ export async function processNotebook(
       await supabase.from("chunks").delete().eq("notebook_id", notebookId);
     }
 
-    // Embed chunks in batches to respect 10 RPM
+    // Embed chunks in batches to respect Gemini 10 RPM limit
     const BATCH_SIZE = 5;
-    const INTER_BATCH_DELAY = 6500;
+    const INTER_BATCH_DELAY = 6500; // ms between batches (~9.2 batches/min)
 
     /* v8 ignore next 3 -- @preserve */
-    const metadata = fileId
+    const metadata: Record<string, string> = fileId
       ? { file_id: fileId, file_name: fileName ?? "unknown" }
       : {};
+
+    // Start metadata generation early (runs in parallel with remaining batches)
+    const sampleForMeta = chunks.slice(0, 3).join("\n\n");
+    const metaPromise = (async () => {
+      try {
+        await generateNotebookMeta(notebookId, sampleForMeta);
+      } catch {
+        await sleep(1000);
+        try {
+          await generateNotebookMeta(notebookId, sampleForMeta);
+        } catch {
+          // Meta generation failed after retry, notebook keeps default title
+        }
+      }
+    })();
+
+    // Accumulate all rows, insert once after embedding completes
+    const allRows: Array<{
+      notebook_id: string;
+      user_id: string;
+      content: string;
+      embedding: string;
+      chunk_index: number;
+      metadata: Record<string, string>;
+    }> = [];
 
     for (let i = 0; i < chunks.length; i += BATCH_SIZE) {
       const batchStart = Date.now();
       const batch = chunks.slice(i, i + BATCH_SIZE);
       const embeddings = await Promise.all(batch.map((chunk) => embedText(chunk)));
 
-      const rows = batch.map((content, idx) => ({
-        notebook_id: notebookId,
-        user_id: userId,
-        content,
-        embedding: JSON.stringify(embeddings[idx]),
-        chunk_index: i + idx,
-        metadata,
-      }));
-
-      const { error } = await supabase.from("chunks").insert(rows);
-      if (error) {
-        console.error("[processNotebook] Failed to insert chunks:", error.message);
-        throw new Error("Failed to store document chunks");
+      for (let idx = 0; idx < batch.length; idx++) {
+        allRows.push({
+          notebook_id: notebookId,
+          user_id: userId,
+          content: batch[idx],
+          embedding: JSON.stringify(embeddings[idx]),
+          chunk_index: i + idx,
+          metadata,
+        });
       }
 
       if (i + BATCH_SIZE < chunks.length) {
@@ -154,20 +175,15 @@ export async function processNotebook(
       }
     }
 
-    // Generate title and description (fire-and-forget with retry)
-    const sampleForMeta = chunks.slice(0, 3).join("\n\n");
-    void (async () => {
-      try {
-        await generateNotebookMeta(notebookId, sampleForMeta);
-      } catch {
-        await sleep(5000);
-        try {
-          await generateNotebookMeta(notebookId, sampleForMeta);
-        } catch {
-          // Meta generation failed after retry, notebook keeps default title
-        }
-      }
-    })();
+    // Single bulk insert (avoids N round-trips to Supabase)
+    const { error: insertError } = await supabase.from("chunks").insert(allRows);
+    if (insertError) {
+      console.error("[processNotebook] Failed to insert chunks:", insertError.message);
+      throw new Error("Failed to store document chunks");
+    }
+
+    // Don't block on metadata, but let it finish if it can
+    void metaPromise;
 
     return {
       pageCount,

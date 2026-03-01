@@ -23,11 +23,3 @@ export function getNotebookHash(text: string): string {
     // 3. Deterministic SHA-256
     return createHash("sha256").update(normalized).digest("hex");
 }
-
-/**
- * Legacy alias to avoid breaking existing imports immediately.
- * @deprecated Use getNotebookHash instead.
- */
-export function generateHash(text: string): string {
-    return getNotebookHash(text);
-}

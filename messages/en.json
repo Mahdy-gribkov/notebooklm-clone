@@ -240,7 +240,9 @@
     "uploadFirst": "Load company data first...",
     "browseFiles": "Browse files",
     "uploading": "Uploading...",
-    "send": "Send message"
+    "send": "Send message",
+    "processingFailed": "Processing failed",
+    "tryReupload": "Try re-uploading the file."
   },
   "sources": {
     "title": "Sources",

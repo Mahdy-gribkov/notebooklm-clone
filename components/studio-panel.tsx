@@ -56,7 +56,6 @@ export function StudioPanel({ notebookId }: StudioPanelProps) {
   const [error, setError] = useState<string | null>(null);
 
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
-  const [generatingAudio, setGeneratingAudio] = useState(false);
 
   // Cleanup audio object URL on unmount
   useEffect(() => {
@@ -138,27 +137,6 @@ export function StudioPanel({ notebookId }: StudioPanelProps) {
     { action: "infographic", label: t("infographic"), description: t("infographicDesc"), icon: "infographic", color: "bg-[#BF4D43]/15 text-[#BF4D43]" },
     { action: "slidedeck", label: t("slidedeck"), description: t("slidedeckDesc"), icon: "slides", color: "bg-[#8B7355]/15 text-[#8B7355]" },
   ], [t]);
-
-  async function handleGenerateAudio() {
-    setGeneratingAudio(true);
-    setError(null);
-    try {
-      const res = await fetch(`/api/notebooks/${notebookId}/audio`, { method: "POST" });
-      if (!res.ok) {
-        const body = await res.json().catch(() => ({}));
-        throw new Error(body.error ?? `Failed (${res.status})`);
-      }
-      const blob = await res.blob();
-      setAudioUrl(prev => {
-        if (prev) URL.revokeObjectURL(prev);
-        return URL.createObjectURL(blob);
-      });
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Audio generation failed");
-    } finally {
-      setGeneratingAudio(false);
-    }
-  }
 
   const generate = useCallback(
     async (action: StudioAction) => {
@@ -322,18 +300,18 @@ export function StudioPanel({ notebookId }: StudioPanelProps) {
           </div>
         )}
 
-        {(generatingAction || generatingAudio) && (
+        {generatingAction && (
           <div className="rounded-xl border border-primary/20 bg-primary/5 p-3 text-center mb-4 animate-fade-in">
             <p className="text-xs text-primary font-medium">
               {t("oneAtATime")}
             </p>
             <p className="text-[10px] text-muted-foreground mt-0.5">
-              {t("generating", { type: generatingAction ? t(generatingAction) : t("audioOverview") })}
+              {t("generating", { type: t(generatingAction) })}
             </p>
           </div>
         )}
 
-        <div className="grid grid-cols-2 gap-2.5">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
           {features.map((feature) => {
             const isGenerating = generatingAction === feature.action;
             const hasHistory = history.some((g) => g.action === feature.action);
@@ -344,14 +322,14 @@ export function StudioPanel({ notebookId }: StudioPanelProps) {
                   const existing = history.find((g) => g.action === feature.action);
                   if (existing) {
                     viewHistoryItem(existing);
-                  } else if (!generatingAction && !generatingAudio) {
+                  } else if (!generatingAction) {
                     generate(feature.action);
                   }
                 }}
-                disabled={!!(generatingAction || generatingAudio) && !hasHistory}
+                disabled={!!generatingAction && !hasHistory}
                 className={`group relative flex flex-col items-start gap-2.5 rounded-xl border bg-card p-4 text-left transition-all shadow-sm shadow-black/[0.02] ${isGenerating
                   ? "opacity-70 cursor-wait"
-                  : (generatingAction || generatingAudio) && !hasHistory
+                  : generatingAction && !hasHistory
                     ? "opacity-40 cursor-not-allowed"
                     : "hover:shadow-lg hover:border-primary/30 hover:-translate-y-0.5"
                   }`}
@@ -403,16 +381,6 @@ export function StudioPanel({ notebookId }: StudioPanelProps) {
             <audio controls className="w-full h-8" src={audioUrl}>
               Your browser does not support audio playback.
             </audio>
-          </div>
-        )}
-
-        {generatingAudio && (
-          <div className="mt-4 rounded-xl border bg-card p-4 flex items-center gap-3 animate-fade-in">
-            <div className="h-5 w-5 rounded-full border-2 border-primary border-t-transparent animate-spin shrink-0" />
-            <div>
-              <p className="text-xs font-medium">{t("generating", { type: t("audioOverview") })}</p>
-              <p className="text-[10px] text-muted-foreground">{t("generatingNote")}</p>
-            </div>
           </div>
         )}
 

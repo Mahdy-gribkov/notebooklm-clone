@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useRef, useEffect } from "react";
+import { useState, useCallback, useRef } from "react";
 import Link from "next/link";
 import dynamic from "next/dynamic";
 import { ChatInterface } from "@/components/chat-interface";
@@ -19,6 +19,7 @@ const StudioPanel = dynamic(
 import { ThemeToggle } from "@/components/theme-toggle";
 import { LanguageToggle } from "@/components/language-toggle";
 import { ShareDialog } from "@/components/share-dialog";
+import { CompanyLogo } from "@/components/company-logo";
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import type { Message, NotebookFile } from "@/types";
@@ -30,9 +31,11 @@ interface NotebookLayoutProps {
   initialMessages: Message[];
   notebookDescription?: string | null;
   starterPrompts?: string[] | null;
+  companyName?: string;
+  companyDomain?: string;
 }
 
-export function NotebookLayout({ notebookId, notebookTitle, notebookFiles, initialMessages, notebookDescription, starterPrompts }: NotebookLayoutProps) {
+export function NotebookLayout({ notebookId, notebookTitle, notebookFiles, initialMessages, notebookDescription, starterPrompts, companyName, companyDomain }: NotebookLayoutProps) {
   const [sourcesOpen, setSourcesOpen] = useState(true);
   const [studioOpen, setStudioOpen] = useState(false);
   const [studioMounted, setStudioMounted] = useState(false);
@@ -124,6 +127,7 @@ export function NotebookLayout({ notebookId, notebookTitle, notebookFiles, initi
   // Check if any files are still processing
   const hasProcessingFiles = files.some((f) => f.status === "processing");
   const hasReadyFiles = files.some((f) => f.status === "ready");
+  const hasErrorFiles = files.some((f) => f.status === "error");
 
   return (
     <div className="flex h-dvh flex-col bg-background">
@@ -138,6 +142,10 @@ export function NotebookLayout({ notebookId, notebookTitle, notebookFiles, initi
               <span className="hidden sm:inline text-xs">{t("dashboard")}</span>
             </Button>
           </Link>
+
+          {companyName && (
+            <CompanyLogo domain={companyDomain} name={companyName} size="sm" />
+          )}
 
           {/* Desktop sources toggle */}
           <button
@@ -232,7 +240,8 @@ export function NotebookLayout({ notebookId, notebookTitle, notebookFiles, initi
             notebookId={notebookId}
             initialMessages={initialMessages}
             isProcessing={hasProcessingFiles && !hasReadyFiles}
-            hasFiles={files.length > 0}
+            hasFiles={hasReadyFiles}
+            hasErrorFiles={hasErrorFiles && !hasReadyFiles && !hasProcessingFiles}
             description={notebookDescription}
             starterPrompts={currentStarterPrompts}
             onFileUploaded={handleFileUploaded}

@@ -240,7 +240,9 @@
     "uploadFirst": "טען נתוני חברה תחילה...",
     "browseFiles": "עיין בקבצים",
     "uploading": "מעלה...",
-    "send": "שלח הודעה"
+    "send": "שלח הודעה",
+    "processingFailed": "העיבוד נכשל",
+    "tryReupload": "נסה להעלות את הקובץ מחדש."
   },
   "sources": {
     "title": "מקורות",

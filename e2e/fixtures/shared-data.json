@@ -1,0 +1,19 @@
+{
+  "notebook": {
+    "id": "nb-shared-1",
+    "title": "Shared Notebook",
+    "description": "A shared research notebook"
+  },
+  "messages": [
+    {
+      "id": "m-shared-1",
+      "role": "user",
+      "content": "Tell me about this topic"
+    },
+    {
+      "id": "m-shared-2",
+      "role": "assistant",
+      "content": "Here is what I found in the documents."
+    }
+  ]
+}

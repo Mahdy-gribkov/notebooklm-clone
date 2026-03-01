@@ -12,6 +12,7 @@ import { SourcePanel } from "@/components/source-panel";
 import { Mascot } from "@/components/mascot";
 import { useTranslations } from "next-intl";
 import { validateUploadFile } from "@/lib/validate-file";
+import { CHAT_PROSE_CLASSES } from "@/lib/constants";
 import type { Message, NotebookFile, Source } from "@/types";
 
 interface ChatInterfaceProps {
@@ -19,6 +20,7 @@ interface ChatInterfaceProps {
   initialMessages: Message[];
   isProcessing?: boolean;
   hasFiles?: boolean;
+  hasErrorFiles?: boolean;
   description?: string | null;
   starterPrompts?: string[] | null;
   onFileUploaded?: (file: NotebookFile) => void;
@@ -26,12 +28,13 @@ interface ChatInterfaceProps {
   setIsUploading?: (v: boolean) => void;
 }
 
-export function ChatInterface({ notebookId, initialMessages, isProcessing = false, hasFiles = true, description, starterPrompts: dynamicPrompts, onFileUploaded, isUploading: externalUploading, setIsUploading }: ChatInterfaceProps) {
+export function ChatInterface({ notebookId, initialMessages, isProcessing = false, hasFiles = true, hasErrorFiles = false, description, starterPrompts: dynamicPrompts, onFileUploaded, isUploading: externalUploading, setIsUploading }: ChatInterfaceProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [savedNoteId, setSavedNoteId] = useState<string | null>(null);
+  const savedMessages = useRef(new Set<string>());
   const [centerUploading, setCenterUploading] = useState(false);
   const t = useTranslations("chat");
 
@@ -131,6 +134,8 @@ export function ChatInterface({ notebookId, initialMessages, isProcessing = fals
   }, []);
 
   const saveToNote = useCallback(async (messageId: string, content: string) => {
+    if (savedMessages.current.has(messageId)) return;
+    savedMessages.current.add(messageId);
     try {
       const res = await fetch(`/api/notebooks/${notebookId}/notes`, {
         method: "POST",
@@ -140,8 +145,11 @@ export function ChatInterface({ notebookId, initialMessages, isProcessing = fals
       if (res.ok) {
         setSavedNoteId(messageId);
         setTimeout(() => setSavedNoteId(null), 2000);
+      } else {
+        savedMessages.current.delete(messageId);
       }
     } catch (err) {
+      savedMessages.current.delete(messageId);
       console.error("[chat] Save to note failed:", err);
     }
   }, [notebookId]);
@@ -187,7 +195,7 @@ export function ChatInterface({ notebookId, initialMessages, isProcessing = fals
   return (
     <div className="flex h-full flex-col min-h-0">
       {errorMessage && (
-        <div className="fixed top-4 end-4 z-50 flex items-center gap-2 bg-destructive/10 border border-destructive/20 px-3 py-2.5 rounded-lg text-xs text-destructive animate-slide-up max-w-sm shadow-lg">
+        <div className="fixed bottom-24 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2 bg-destructive/10 border border-destructive/20 px-3 py-2.5 rounded-lg text-xs text-destructive animate-slide-up max-w-sm shadow-lg">
           <svg className="h-4 w-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
           </svg>
@@ -217,8 +225,14 @@ export function ChatInterface({ notebookId, initialMessages, isProcessing = fals
                   onChange={handleCenterFileChange}
                 />
                 <div className="mb-6 cursor-pointer" onClick={() => fileInputRef.current?.click()}>
-                  <Mascot size="lg" mood="happy" />
+                  <Mascot size="lg" mood={hasErrorFiles ? "neutral" : "happy"} />
                 </div>
+                {hasErrorFiles && (
+                  <div className="rounded-xl border border-destructive/20 bg-destructive/5 p-3 text-center mb-4 max-w-sm">
+                    <p className="text-sm text-destructive font-medium">{t("processingFailed")}</p>
+                    <p className="text-xs text-muted-foreground mt-1">{t("tryReupload")}</p>
+                  </div>
+                )}
                 <p className="text-lg font-bold mb-1">{t("uploadToStart")}</p>
                 <p className="text-sm text-muted-foreground mb-3">{t("uploadToStartDesc")}</p>
                 <div className="flex items-center gap-1.5 mb-5 text-[10px] text-muted-foreground/50">
@@ -275,7 +289,7 @@ export function ChatInterface({ notebookId, initialMessages, isProcessing = fals
                       key={prompt.text}
                       onClick={() => handleStarterPrompt(prompt.text)}
                       disabled={isProcessing}
-                      className="group flex items-start gap-3 rounded-xl border border-border/60 bg-card p-4 text-left text-xs text-muted-foreground hover:bg-accent/60 hover:text-foreground hover:border-primary/30 hover:shadow-md hover:-translate-y-0.5 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="group flex items-start gap-3 rounded-xl border border-border/60 bg-card p-4 text-left text-xs text-muted-foreground hover:bg-accent/60 hover:text-foreground hover:border-primary/30 hover:shadow-md hover:-translate-y-0.5 transition-all disabled:opacity-50 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
                     >
                       <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-primary/10 mt-0.5">
                         <StarterIcon type={prompt.icon} />
@@ -314,7 +328,7 @@ export function ChatInterface({ notebookId, initialMessages, isProcessing = fals
                       <div
                         className={`group/msg relative rounded-2xl px-4 py-2.5 text-sm leading-relaxed ${isUser
                           ? "bg-gradient-to-br from-primary to-primary/85 text-primary-foreground rounded-br-md shadow-sm shadow-primary/20"
-                          : "bg-[#FAF9F7] dark:bg-muted/20 border border-border/40 border-l-2 border-l-primary/50 shadow-sm shadow-black/[0.03] prose dark:prose-invert prose-sm max-w-none prose-p:my-1.5 prose-headings:my-2 prose-ul:my-1.5 prose-ol:my-1.5 prose-li:my-0.5"
+                          : `pe-12 bg-[#FAF9F7] dark:bg-muted/20 border border-border/40 border-l-2 border-l-primary/50 shadow-sm shadow-black/[0.03] ${CHAT_PROSE_CLASSES}`
                           }`}
                       >
                         {isUser ? (
@@ -329,6 +343,7 @@ export function ChatInterface({ notebookId, initialMessages, isProcessing = fals
                               onClick={() => copyMessage(message.id, message.content)}
                               className="p-1.5 rounded-md hover:bg-background/80 text-muted-foreground/50 hover:text-foreground transition-colors focus:outline-none focus:ring-2 focus:ring-primary/30"
                               aria-label={t("copyMessage")}
+                              title={t("copyMessage")}
                             >
                               {copiedId === message.id ? (
                                 <svg className="h-3.5 w-3.5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -344,6 +359,7 @@ export function ChatInterface({ notebookId, initialMessages, isProcessing = fals
                               onClick={() => saveToNote(message.id, message.content)}
                               className="p-1.5 rounded-md hover:bg-background/80 text-muted-foreground/50 hover:text-foreground transition-colors focus:outline-none focus:ring-2 focus:ring-primary/30"
                               aria-label={t("saveToNote")}
+                              title={t("saveToNote")}
                             >
                               {savedNoteId === message.id ? (
                                 <svg className="h-3.5 w-3.5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">

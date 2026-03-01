@@ -8,6 +8,7 @@ import { SourcePanel } from "@/components/source-panel";
 import { useTranslations } from "next-intl";
 import dynamic from "next/dynamic";
 import { CompanyLogo } from "@/components/company-logo";
+import { CHAT_PROSE_CLASSES } from "@/lib/constants";
 import type { Message, Note, StudioGeneration, Source } from "@/types";
 
 const MarkdownRenderer = dynamic(() => import("@/components/markdown-renderer"), {
@@ -199,7 +200,7 @@ export default function SharedNotebookPage() {
           <p className="text-sm text-muted-foreground">Loading company profile...</p>
           <div className="flex gap-3 w-full max-w-xs">
             {[1, 2, 3].map((i) => (
-              <div key={i} className="flex-1 h-16 rounded-xl bg-card animate-shimmer" style={{ animationDelay: `${i * 200}ms` }} />
+              <div key={i} className="flex-1 h-16 rounded-xl bg-card animate-shimmer" style={{ animationDelay: `${i * 80}ms` }} />
             ))}
           </div>
         </div>
@@ -254,7 +255,7 @@ export default function SharedNotebookPage() {
             ) : (
               <Logo size="sm" />
             )}
-            <span className="hidden sm:inline text-[10px] text-muted-foreground/40 font-medium tracking-wide">Powered by DocChat</span>
+            <span className="hidden sm:inline text-[10px] text-muted-foreground/60 font-medium tracking-wide">Powered by DocChat</span>
           </div>
           <ThemeToggle />
         </div>
@@ -262,21 +263,21 @@ export default function SharedNotebookPage() {
 
       {/* Hero section */}
       <div className="border-b border-border/40 bg-gradient-to-b from-primary/[0.03] to-transparent">
-        <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 py-6 sm:py-8">
-          <div className="flex items-start gap-5">
+        <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 py-3 sm:py-4">
+          <div className="flex items-start gap-4">
             {data.company?.name && (
               <div className="hidden sm:block shrink-0">
                 <CompanyLogo domain={data.company.website ?? undefined} name={data.company.name} size="lg" />
               </div>
             )}
             <div className="min-w-0 flex-1">
-              <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">{data.notebook.title}</h1>
+              <h1 className="text-xl sm:text-2xl font-bold tracking-tight">{data.notebook.title}</h1>
               {descriptionText && (
-                <p className="text-muted-foreground mt-1.5 text-sm sm:text-base leading-relaxed max-w-2xl">
+                <p className="text-muted-foreground mt-1 text-sm leading-relaxed max-w-2xl line-clamp-1">
                   {descriptionText}
                 </p>
               )}
-              <div className="flex flex-wrap items-center gap-2 mt-3">
+              <div className="flex flex-wrap items-center gap-2 mt-2">
                 {data.company?.category && (
                   <span className="text-xs font-medium text-primary bg-primary/10 px-2.5 py-1 rounded-full">
                     {data.company.category}
@@ -445,7 +446,7 @@ export default function SharedNotebookPage() {
                     <div
                       className={`group/msg relative rounded-2xl px-4 py-2.5 text-sm ${msg.role === "user"
                         ? "max-w-[85%] lg:max-w-2xl xl:max-w-3xl bg-gradient-to-br from-primary to-primary/85 text-primary-foreground rounded-br-md shadow-sm shadow-primary/20"
-                        : "max-w-[85%] lg:max-w-2xl xl:max-w-3xl bg-[#FAF9F7] dark:bg-muted/20 border border-border/40 border-l-2 border-l-primary/50 shadow-sm shadow-black/[0.03] prose dark:prose-invert prose-sm max-w-none prose-p:my-1.5 prose-headings:my-2 prose-ul:my-1.5 prose-ol:my-1.5 prose-li:my-0.5"
+                        : `max-w-[85%] lg:max-w-2xl xl:max-w-3xl pe-12 bg-[#FAF9F7] dark:bg-muted/20 border border-border/40 border-l-2 border-l-primary/50 shadow-sm shadow-black/[0.03] ${CHAT_PROSE_CLASSES}`
                         }`}
                     >
                       {msg.role === "assistant" && msg.content && (
@@ -536,7 +537,7 @@ export default function SharedNotebookPage() {
               <div className="space-y-4">
                 {data.notes.length === 0 && (
                   <div className="flex flex-col items-center py-16 text-center">
-                    <svg className="h-10 w-10 text-muted-foreground/40 dark:text-muted-foreground/50 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                    <svg className="h-10 w-10 text-muted-foreground/60 dark:text-muted-foreground/50 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                     </svg>
                     <p className="text-sm font-medium text-muted-foreground">No notes yet</p>
@@ -558,7 +559,7 @@ export default function SharedNotebookPage() {
               <div className="space-y-4">
                 {data.generations.length === 0 && (
                   <div className="flex flex-col items-center py-16 text-center">
-                    <svg className="h-10 w-10 text-muted-foreground/40 dark:text-muted-foreground/50 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                    <svg className="h-10 w-10 text-muted-foreground/60 dark:text-muted-foreground/50 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5.002 5.002 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
                     </svg>
                     <p className="text-sm font-medium text-muted-foreground">No studio outputs yet</p>

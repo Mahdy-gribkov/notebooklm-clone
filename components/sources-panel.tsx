@@ -271,7 +271,7 @@ export function SourcesPanel({ notebookId, initialFiles, isUploading: externalUp
       <div className="flex-1 overflow-y-auto scrollbar-thin mt-2 min-h-0">
         {files.length === 0 && !uploading ? (
           <div className="flex flex-col items-center justify-center h-full px-4 py-8 text-center">
-            <svg className="h-10 w-10 text-muted-foreground/30 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="h-10 w-10 text-muted-foreground/50 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
             </svg>
             <p className="text-xs font-medium text-muted-foreground">{t("noSources")}</p>
@@ -291,7 +291,7 @@ export function SourcesPanel({ notebookId, initialFiles, isUploading: externalUp
                 className="group flex items-center gap-2.5 rounded-lg px-2.5 py-2.5 hover:bg-accent/60 transition-all relative"
               >
                 <div className="relative shrink-0">
-                  <svg className="h-[1.125rem] w-[1.125rem] text-muted-foreground/40" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="h-[1.125rem] w-[1.125rem] text-muted-foreground/60" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
                   </svg>
                   <span className={`absolute -top-0.5 -right-0.5 h-2.5 w-2.5 rounded-full border-2 border-background ${
@@ -321,16 +321,16 @@ export function SourcesPanel({ notebookId, initialFiles, isUploading: externalUp
                     <span className="text-[10px] text-destructive mr-1">{t("deleteConfirm")}</span>
                     <button
                       onClick={() => handleDelete(file.id)}
-                      className="h-5 w-5 flex items-center justify-center rounded text-destructive hover:bg-destructive/10"
+                      className="h-8 w-8 flex items-center justify-center rounded-md text-destructive hover:bg-destructive/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-destructive/30"
                       aria-label="Confirm delete"
                     >
-                      <svg className="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
                       </svg>
                     </button>
                     <button
                       onClick={() => setConfirmDeleteId(null)}
-                      className="h-5 w-5 flex items-center justify-center rounded text-muted-foreground hover:bg-accent"
+                      className="h-8 w-8 flex items-center justify-center rounded-md text-muted-foreground hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
                       aria-label="Cancel delete"
                     >
                       <svg className="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -346,7 +346,7 @@ export function SourcesPanel({ notebookId, initialFiles, isUploading: externalUp
                         fileId={file.id}
                         trigger={
                           <button
-                            className="h-6 w-6 flex items-center justify-center rounded text-muted-foreground hover:text-foreground hover:bg-accent"
+                            className="h-8 w-8 flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
                             aria-label={t("viewPdf")}
                           >
                             <svg className="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -359,7 +359,7 @@ export function SourcesPanel({ notebookId, initialFiles, isUploading: externalUp
                     )}
                     <button
                       onClick={() => setConfirmDeleteId(file.id)}
-                      className="h-6 w-6 flex items-center justify-center rounded text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                      className="h-8 w-8 flex items-center justify-center rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
                       aria-label={t("deleteFile")}
                     >
                       <svg className="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">

@@ -41,7 +41,7 @@ export function SourcePanel({ sources }: SourcePanelProps) {
           </svg>
           {t("sourcesCited")}
         </p>
-        <span className="text-[10px] text-muted-foreground/60">
+        <span className="text-[10px] text-muted-foreground">
           {t("matches", { count: sources.length })}
         </span>
       </div>
@@ -51,11 +51,12 @@ export function SourcePanel({ sources }: SourcePanelProps) {
           <div
             key={source.chunkId}
             id={`source-${i + 1}`}
-            className="group/src rounded-lg border border-s-2 border-s-primary/60 bg-background p-2.5 cursor-pointer select-none transition-all hover:bg-accent/30"
+            className="group/src rounded-lg border border-s-2 border-s-primary/60 bg-background p-2.5 cursor-pointer select-none transition-all hover:bg-accent/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
             onClick={() => setExpanded(expanded === i ? null : i)}
             role="button"
             tabIndex={0}
             aria-expanded={expanded === i}
+            aria-label={`${t("source", { number: i + 1 })}${source.fileName ? ` ${source.fileName}` : ""}`}
             onKeyDown={(e) => {
               if (e.key === "Enter" || e.key === " ") {
                 e.preventDefault();
@@ -91,7 +92,7 @@ export function SourcePanel({ sources }: SourcePanelProps) {
                 {/* Copy button */}
                 <button
                   onClick={(e) => { e.stopPropagation(); copyContent(i, source.content); }}
-                  className="opacity-0 group-hover/src:opacity-100 transition-opacity p-0.5 rounded hover:bg-muted text-muted-foreground/40 hover:text-muted-foreground"
+                  className="opacity-0 group-hover/src:opacity-100 transition-opacity p-1.5 rounded-md hover:bg-muted text-muted-foreground/60 hover:text-muted-foreground min-h-[44px] min-w-[44px] flex items-center justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
                   aria-label={t("copySource")}
                 >
                   {copiedIdx === i ? (

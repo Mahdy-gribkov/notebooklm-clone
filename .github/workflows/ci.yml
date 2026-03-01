@@ -50,6 +50,9 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Security audit
+        run: npm audit --audit-level=high || true
+
       - name: Run tests with coverage
         run: npx vitest run --coverage
 
@@ -61,10 +64,27 @@ jobs:
           path: coverage/
           retention-days: 7
 
+  component-test:
+    name: Component tests (RTL)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "22"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run component tests
+        run: npx vitest run __tests__/components/
+
   build:
     name: Build
     runs-on: ubuntu-latest
-    needs: [check, test]
+    needs: [check, test, component-test]
     steps:
       - uses: actions/checkout@v6
 
@@ -117,6 +137,70 @@ jobs:
             NEXT_PUBLIC_APP_URL=${{ secrets.NEXT_PUBLIC_APP_URL }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+  health-check:
+    name: Post-deploy health check
+    runs-on: ubuntu-latest
+    needs: docker-push
+    steps:
+      - name: Wait for Render deploy
+        run: sleep 120
+
+      - name: Check health
+        run: curl -sf --max-time 30 https://docchat-cagb.onrender.com/ || exit 1
+
+  e2e:
+    name: E2E smoke tests
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "22"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Build app
+        run: npm run build
+
+      - name: Run E2E tests
+        run: npx playwright test
+
+      - name: Upload Playwright report
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 7
+
+  lighthouse:
+    name: Lighthouse CI
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "22"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build app
+        run: npm run build
+
+      - name: Run Lighthouse CI
+        run: npx @lhci/cli autorun
 
   docker-validate:
     name: Docker build (validate)

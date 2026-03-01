@@ -74,6 +74,33 @@ describe("trimMessages", () => {
     expect(result).toEqual(messages);
   });
 
+  it("computes dynamic budget from systemPromptChars", () => {
+    // Budget = 32000 - 20000 - 4000 = 8000
+    const messages = [
+      msg("user", "a".repeat(5000)),
+      msg("assistant", "b".repeat(5000)),
+      msg("user", "c".repeat(3000)),
+    ];
+    // Last = 3000. History backwards: "b" (5000) => 8000 <= 8000 => keep. "a" (5000) => 13000 > 8000 => stop
+    const result = trimMessages(messages, undefined, 20000);
+    expect(result).toEqual([
+      msg("assistant", "b".repeat(5000)),
+      msg("user", "c".repeat(3000)),
+    ]);
+  });
+
+  it("floors budget at 2000 when systemPromptChars is very large", () => {
+    // Budget = max(32000 - 30000 - 4000, 2000) = max(-2000, 2000) = 2000
+    const messages = [
+      msg("user", "a".repeat(3000)),
+      msg("assistant", "b".repeat(3000)),
+      msg("user", "c".repeat(1500)),
+    ];
+    // Last = 1500. History backwards: "b" (3000) => 4500 > 2000 => stop
+    const result = trimMessages(messages, undefined, 30000);
+    expect(result).toEqual([msg("user", "c".repeat(1500))]);
+  });
+
   it("drops multiple old messages preserving order", () => {
     const messages = [
       msg("user", "a".repeat(4000)),

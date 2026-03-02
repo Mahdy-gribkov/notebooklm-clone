@@ -223,6 +223,10 @@ export async function DELETE(
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
+  if (!checkRateLimit(`member-delete:${user.id}`, 10, 60_000)) {
+    return NextResponse.json({ error: "Rate limit exceeded" }, { status: 429, headers: { "Retry-After": "60" } });
+  }
+
   // Verify ownership
   const { data: notebook } = await supabase
     .from("notebooks")

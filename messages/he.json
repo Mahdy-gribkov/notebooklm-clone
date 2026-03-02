@@ -101,6 +101,8 @@
     "next": "הבא",
     "back": "הקודם",
     "notebookDeleted": "המחקר נמחק",
+    "fetchError": "טעינת המחברות נכשלה. נסה לרענן את הדף.",
+    "retry": "רענון",
     "showMore": "הצג עוד",
     "showLess": "הצג פחות"
   },
@@ -264,7 +266,8 @@
     "duplicateFile": "קובץ זה כבר נטען",
     "fileLimitReached": "מקסימום 5 קבצים למחקר. מחק קובץ כדי להוסיף עוד.",
     "uploadingCount": "מעלה {count} {count, plural, one {קובץ} other {קבצים}}...",
-    "uploadInProgress": "העלאה בתהליך מפאנל אחר..."
+    "uploadInProgress": "העלאה בתהליך מפאנל אחר...",
+    "deleteFailed": "מחיקת הקובץ נכשלה. נסה שוב."
   },
   "sourcePanel": {
     "sourcesCited": "מקורות מצוטטים",
@@ -335,7 +338,11 @@
     "download": "הורד",
     "copy": "העתק",
     "copied": "הועתק!",
-    "contents": "תוכן עניינים"
+    "contents": "תוכן עניינים",
+    "justNow": "עכשיו",
+    "minutesAgo": "לפני {count} דק׳",
+    "hoursAgo": "לפני {count} שע׳",
+    "daysAgo": "לפני {count} ימים"
   },
   "upload": {
     "dropOrBrowse": "גרור PDF לכאן או {browse}",
@@ -406,7 +413,14 @@
     "signOut": "התנתקות",
     "deleteAccount": "מחיקת חשבון",
     "deleteAccountConfirm": "האם אתה בטוח? פעולה זו תמחק לצמיתות את החשבון וכל הנתונים שלך.",
-    "deleteAccountNote": "לא ניתן לבטל פעולה זו."
+    "deleteAccountNote": "לא ניתן לבטל פעולה זו.",
+    "allNotebooksDeleted": "כל המחברות נמחקו",
+    "deleteAllFailed": "מחיקת המחברות נכשלה. נסה שוב.",
+    "deleteAccountFailed": "מחיקת החשבון נכשלה. נסה שוב.",
+    "profileUpdated": "הפרופיל עודכן",
+    "prefsSaved": "ההעדפות נשמרו",
+    "accentUpdated": "צבע הדגש עודכן",
+    "exportFailed": "ייצוא הנתונים נכשל. נסה שוב."
   },
   "share": {
     "title": "שיתוף פרופיל חברה",
@@ -427,6 +441,13 @@
     "expire30": "30 ימים",
     "expireNever": "לעולם לא",
     "createFailed": "יצירת הקישור נכשלה"
+  },
+  "pdfViewer": {
+    "title": "מציג מסמכים",
+    "download": "הורד PDF",
+    "loadError": "לא ניתן לטעון את ה-PDF. נסה שוב.",
+    "retry": "נסה שוב",
+    "iframeTitle": "מציג PDF"
   },
   "export": {
     "title": "ייצוא",

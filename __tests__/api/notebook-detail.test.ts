@@ -123,7 +123,7 @@ describe("GET /api/notebooks/[id]", () => {
     expect(res.status).toBe(200);
     const body = await res.json();
     expect(body).toEqual(notebook);
-    expect(res.headers.get("Cache-Control")).toBe("private, max-age=5, stale-while-revalidate=30");
+    expect(res.headers.get("Cache-Control")).toBe("private, no-cache");
   });
 });
 

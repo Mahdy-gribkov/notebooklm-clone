@@ -1,4 +1,5 @@
 import { authenticateRequest } from "@/lib/auth";
+import { checkRateLimit } from "@/lib/rate-limit";
 import { createClient } from "@/lib/supabase/server";
 import { isValidUUID, sanitizeText } from "@/lib/validate";
 import { NextResponse } from "next/server";
@@ -18,6 +19,10 @@ export async function PATCH(
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  if (!checkRateLimit(`note-patch:${user.id}`, 30, 60_000)) {
+    return NextResponse.json({ error: "Rate limit exceeded" }, { status: 429, headers: { "Retry-After": "60" } });
+  }
 
   const body = await request.json().catch(() => ({}));
   const updates: Record<string, string> = { updated_at: new Date().toISOString() };
@@ -53,6 +58,10 @@ export async function DELETE(
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  if (!checkRateLimit(`note-delete:${user.id}`, 10, 60_000)) {
+    return NextResponse.json({ error: "Rate limit exceeded" }, { status: 429, headers: { "Retry-After": "60" } });
+  }
 
   const { error } = await supabase
     .from("notes")

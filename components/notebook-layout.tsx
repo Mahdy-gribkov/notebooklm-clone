@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useRef } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
 import Link from "next/link";
 import dynamic from "next/dynamic";
 import { ChatInterface } from "@/components/chat-interface";
@@ -69,6 +69,14 @@ export function NotebookLayout({ notebookId, notebookTitle, notebookFiles, initi
       }
     }, 10_000);
   }, [notebookId]);
+
+  // Cleanup promptRefreshTimer on unmount
+  useEffect(() => {
+    return () => {
+      if (promptRefreshTimer.current) clearTimeout(promptRefreshTimer.current);
+    };
+  }, []);
+
   const t = useTranslations("notebook");
   const ts = useTranslations("share");
 
@@ -172,6 +180,7 @@ export function NotebookLayout({ notebookId, notebookTitle, notebookFiles, initi
                 onBlur={saveTitle}
                 onKeyDown={handleTitleKeyDown}
                 autoFocus
+                aria-label={t("doubleClickToEdit")}
                 className="w-full text-sm font-semibold bg-transparent border-b border-primary/40 outline-none py-0.5"
                 maxLength={200}
               />

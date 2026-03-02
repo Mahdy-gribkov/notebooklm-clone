@@ -1,4 +1,5 @@
 import { authenticateRequest } from "@/lib/auth";
+import { checkRateLimit } from "@/lib/rate-limit";
 import { createClient } from "@/lib/supabase/server";
 import { isValidUUID } from "@/lib/validate";
 import { NextRequest, NextResponse } from "next/server";
@@ -18,6 +19,10 @@ export async function GET(
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
+  if (!checkRateLimit(`gen-get:${user.id}`, 60, 60_000)) {
+    return NextResponse.json({ error: "Rate limit exceeded" }, { status: 429, headers: { "Retry-After": "60" } });
+  }
+
   const { data, error } = await supabase
     .from("studio_generations")
     .select("id, notebook_id, action, result, created_at")
@@ -27,7 +32,7 @@ export async function GET(
 
   if (error) return NextResponse.json({ error: "Internal error" }, { status: 500 });
   return NextResponse.json(data, {
-    headers: { "Cache-Control": "private, max-age=10, stale-while-revalidate=60" },
+    headers: { "Cache-Control": "private, no-cache" },
   });
 }
 
@@ -54,6 +59,10 @@ export async function POST(
     .eq("user_id", user.id)
     .single();
   if (!notebook) return NextResponse.json({ error: "Notebook not found" }, { status: 404 });
+
+  if (!checkRateLimit(`gen-post:${user.id}`, 20, 60_000)) {
+    return NextResponse.json({ error: "Rate limit exceeded" }, { status: 429, headers: { "Retry-After": "60" } });
+  }
 
   const body = await request.json().catch(() => ({}));
   const { action, result } = body as { action: string; result: unknown };
@@ -101,6 +110,10 @@ export async function DELETE(
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  if (!checkRateLimit(`gen-delete:${user.id}`, 10, 60_000)) {
+    return NextResponse.json({ error: "Rate limit exceeded" }, { status: 429, headers: { "Retry-After": "60" } });
+  }
 
   const { error } = await supabase
     .from("studio_generations")

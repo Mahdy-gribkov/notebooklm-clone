@@ -2,6 +2,7 @@ import { authenticateRequest } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { getServiceClient } from "@/lib/supabase/service";
 import { updateNotebookStatus } from "@/lib/notebook-status";
+import { checkRateLimit } from "@/lib/rate-limit";
 import { isValidUUID } from "@/lib/validate";
 import { NextResponse } from "next/server";
 
@@ -25,6 +26,10 @@ export async function DELETE(
 
   if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  if (!checkRateLimit(`file-delete:${user.id}`, 10, 60_000)) {
+    return NextResponse.json({ error: "Rate limit exceeded" }, { status: 429, headers: { "Retry-After": "60" } });
   }
 
   const serviceClient = getServiceClient();

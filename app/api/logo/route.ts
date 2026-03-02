@@ -7,8 +7,13 @@ const TRANSPARENT_PNG = Buffer.from(
   "base64"
 );
 
-const CACHE_HEADERS = {
-  "Cache-Control": "public, max-age=604800, stale-while-revalidate=86400",
+const SUCCESS_CACHE = {
+  "Cache-Control": "public, max-age=86400, stale-while-revalidate=3600",
+  "Content-Type": "image/png",
+};
+
+const FAILURE_CACHE = {
+  "Cache-Control": "public, max-age=300",
   "Content-Type": "image/png",
 };
 
@@ -55,7 +60,7 @@ export async function GET(request: NextRequest) {
       // Real favicons are typically >100 bytes.
       if (buf.length > 100) {
         return new NextResponse(buf, {
-          headers: { ...CACHE_HEADERS, "Content-Type": contentType },
+          headers: { ...SUCCESS_CACHE, "Content-Type": contentType },
         });
       }
     }
@@ -72,7 +77,7 @@ export async function GET(request: NextRequest) {
       const buf = Buffer.from(await res.arrayBuffer());
       if (buf.length > 100) {
         return new NextResponse(buf, {
-          headers: { ...CACHE_HEADERS, "Content-Type": contentType },
+          headers: { ...SUCCESS_CACHE, "Content-Type": contentType },
         });
       }
     }
@@ -80,8 +85,8 @@ export async function GET(request: NextRequest) {
     console.error(`[logo] DuckDuckGo failed for ${host}:`, e instanceof Error ? e.message : e);
   }
 
-  // Total failure: return transparent PNG so letter badge shows
+  // Total failure: return transparent PNG with short cache so browser retries soon
   return new NextResponse(TRANSPARENT_PNG, {
-    headers: CACHE_HEADERS,
+    headers: FAILURE_CACHE,
   });
 }

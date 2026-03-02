@@ -56,7 +56,7 @@ export async function GET(
   }
 
   return NextResponse.json(files ?? [], {
-    headers: { "Cache-Control": "private, max-age=10, stale-while-revalidate=60" },
+    headers: { "Cache-Control": "private, no-cache" },
   });
 }
 

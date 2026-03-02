@@ -114,7 +114,20 @@ export async function POST(request: Request) {
           share_token: null,
         });
       if (companyError) {
-        console.error("[clone-featured] Companies insert failed:", companyError.message);
+        console.error("[clone-featured] Companies insert failed, retrying:", companyError.message);
+        // Retry once without source_hash constraint
+        const { error: retryErr } = await serviceClient
+          .from("companies")
+          .upsert({
+            name: title,
+            website: featured.website,
+            category: featured.category,
+            notebook_id: notebook.id,
+            share_token: null,
+          }, { onConflict: "notebook_id" });
+        if (retryErr) {
+          console.error("[clone-featured] Companies retry also failed:", retryErr.message);
+        }
       }
     } catch (e) {
       console.error("[clone-featured] Companies insert error:", e instanceof Error ? e.message : e);

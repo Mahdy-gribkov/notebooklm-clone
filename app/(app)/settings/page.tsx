@@ -91,7 +91,7 @@ export default function SettingsPage() {
       if (res.ok) {
         const data = await res.json();
         setAvatarUrl(data.avatar_url);
-        addToast("Profile photo updated");
+        addToast(t("profileUpdated"));
       } else {
         const err = await res.json().catch(() => ({}));
         addToast(err.error || "Upload failed", "error");
@@ -111,8 +111,12 @@ export default function SettingsPage() {
         body: JSON.stringify({ full_name: fullName }),
       });
       if (res.ok) {
-        addToast("Profile updated");
+        addToast(t("profileUpdated"));
+      } else {
+        addToast(t("exportFailed"), "error");
       }
+    } catch {
+      addToast(t("exportFailed"), "error");
     } finally {
       setSavingName(false);
     }
@@ -132,9 +136,9 @@ export default function SettingsPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ accent_color: hue }),
       });
-      addToast("Accent color updated");
+      addToast(t("accentUpdated"));
     } catch {
-      // Silent fail
+      addToast(t("accentUpdated"));
     }
   }
 
@@ -147,7 +151,7 @@ export default function SettingsPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ ai_style: style }),
       });
-      if (res.ok) addToast("Preferences saved");
+      if (res.ok) addToast(t("prefsSaved"));
     } finally {
       setSavingPrefs(false);
     }
@@ -171,7 +175,11 @@ export default function SettingsPage() {
         a.download = `docchat-export-${new Date().toISOString().split("T")[0]}.json`;
         a.click();
         URL.revokeObjectURL(url);
+      } else {
+        addToast(t("exportFailed"), "error");
       }
+    } catch {
+      addToast(t("exportFailed"), "error");
     } finally {
       setExporting(false);
     }
@@ -182,8 +190,13 @@ export default function SettingsPage() {
     try {
       const res = await fetch("/api/notebooks", { method: "DELETE" });
       if (res.ok) {
-        router.refresh();
+        addToast(t("allNotebooksDeleted"));
+        router.push("/dashboard");
+      } else {
+        addToast(t("deleteAllFailed"), "error");
       }
+    } catch {
+      addToast(t("deleteAllFailed"), "error");
     } finally {
       setDeletingAll(false);
     }
@@ -195,7 +208,11 @@ export default function SettingsPage() {
       const res = await fetch("/api/account", { method: "DELETE" });
       if (res.ok) {
         window.location.href = "/login";
+      } else {
+        addToast(t("deleteAccountFailed"), "error");
       }
+    } catch {
+      addToast(t("deleteAccountFailed"), "error");
     } finally {
       setDeleting(false);
       setConfirmDelete(false);

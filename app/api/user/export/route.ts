@@ -20,25 +20,35 @@ export async function GET(request: Request) {
   }
 
   // Fetch all user data
-  const [notebooks, notes, messages] = await Promise.all([
-    supabase.from("notebooks").select("*").eq("user_id", user.id).order("created_at", { ascending: false }).limit(5000),
-    supabase.from("notes").select("*").eq("user_id", user.id).order("created_at", { ascending: false }).limit(5000),
-    supabase.from("messages").select("id, notebook_id, role, content, created_at").eq("user_id", user.id).order("created_at", { ascending: false }).limit(5000),
-  ]);
+  try {
+    const [notebooks, notes, messages] = await Promise.all([
+      supabase.from("notebooks").select("*").eq("user_id", user.id).order("created_at", { ascending: false }).limit(5000),
+      supabase.from("notes").select("*").eq("user_id", user.id).order("created_at", { ascending: false }).limit(5000),
+      supabase.from("messages").select("id, notebook_id, role, content, created_at").eq("user_id", user.id).order("created_at", { ascending: false }).limit(5000),
+    ]);
 
-  const exportData = {
-    exported_at: new Date().toISOString(),
-    user_email: user.email,
-    notebooks: notebooks.data ?? [],
-    notes: notes.data ?? [],
-    messages: messages.data ?? [],
-  };
+    if (notebooks.error || notes.error || messages.error) {
+      console.error("[user/export] DB query failed:", notebooks.error?.message, notes.error?.message, messages.error?.message);
+      return NextResponse.json({ error: "Failed to export data" }, { status: 500 });
+    }
 
-  return new NextResponse(JSON.stringify(exportData, null, 2), {
-    status: 200,
-    headers: {
-      "Content-Type": "application/json",
-      "Content-Disposition": `attachment; filename="docchat-export-${new Date().toISOString().split("T")[0]}.json"`,
-    },
-  });
+    const exportData = {
+      exported_at: new Date().toISOString(),
+      user_email: user.email,
+      notebooks: notebooks.data ?? [],
+      notes: notes.data ?? [],
+      messages: messages.data ?? [],
+    };
+
+    return new NextResponse(JSON.stringify(exportData, null, 2), {
+      status: 200,
+      headers: {
+        "Content-Type": "application/json",
+        "Content-Disposition": `attachment; filename="docchat-export-${new Date().toISOString().split("T")[0]}.json"`,
+      },
+    });
+  } catch (e) {
+    console.error("[user/export] Unexpected error:", e);
+    return NextResponse.json({ error: "Failed to export data" }, { status: 500 });
+  }
 }

@@ -17,6 +17,7 @@ interface SourcesPanelProps {
 
 export function SourcesPanel({ notebookId, initialFiles, isUploading: externalUploading, setIsUploading }: SourcesPanelProps) {
   const t = useTranslations("sources");
+  const tc = useTranslations("common");
   const [files, setFiles] = useState<NotebookFile[]>(initialFiles);
   const [uploadingFiles, setUploadingFiles] = useState<Map<string, number>>(new Map());
   const localUploading = uploadingFiles.size > 0;
@@ -144,9 +145,12 @@ export function SourcesPanel({ notebookId, initialFiles, isUploading: externalUp
       });
       if (res.ok) {
         setFiles((prev) => prev.filter((f) => f.id !== fileId));
+      } else {
+        setError(t("deleteFailed"));
       }
     } catch (err) {
       console.error("[sources] Delete failed:", err);
+      setError(t("deleteFailed"));
     }
   }
 
@@ -348,7 +352,7 @@ export function SourcesPanel({ notebookId, initialFiles, isUploading: externalUp
                     <button
                       onClick={() => handleDelete(file.id)}
                       className="h-8 w-8 flex items-center justify-center rounded-md text-destructive hover:bg-destructive/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-destructive/30"
-                      aria-label="Confirm delete"
+                      aria-label={t("deleteConfirm")}
                     >
                       <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
@@ -357,7 +361,7 @@ export function SourcesPanel({ notebookId, initialFiles, isUploading: externalUp
                     <button
                       onClick={() => setConfirmDeleteId(null)}
                       className="h-8 w-8 flex items-center justify-center rounded-md text-muted-foreground hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
-                      aria-label="Cancel delete"
+                      aria-label={tc("cancel")}
                     >
                       <svg className="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />

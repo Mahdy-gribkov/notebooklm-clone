@@ -89,7 +89,7 @@ export function StudioPanel({ notebookId }: StudioPanelProps) {
           }
         }
       })
-      .catch(() => { });
+      .catch((e) => { console.warn("[studio] Failed to load generations:", e); });
   }, [notebookId]);
 
   useEffect(() => {
@@ -97,7 +97,7 @@ export function StudioPanel({ notebookId }: StudioPanelProps) {
     fetch(`/api/notebooks/${notebookId}/notes`)
       .then((r) => (r.ok ? r.json() : []))
       .then((data) => setNotes(data))
-      .catch(() => { });
+      .catch((e) => { console.warn("[studio] Failed to load notes:", e); });
   }, [notebookId, notesLoaded]);
 
   async function handleCreateNote() {
@@ -211,11 +211,17 @@ export function StudioPanel({ notebookId }: StudioPanelProps) {
   );
 
   async function handleDeleteGeneration(genId: string) {
-    const res = await fetch(`/api/notebooks/${notebookId}/generations?generationId=${genId}`, {
-      method: "DELETE",
-    });
-    if (res.ok) {
-      setHistory((prev) => prev.filter((g) => g.id !== genId));
+    try {
+      const res = await fetch(`/api/notebooks/${notebookId}/generations?generationId=${genId}`, {
+        method: "DELETE",
+      });
+      if (res.ok) {
+        setHistory((prev) => prev.filter((g) => g.id !== genId));
+      } else {
+        setError("Failed to delete generation");
+      }
+    } catch {
+      setError("Failed to delete generation");
     }
   }
 
@@ -415,7 +421,7 @@ export function StudioPanel({ notebookId }: StudioPanelProps) {
                     <div className="min-w-0 flex-1">
                       <p className="text-xs font-medium truncate">{ACTION_LABELS[gen.action as StudioAction] || gen.action}</p>
                       <p className="text-[10px] text-muted-foreground" suppressHydrationWarning>
-                        {formatRelativeTime(gen.created_at)}
+                        {formatRelativeTime(gen.created_at, t)}
                       </p>
                     </div>
                   </button>
@@ -468,7 +474,7 @@ export function StudioPanel({ notebookId }: StudioPanelProps) {
                   <div className="min-w-0 flex-1">
                     <p className="text-xs font-medium truncate">{note.title}</p>
                     <p className="text-[10px] text-muted-foreground" suppressHydrationWarning>
-                      {formatRelativeTime(note.updated_at)}
+                      {formatRelativeTime(note.updated_at, t)}
                     </p>
                   </div>
                 </button>
@@ -498,7 +504,7 @@ function getIconForAction(action: string): string {
   return map[action] || "report";
 }
 
-function formatRelativeTime(dateStr: string): string {
+function formatRelativeTime(dateStr: string, t: (key: string, values?: Record<string, number>) => string): string {
   const now = Date.now();
   const date = new Date(dateStr).getTime();
   const diff = now - date;
@@ -506,10 +512,10 @@ function formatRelativeTime(dateStr: string): string {
   const hours = Math.floor(diff / 3600000);
   const days = Math.floor(diff / 86400000);
 
-  if (minutes < 1) return "Just now";
-  if (minutes < 60) return `${minutes}m ago`;
-  if (hours < 24) return `${hours}h ago`;
-  if (days < 7) return `${days}d ago`;
+  if (minutes < 1) return t("justNow");
+  if (minutes < 60) return t("minutesAgo", { count: minutes });
+  if (hours < 24) return t("hoursAgo", { count: hours });
+  if (days < 7) return t("daysAgo", { count: days });
   return new Date(dateStr).toLocaleDateString(undefined, { month: "short", day: "numeric" });
 }
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, memo } from "react";
+import { useState, useEffect, memo } from "react";
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 
@@ -25,6 +25,22 @@ export const QuizView = memo(function QuizView({ data }: QuizViewProps) {
   const [answers, setAnswers] = useState<(number | null)[]>(new Array(data.length).fill(null));
 
   const q = data[current];
+
+  // Keyboard shortcuts: 1-4 to select, Enter to check/next
+  useEffect(() => {
+    function handleKeyDown(e: KeyboardEvent) {
+      if (finished) return;
+      const num = parseInt(e.key);
+      if (num >= 1 && num <= q.options.length && !checked) {
+        setSelected(num - 1);
+      } else if (e.key === "Enter") {
+        if (!checked && selected !== null) checkAnswer();
+        else if (checked) next();
+      }
+    }
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  });
 
   function checkAnswer() {
     if (selected === null) return;
@@ -184,6 +200,7 @@ export const QuizView = memo(function QuizView({ data }: QuizViewProps) {
               key={i}
               onClick={() => !checked && setSelected(i)}
               disabled={checked}
+              aria-label={`${String.fromCharCode(65 + i)}: ${option}`}
               className={`w-full text-left rounded-lg px-4 py-3 text-sm transition-all ${optionClass}`}
             >
               <span className="inline-flex h-5 w-5 items-center justify-center rounded-full border text-[10px] font-bold mr-2.5 text-muted-foreground">

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import {
   Dialog,
   DialogContent,
@@ -16,6 +17,7 @@ interface PdfViewerModalProps {
 }
 
 export function PdfViewerModal({ notebookId, fileId, trigger }: PdfViewerModalProps) {
+  const t = useTranslations("pdfViewer");
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
@@ -35,7 +37,7 @@ export function PdfViewerModal({ notebookId, fileId, trigger }: PdfViewerModalPr
         throw new Error("Invalid PDF URL");
       }
     } catch {
-      setError("Could not load PDF. Please try again.");
+      setError(t("loadError"));
     } finally {
       setLoading(false);
     }
@@ -55,7 +57,7 @@ export function PdfViewerModal({ notebookId, fileId, trigger }: PdfViewerModalPr
       <DialogTrigger asChild>{trigger}</DialogTrigger>
       <DialogContent className="max-w-4xl h-[90vh] flex flex-col p-0 gap-0">
         <DialogHeader className="flex flex-row items-center justify-between px-4 py-3 border-b shrink-0">
-          <DialogTitle className="text-sm font-semibold">Document Viewer</DialogTitle>
+          <DialogTitle className="text-sm font-semibold">{t("title")}</DialogTitle>
           {pdfUrl && (
             <a
               href={pdfUrl}
@@ -64,7 +66,7 @@ export function PdfViewerModal({ notebookId, fileId, trigger }: PdfViewerModalPr
               rel="noopener noreferrer"
               className="text-xs text-muted-foreground hover:text-foreground transition-colors"
             >
-              Download PDF
+              {t("download")}
             </a>
           )}
         </DialogHeader>
@@ -81,7 +83,7 @@ export function PdfViewerModal({ notebookId, fileId, trigger }: PdfViewerModalPr
                 onClick={fetchUrl}
                 className="text-xs text-muted-foreground hover:text-foreground transition-colors underline underline-offset-2"
               >
-                Retry
+                {t("retry")}
               </button>
             </div>
           )}
@@ -89,7 +91,7 @@ export function PdfViewerModal({ notebookId, fileId, trigger }: PdfViewerModalPr
             <iframe
               src={pdfUrl}
               className="w-full h-full border-0"
-              title="PDF Viewer"
+              title={t("iframeTitle")}
             />
           )}
         </div>

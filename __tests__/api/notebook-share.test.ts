@@ -43,6 +43,7 @@ describe("GET /api/notebooks/[id]/share", () => {
     vi.clearAllMocks();
     mockedAuth.mockResolvedValue("skip");
     mockedIsValidUUID.mockReturnValue(true);
+    mockedRateLimit.mockReturnValue(true);
     mockSupabase.auth.getUser.mockResolvedValue({
       data: { user: { id: "user-123" } },
     });

@@ -70,6 +70,7 @@ export function Toolbar({
       <select
         value={sortBy}
         onChange={(e) => onSortChange(e.target.value as SortKey)}
+        aria-label="Sort notebooks"
         className="h-10 rounded-lg border bg-background px-3 text-sm text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
       >
         {sortOptions.map((opt) => (

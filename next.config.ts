@@ -24,7 +24,7 @@ const securityHeaders = [
       "style-src 'self' 'unsafe-inline'",
       "img-src 'self' data: blob: https:",
       "font-src 'self' data:",
-      "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://generativelanguage.googleapis.com",
+      "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://generativelanguage.googleapis.com https://api.groq.com",
       "frame-ancestors 'none'",
     ].join("; "),
   },
@@ -35,16 +35,23 @@ const nextConfig: NextConfig = {
   poweredByHeader: false,
   output: "standalone",
   compress: true,
-  serverExternalPackages: ["pdf-parse"],
+  serverExternalPackages: ["pdf-parse", "mammoth"],
   experimental: {
     optimizePackageImports: ["lucide-react"],
   },
   images: {
     remotePatterns: [
       { protocol: "https", hostname: "*.supabase.co" },
-      { protocol: "https", hostname: "logo.clearbit.com" },
-      { protocol: "https", hostname: "img.logo.dev" },
     ],
+  },
+  async redirects() {
+    return [
+      {
+        source: "/api/resume",
+        destination: "/Medy-Gribkov-Resume.pdf",
+        permanent: false,
+      },
+    ];
   },
   async headers() {
     return [

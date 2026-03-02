@@ -98,12 +98,12 @@ export async function GET(request: Request) {
     }
 
     return NextResponse.json({ notebooks, sharedNotebooks, filesByNotebook, companyByNotebook }, {
-      headers: { "Cache-Control": "private, max-age=15, stale-while-revalidate=60" },
+      headers: { "Cache-Control": "private, max-age=5, stale-while-revalidate=10" },
     });
   }
 
   return NextResponse.json({ notebooks, sharedNotebooks, companyByNotebook }, {
-    headers: { "Cache-Control": "private, max-age=15, stale-while-revalidate=60" },
+    headers: { "Cache-Control": "private, max-age=5, stale-while-revalidate=10" },
   });
 }
 
@@ -115,6 +115,10 @@ export async function DELETE(request: Request) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  if (!checkRateLimit(`notebooks-delete-all:${user.id}`, 2, 3_600_000)) {
+    return NextResponse.json({ error: "Rate limit exceeded" }, { status: 429, headers: { "Retry-After": "3600" } });
+  }
 
   // Get all storage paths to clean up
   const { data: files } = await supabase

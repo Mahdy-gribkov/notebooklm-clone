@@ -41,6 +41,10 @@ export async function GET(
     return NextResponse.json({ error: "Notebook not found" }, { status: 404 });
   }
 
+  if (!checkRateLimit(`share-get:${user.id}`, 60, 60_000)) {
+    return NextResponse.json({ error: "Rate limit exceeded" }, { status: 429, headers: { "Retry-After": "60" } });
+  }
+
   const { data: links } = await supabase
     .from("shared_links")
     .select("id, token, permissions, expires_at, is_active, created_at")
@@ -161,6 +165,10 @@ export async function DELETE(
 
   if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  if (!checkRateLimit(`share-delete:${user.id}`, 10, 60_000)) {
+    return NextResponse.json({ error: "Rate limit exceeded" }, { status: 429, headers: { "Retry-After": "60" } });
   }
 
   let body: { token?: string };

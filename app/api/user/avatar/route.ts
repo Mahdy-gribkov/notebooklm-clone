@@ -1,3 +1,4 @@
+import { authenticateRequest } from "@/lib/auth";
 import { checkRateLimit } from "@/lib/rate-limit";
 import { createClient } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
@@ -7,6 +8,9 @@ const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp"];
 
 // POST /api/user/avatar - upload avatar image
 export async function POST(request: Request) {
+  const auth = await authenticateRequest(request);
+  if (!auth) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
   const supabase = await createClient();
   const {
     data: { user },
@@ -91,7 +95,10 @@ export async function POST(request: Request) {
 }
 
 // DELETE /api/user/avatar - remove avatar
-export async function DELETE() {
+export async function DELETE(request: Request) {
+  const auth = await authenticateRequest(request);
+  if (!auth) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
   const supabase = await createClient();
   const {
     data: { user },

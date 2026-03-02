@@ -157,7 +157,7 @@ describe("GET /api/notebooks/[id]/files", () => {
     expect(res.status).toBe(200);
     const body = await res.json();
     expect(body).toEqual(files);
-    expect(res.headers.get("Cache-Control")).toBe("private, max-age=10, stale-while-revalidate=60");
+    expect(res.headers.get("Cache-Control")).toBe("private, no-cache");
   });
 
   it("returns 500 on database error", async () => {

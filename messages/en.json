@@ -101,6 +101,8 @@
     "next": "Next",
     "back": "Back",
     "notebookDeleted": "Research deleted",
+    "fetchError": "Failed to load notebooks. Please try refreshing.",
+    "retry": "Refresh",
     "showMore": "Show more",
     "showLess": "Show less"
   },
@@ -264,7 +266,8 @@
     "duplicateFile": "This file has already been loaded",
     "fileLimitReached": "Maximum 5 files per research notebook. Delete a file to add more.",
     "uploadingCount": "Uploading {count} {count, plural, one {file} other {files}}...",
-    "uploadInProgress": "Upload in progress from another panel..."
+    "uploadInProgress": "Upload in progress from another panel...",
+    "deleteFailed": "Failed to delete file. Try again."
   },
   "sourcePanel": {
     "sourcesCited": "Sources Cited",
@@ -335,7 +338,11 @@
     "download": "Download",
     "copy": "Copy",
     "copied": "Copied!",
-    "contents": "Contents"
+    "contents": "Contents",
+    "justNow": "Just now",
+    "minutesAgo": "{count}m ago",
+    "hoursAgo": "{count}h ago",
+    "daysAgo": "{count}d ago"
   },
   "upload": {
     "dropOrBrowse": "Drop a file here or {browse}",
@@ -406,7 +413,14 @@
     "signOut": "Sign out",
     "deleteAccount": "Delete account",
     "deleteAccountConfirm": "Are you sure? This will permanently delete your account and all data.",
-    "deleteAccountNote": "This action cannot be undone."
+    "deleteAccountNote": "This action cannot be undone.",
+    "allNotebooksDeleted": "All notebooks deleted",
+    "deleteAllFailed": "Failed to delete notebooks. Please try again.",
+    "deleteAccountFailed": "Failed to delete account. Please try again.",
+    "profileUpdated": "Profile updated",
+    "prefsSaved": "Preferences saved",
+    "accentUpdated": "Accent color updated",
+    "exportFailed": "Failed to export data. Please try again."
   },
   "share": {
     "title": "Share company profile",
@@ -427,6 +441,13 @@
     "expire30": "30 days",
     "expireNever": "Never",
     "createFailed": "Failed to create link"
+  },
+  "pdfViewer": {
+    "title": "Document Viewer",
+    "download": "Download PDF",
+    "loadError": "Could not load PDF. Please try again.",
+    "retry": "Retry",
+    "iframeTitle": "PDF Viewer"
   },
   "export": {
     "title": "Export",

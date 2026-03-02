@@ -49,6 +49,7 @@ export default function DashboardPage() {
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [showAllFeatured, setShowAllFeatured] = useState(false);
   const [cloningSlug, setCloningSlug] = useState<string | null>(null);
+  const [fetchError, setFetchError] = useState(false);
 
   useEffect(() => {
     const saved = localStorage.getItem("grid-density") as GridDensity;
@@ -72,10 +73,15 @@ export default function DashboardPage() {
           } else {
             setNotebooks(data);
           }
+        } else {
+          setFetchError(true);
         }
         setLoading(false);
       })
-      .catch(() => setLoading(false));
+      .catch(() => {
+        setFetchError(true);
+        setLoading(false);
+      });
 
     const supabase = createClient();
     supabase.auth.getUser().then(({ data }) => {
@@ -182,6 +188,13 @@ export default function DashboardPage() {
     setSearchInput(value);
     if (debounceRef.current) clearTimeout(debounceRef.current);
     debounceRef.current = setTimeout(() => setSearchQuery(value), 300);
+  }, []);
+
+  // Cleanup debounce timer on unmount
+  useEffect(() => {
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+    };
   }, []);
 
   // Memos
@@ -295,6 +308,14 @@ export default function DashboardPage() {
           />
         )}
 
+        {fetchError && (
+          <div className="rounded-lg border border-destructive/20 bg-destructive/5 p-4 text-sm text-destructive mb-4">
+            {t("fetchError")}
+            <button onClick={() => window.location.reload()} className="ml-2 underline hover:no-underline">
+              {t("retry")}
+            </button>
+          </div>
+        )}
         {showRecent && (
           <RecentNotebooks
             notebooks={notebooks}

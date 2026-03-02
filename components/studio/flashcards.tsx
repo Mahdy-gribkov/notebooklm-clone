@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, memo } from "react";
+import { useState, useCallback, useEffect, memo } from "react";
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 
@@ -17,6 +17,25 @@ export const FlashcardsView = memo(function FlashcardsView({ data }: FlashcardsV
   const t = useTranslations("studio");
   const [cards, setCards] = useState(data);
   const [flipped, setFlipped] = useState<Set<number>>(new Set());
+  const [focusedCard, setFocusedCard] = useState(0);
+
+  // Keyboard: arrow keys to navigate, Space to flip
+  useEffect(() => {
+    function handleKeyDown(e: KeyboardEvent) {
+      if (e.key === "ArrowRight" || e.key === "ArrowDown") {
+        e.preventDefault();
+        setFocusedCard((prev) => Math.min(prev + 1, cards.length - 1));
+      } else if (e.key === "ArrowLeft" || e.key === "ArrowUp") {
+        e.preventDefault();
+        setFocusedCard((prev) => Math.max(prev - 1, 0));
+      } else if (e.key === " ") {
+        e.preventDefault();
+        toggleFlip(focusedCard);
+      }
+    }
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  });
 
   const toggleFlip = useCallback((index: number) => {
     setFlipped((prev) => {

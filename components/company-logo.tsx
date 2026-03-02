@@ -8,6 +8,8 @@ interface CompanyLogoProps {
   name: string;
   size?: "sm" | "md" | "lg";
   className?: string;
+  /** Use eager loading (for above-the-fold logos) */
+  eager?: boolean;
 }
 
 const SIZES = {
@@ -25,31 +27,29 @@ function extractDomain(input: string): string {
   }
 }
 
-/** Favicon size param for Google API (closest to our display size) */
+/** Favicon size param (closest to our display size) */
 function faviconSize(px: number): number {
   if (px <= 24) return 32;
   if (px <= 32) return 64;
   return 128;
 }
 
-function CompanyLogoInner({ domain, name, size = "md", className = "" }: CompanyLogoProps) {
+function CompanyLogoInner({ domain, name, size = "md", className = "", eager = false }: CompanyLogoProps) {
   const [loaded, setLoaded] = useState(false);
-  const [provider, setProvider] = useState<"google" | "logodev" | "none">(
-    domain ? "google" : "none"
-  );
+  const [failed, setFailed] = useState(false);
 
   const { box, text, px } = SIZES[size];
   const host = domain ? extractDomain(domain) : "";
 
   const letter = (
     <div
-      className={`${box} rounded-lg bg-primary/90 shadow-sm flex items-center justify-center text-primary-foreground font-bold ${text} ${loaded ? "opacity-0" : "opacity-100"} transition-opacity duration-200 absolute inset-0 ${className}`}
+      className={`${box} rounded-lg bg-primary/90 shadow-sm flex items-center justify-center text-primary-foreground font-bold ${text} ${loaded ? "opacity-0" : "opacity-100"} transition-opacity duration-200 absolute inset-0`}
     >
       {name.charAt(0).toUpperCase()}
     </div>
   );
 
-  if (provider === "none" || !host) {
+  if (!host || failed) {
     return (
       <div className={`${box} relative shrink-0 ${className}`}>
         <div
@@ -61,10 +61,7 @@ function CompanyLogoInner({ domain, name, size = "md", className = "" }: Company
     );
   }
 
-  const src =
-    provider === "google"
-      ? `https://www.google.com/s2/favicons?domain=${host}&sz=${faviconSize(px)}`
-      : `https://img.logo.dev/${host}?token=pk_anonymous&size=${faviconSize(px)}`;
+  const src = `/api/logo?domain=${host}&sz=${faviconSize(px)}`;
 
   return (
     <div className={`${box} relative shrink-0 ${className}`}>
@@ -76,17 +73,18 @@ function CompanyLogoInner({ domain, name, size = "md", className = "" }: Company
         width={px}
         height={px}
         className={`${box} rounded-lg bg-white/90 p-0.5 shadow-sm absolute inset-0 object-contain ${loaded ? "opacity-100" : "opacity-0"} transition-opacity duration-200`}
-        loading="lazy"
-        onLoad={() => setLoaded(true)}
-        onError={() => {
-          if (provider === "google") {
-            setProvider("logodev");
-            setLoaded(false);
+        loading={eager ? "eager" : "lazy"}
+        fetchPriority={eager ? "auto" : "low"}
+        onLoad={(e) => {
+          // If the proxy returned a 1x1 transparent PNG (failed), keep the letter
+          const img = e.currentTarget;
+          if (img.naturalWidth <= 1 && img.naturalHeight <= 1) {
+            setFailed(true);
           } else {
-            setProvider("none");
-            setLoaded(false);
+            setLoaded(true);
           }
         }}
+        onError={() => setFailed(true)}
       />
     </div>
   );

@@ -249,7 +249,7 @@ export default function DashboardPage() {
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
-      <header className="bg-background/80 backdrop-blur-md sticky top-0 z-10 border-b border-border/40">
+      <header className="bg-background/80 backdrop-blur-md sticky top-0 z-30 border-b border-border/40">
         <div className="mx-auto flex max-w-[1400px] items-center justify-between px-4 sm:px-6 lg:px-8 py-4">
           <Logo />
           <div className="flex items-center gap-2">
@@ -433,7 +433,7 @@ const FeaturedCard = React.memo(function FeaturedCard({
 
       {fn.website && (
         <div className="absolute top-4 right-4 rtl:right-auto rtl:left-4 z-10">
-          <CompanyLogo domain={fn.website} name={tf(fn.titleKey)} size="md" />
+          <CompanyLogo domain={fn.website} name={tf(fn.titleKey)} size="md" eager={index < 8} />
         </div>
       )}
 

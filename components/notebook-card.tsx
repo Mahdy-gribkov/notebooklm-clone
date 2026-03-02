@@ -169,7 +169,7 @@ export function NotebookCard({ notebook, files = [], timedOut = false, onDelete,
       </Link>
 
       {/* Kebab menu */}
-      <div className="absolute right-3 rtl:right-auto rtl:left-3 top-4 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
+      <div className="absolute right-3 rtl:right-auto rtl:left-3 top-4 z-10 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <button

@@ -28,21 +28,21 @@ DocChat is a full-stack document intelligence platform built with Next.js 16, La
 |---|---|
 | Framework | Next.js 16 (App Router), React 19, TypeScript 5 (strict) |
 | Styling | Tailwind CSS v4, shadcn/ui v3, tw-animate-css |
-| AI/LLM | Groq (Llama 3.3 70B) primary, Gemini 2.0 Flash fallback, via Vercel AI SDK v4 |
+| AI/LLM | Groq (Llama 3.3 70B) primary, Gemini 2.0 Flash fallback, via Vercel AI SDK v6 |
 | RAG Pipeline | LangChain (retriever, RAG chain, structured output parsers, message trimming) |
 | Embeddings | Google Gemini Embedding 001 (768-dim) via @langchain/google-genai |
-| Vector Search | pgvector (IVFFlat index, cosine distance) |
+| Vector Search | pgvector (HNSW index, cosine distance) |
 | Database | Supabase PostgreSQL with Row-Level Security |
 | Auth | Supabase Auth (email, magic link, GitHub OAuth, Google OAuth) |
 | Storage | Supabase Storage (private bucket, signed URLs) |
-| Testing | Vitest (361+ tests, 41 files, 97%+ statement coverage), Playwright E2E (6 tests) |
+| Testing | Vitest (683+ tests, 74 files, 97%+ statement coverage), Playwright E2E (34 tests, 12 spec files) |
 | CI/CD | GitHub Actions (typecheck, lint, test, build, Docker push) |
-| Deploy | Docker (standalone Next.js, node:22-alpine) on Render |
+| Deploy | Docker (standalone Next.js, node:24-alpine) on Render |
 
 ## Quick Start
 
 ```bash
-git clone https://github.com/mahdygr-blip/NoteBookLM-clone.git
+git clone https://github.com/medy-gribkov/notebooklm-clone.git
 cd NoteBookLM-clone
 npm install --legacy-peer-deps
 
@@ -65,6 +65,8 @@ Open [http://localhost:3000](http://localhost:3000).
 | `GROQ_API_KEY` | Yes | Groq API key (primary LLM) |
 | `GEMINI_API_KEY` | Yes | Google AI API key (embeddings + LLM fallback + OCR) |
 | `NEXT_PUBLIC_APP_URL` | No | Public app URL for OG meta tags (defaults to localhost) |
+| `ADMIN_USER_ID` | No | UUID of admin user (enables admin features server-side) |
+| `NEXT_PUBLIC_ADMIN_USER_ID` | No | UUID of admin user (enables admin UI client-side) |
 
 ## Database Setup
 
@@ -72,13 +74,16 @@ Apply migrations in the Supabase SQL Editor, in order:
 
 1. `0001_schema.sql` -- Tables, RLS policies, pgvector extension, storage policy
 2. `0002_functions.sql` -- RPC functions (vector search, share token validation)
-3. `0003_indexes.sql` -- Performance indexes (IVFFlat, foreign keys, composites)
+3. `0003_indexes.sql` -- Performance indexes (foreign keys, composites)
 4. `0004_optimization.sql` -- Query optimizations
 5. `0005_backfill_featured_file_ids.sql` -- Featured notebook file IDs
 6. `0006_add_source_hash.sql` -- Content deduplication hashing
 7. `0007_chat_privacy_and_hashing.sql` -- Chat privacy and IP hashing
 8. `0008_companies.sql` -- Company metadata table
 9. `0009_perf_indexes.sql` -- Additional performance indexes
+10. `0010_additional_indexes.sql` -- Status, source hash, and share token indexes
+11. `0011_admin_profile.sql` -- Admin profile table with RLS
+12. `0012_hnsw_index.sql` -- Replace IVFFlat with HNSW for better recall
 
 After migrations, create a private storage bucket named `pdf-uploads` with a 5 MB file size limit.
 
@@ -186,7 +191,7 @@ lib/
     chat-model.ts               ChatGoogleGenerativeAI for metadata generation
     output-parsers.ts           Zod schemas + StructuredOutputParser for 7 studio types
     trim-messages.ts            Message history trimming (12k char budget)
-supabase/migrations/            SQL migrations (9 files)
+supabase/migrations/            SQL migrations (12 files)
 messages/                       i18n translations (en.json, he.json)
 public/                         Static assets (favicon, OG image, manifest)
 nginx/                          nginx config for VPS deployments
@@ -253,7 +258,7 @@ npm run test:watch    # Watch mode
 npm run test:coverage # With coverage report
 ```
 
-41 test files, 361+ unit/component tests, 6 E2E tests. Coverage: 97%+ statements, 95%+ branches. `lib/langchain/` at 100%.
+74 test files, 683+ unit/component tests, 34 E2E tests (12 spec files). Coverage: 97%+ statements, 95%+ branches. `lib/langchain/` at 100%.
 
 ## CI/CD
 

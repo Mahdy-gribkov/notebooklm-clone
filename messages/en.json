@@ -253,7 +253,8 @@
     "uploading": "Uploading...",
     "send": "Send message",
     "processingFailed": "Processing failed",
-    "tryReupload": "Try uploading the file again."
+    "tryReupload": "Try uploading the file again.",
+    "showingLastMessages": "Showing last 200 messages"
   },
   "sources": {
     "title": "Sources",

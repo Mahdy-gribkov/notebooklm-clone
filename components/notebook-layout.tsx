@@ -29,13 +29,14 @@ interface NotebookLayoutProps {
   notebookTitle: string;
   notebookFiles: NotebookFile[];
   initialMessages: Message[];
+  hasMoreMessages?: boolean;
   notebookDescription?: string | null;
   starterPrompts?: string[] | null;
   companyName?: string;
   companyDomain?: string;
 }
 
-export function NotebookLayout({ notebookId, notebookTitle, notebookFiles, initialMessages, notebookDescription, starterPrompts, companyName, companyDomain }: NotebookLayoutProps) {
+export function NotebookLayout({ notebookId, notebookTitle, notebookFiles, initialMessages, hasMoreMessages, notebookDescription, starterPrompts, companyName, companyDomain }: NotebookLayoutProps) {
   const [sourcesOpen, setSourcesOpen] = useState(true);
   const [studioOpen, setStudioOpen] = useState(false);
   const [studioMounted, setStudioMounted] = useState(false);
@@ -251,7 +252,7 @@ export function NotebookLayout({ notebookId, notebookTitle, notebookFiles, initi
       <div className="flex flex-1 overflow-hidden min-h-0">
         {/* Left: Sources panel (desktop lg+) */}
         <div
-          className={`hidden lg:flex flex-col border-e bg-background shrink-0 transition-[width,opacity] duration-300 ease-in-out overflow-hidden ${sourcesOpen ? "w-[260px] opacity-100" : "w-0 opacity-0 border-e-0"
+          className={`hidden lg:flex flex-col border-e bg-background shrink-0 transition-[width,opacity] duration-300 ease-in-out overflow-hidden will-change-[width,opacity] ${sourcesOpen ? "w-[260px] opacity-100" : "w-0 opacity-0 border-e-0"
             }`}
         >
           <div className="w-[260px] h-full min-w-[260px]">
@@ -264,6 +265,7 @@ export function NotebookLayout({ notebookId, notebookTitle, notebookFiles, initi
           <ChatInterface
             notebookId={notebookId}
             initialMessages={initialMessages}
+            hasMoreMessages={hasMoreMessages}
             isProcessing={hasProcessingFiles && !hasReadyFiles}
             hasFiles={hasReadyFiles}
             hasErrorFiles={hasErrorFiles && !hasReadyFiles && !hasProcessingFiles}

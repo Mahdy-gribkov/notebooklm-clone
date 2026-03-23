@@ -253,7 +253,8 @@
     "uploading": "מעלה...",
     "send": "שלח הודעה",
     "processingFailed": "העיבוד נכשל",
-    "tryReupload": "נסה להעלות את הקובץ שוב."
+    "tryReupload": "נסה להעלות את הקובץ שוב.",
+    "showingLastMessages": "מציג 200 הודעות אחרונות"
   },
   "sources": {
     "title": "מקורות",

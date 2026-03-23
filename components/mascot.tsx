@@ -4,9 +4,10 @@ interface MascotProps {
     size?: "sm" | "md" | "lg";
     mood?: "happy" | "thinking" | "surprised" | "neutral" | "error";
     className?: string;
+    priority?: boolean;
 }
 
-export function Mascot({ size = "md", mood = "neutral", className = "" }: MascotProps) {
+export function Mascot({ size = "md", mood = "neutral", className = "", priority = false }: MascotProps) {
     // Map size prop to explicit integer widths for Next.js Image optimization
     const dimensions = {
         sm: 64,
@@ -37,7 +38,7 @@ export function Mascot({ size = "md", mood = "neutral", className = "" }: Mascot
                     alt="DocChat Assistant"
                     width={currentSize}
                     height={currentSize}
-                    priority
+                    priority={priority}
                     className="object-contain drop-shadow-md"
                 />
             </div>

@@ -3,6 +3,9 @@ module.exports = {
     collect: {
       startServerCommand: "npm run start",
       startServerReadyPattern: "Ready in",
+      // Only unauthenticated pages can be audited without a custom puppeteer
+      // auth script. Dashboard and notebook routes require Supabase session
+      // cookies, which Lighthouse CI cannot inject natively.
       url: ["http://localhost:3000/login"],
       numberOfRuns: 3,
       settings: {

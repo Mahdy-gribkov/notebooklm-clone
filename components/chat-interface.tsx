@@ -19,6 +19,7 @@ import type { Message, NotebookFile, Source } from "@/types";
 interface ChatInterfaceProps {
   notebookId: string;
   initialMessages: Message[];
+  hasMoreMessages?: boolean;
   isProcessing?: boolean;
   hasFiles?: boolean;
   hasErrorFiles?: boolean;
@@ -29,7 +30,7 @@ interface ChatInterfaceProps {
   setIsUploading?: (v: boolean) => void;
 }
 
-export function ChatInterface({ notebookId, initialMessages, isProcessing = false, hasFiles = true, hasErrorFiles = false, description, starterPrompts: dynamicPrompts, onFileUploaded, isUploading: externalUploading, setIsUploading }: ChatInterfaceProps) {
+export function ChatInterface({ notebookId, initialMessages, hasMoreMessages, isProcessing = false, hasFiles = true, hasErrorFiles = false, description, starterPrompts: dynamicPrompts, onFileUploaded, isUploading: externalUploading, setIsUploading }: ChatInterfaceProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -220,6 +221,11 @@ export function ChatInterface({ notebookId, initialMessages, isProcessing = fals
       <div ref={scrollRef} className="flex-1 overflow-y-auto min-h-0 scrollbar-thin">
         <div className="px-4 py-6">
           <div className="space-y-5 max-w-2xl lg:max-w-3xl mx-auto">
+            {hasMoreMessages && (
+              <div className="text-center text-xs text-muted-foreground py-2 border-b border-border/50 mb-2">
+                {t("showingLastMessages")}
+              </div>
+            )}
             {messages.length === 0 && !hasFiles && !isProcessing && (
               <div className="flex flex-col items-center py-10 sm:py-20 text-center animate-fade-in">
                 <input

@@ -84,7 +84,7 @@ Deploy על **Render** ולא Vercel. למה? Docker control. אני רוצה mu
 
 `[CUT: app/api/chat/route.ts, streamText call]`
 
-ה-streaming עצמו דרך **Vercel AI SDK**, `streamText` עם `useChat` hook בצד הלקוח. למה לא LangChain streaming? כי ה-useChat hook של Vercel AI SDK נותן state management מובנה, automatic message history, ו-StreamData protocol לשליחת metadata כמו sources.
+ה-streaming עצמו דרך **Vercel AI SDK v6**, `streamText` עם `useChat` hook בצד הלקוח. למה לא LangChain streaming? כי ה-useChat hook של Vercel AI SDK נותן state management מובנה, automatic message history, ו-sources נשלחים דרך `X-Chat-Sources` response header.
 
 **זו ההחלטה הארכיטקטונית המרכזית: LangChain לכל ה-RAG logic, Vercel AI SDK רק ל-streaming**. שני ה-SDKs עושים דברים שונים טוב.
 

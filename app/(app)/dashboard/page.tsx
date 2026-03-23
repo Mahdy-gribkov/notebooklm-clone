@@ -448,7 +448,7 @@ const FeaturedCard = React.memo(function FeaturedCard({
       style={{ height: 200, animationDelay: `${index * 25}ms` }}
     >
       <div className="absolute inset-0 opacity-[0.07]">
-        <CardPattern pattern={fn.pattern} />
+        <CardPattern pattern={fn.pattern} slug={fn.slug} />
       </div>
       <div className="absolute inset-0 featured-mesh opacity-50 mix-blend-overlay" />
 
@@ -482,7 +482,7 @@ const FeaturedCard = React.memo(function FeaturedCard({
   );
 });
 
-function CardPattern({ pattern }: { pattern: string }) {
+function CardPattern({ pattern, slug }: { pattern: string; slug: string }) {
   switch (pattern) {
     case "circles":
       return (
@@ -496,8 +496,8 @@ function CardPattern({ pattern }: { pattern: string }) {
     case "grid":
       return (
         <svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
-          <defs><pattern id="grid" width="30" height="30" patternUnits="userSpaceOnUse"><path d="M 30 0 L 0 0 0 30" fill="none" stroke="white" strokeWidth="1.5" /></pattern></defs>
-          <rect width="100%" height="100%" fill="url(#grid)" />
+          <defs><pattern id={`grid-${slug}`} width="30" height="30" patternUnits="userSpaceOnUse"><path d="M 30 0 L 0 0 0 30" fill="none" stroke="white" strokeWidth="1.5" /></pattern></defs>
+          <rect width="100%" height="100%" fill={`url(#grid-${slug})`} />
         </svg>
       );
     case "waves":
@@ -511,15 +511,15 @@ function CardPattern({ pattern }: { pattern: string }) {
     case "dots":
       return (
         <svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
-          <defs><pattern id="dots" width="20" height="20" patternUnits="userSpaceOnUse"><circle cx="10" cy="10" r="2.5" fill="white" /></pattern></defs>
-          <rect width="100%" height="100%" fill="url(#dots)" />
+          <defs><pattern id={`dots-${slug}`} width="20" height="20" patternUnits="userSpaceOnUse"><circle cx="10" cy="10" r="2.5" fill="white" /></pattern></defs>
+          <rect width="100%" height="100%" fill={`url(#dots-${slug})`} />
         </svg>
       );
     case "hexagons":
       return (
         <svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
-          <defs><pattern id="hex" width="50" height="43.3" patternUnits="userSpaceOnUse" patternTransform="scale(1.2)"><polygon points="25,0 50,14.4 50,28.9 25,43.3 0,28.9 0,14.4" fill="none" stroke="white" strokeWidth="1.5" /></pattern></defs>
-          <rect width="100%" height="100%" fill="url(#hex)" />
+          <defs><pattern id={`hex-${slug}`} width="50" height="43.3" patternUnits="userSpaceOnUse" patternTransform="scale(1.2)"><polygon points="25,0 50,14.4 50,28.9 25,43.3 0,28.9 0,14.4" fill="none" stroke="white" strokeWidth="1.5" /></pattern></defs>
+          <rect width="100%" height="100%" fill={`url(#hex-${slug})`} />
         </svg>
       );
     case "triangles":
@@ -533,15 +533,15 @@ function CardPattern({ pattern }: { pattern: string }) {
     case "lines":
       return (
         <svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
-          <defs><pattern id="lines" width="12" height="12" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><line x1="0" y1="0" x2="0" y2="12" stroke="white" strokeWidth="2" /></pattern></defs>
-          <rect width="100%" height="100%" fill="url(#lines)" />
+          <defs><pattern id={`lines-${slug}`} width="12" height="12" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><line x1="0" y1="0" x2="0" y2="12" stroke="white" strokeWidth="2" /></pattern></defs>
+          <rect width="100%" height="100%" fill={`url(#lines-${slug})`} />
         </svg>
       );
     case "diamond":
       return (
         <svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
-          <defs><pattern id="diamond" width="30" height="30" patternUnits="userSpaceOnUse"><polygon points="15,0 30,15 15,30 0,15" fill="none" stroke="white" strokeWidth="1.5" /></pattern></defs>
-          <rect width="100%" height="100%" fill="url(#diamond)" />
+          <defs><pattern id={`diamond-${slug}`} width="30" height="30" patternUnits="userSpaceOnUse"><polygon points="15,0 30,15 15,30 0,15" fill="none" stroke="white" strokeWidth="1.5" /></pattern></defs>
+          <rect width="100%" height="100%" fill={`url(#diamond-${slug})`} />
         </svg>
       );
     default:

@@ -44,7 +44,7 @@ export default async function NotebookPage({ params }: PageProps) {
       .eq("user_id", user.id)
       .eq("is_public", false)
       .order("created_at", { ascending: true })
-      .limit(200),
+      .limit(201),
     supabase
       .from("companies")
       .select("name, website")
@@ -54,17 +54,21 @@ export default async function NotebookPage({ params }: PageProps) {
 
   const notebook = nbRes.data;
   const files = filesRes.data;
-  const messages = messagesRes.data;
+  const allMessages = messagesRes.data ?? [];
   const company = companyRes.data;
 
   if (!notebook) notFound();
+
+  const hasMoreMessages = allMessages.length > 200;
+  const messages = hasMoreMessages ? allMessages.slice(-200) : allMessages;
 
   return (
     <NotebookLayout
       notebookId={id}
       notebookTitle={notebook.title}
       notebookFiles={(files ?? []) as NotebookFile[]}
-      initialMessages={(messages ?? []) as Message[]}
+      initialMessages={messages as Message[]}
+      hasMoreMessages={hasMoreMessages}
       notebookDescription={
         notebook.description?.startsWith("featured.")
           ? t(notebook.description.replace("featured.", ""))
